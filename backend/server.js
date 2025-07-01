@@ -12,7 +12,7 @@ const { randomUUID } = require('crypto');
 const app = express();
 const db = new Database('./confirmation_data.db');
 const upload = multer({ dest: 'uploads/' }).any();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 
