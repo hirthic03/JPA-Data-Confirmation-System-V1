@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 
+const BASE_URL = 'https://jpa-data-confirmation-system-v1.onrender.com';
+
 export default function AdminReportPage() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -14,7 +16,6 @@ export default function AdminReportPage() {
 
 
 useEffect(() => {
-  const BASE_URL = 'https://jpa-data-confirmation-system-v1.onrender.com';
 
   Promise.all([
     fetch(`${BASE_URL}/all-submissions`).then(res => res.json()),
