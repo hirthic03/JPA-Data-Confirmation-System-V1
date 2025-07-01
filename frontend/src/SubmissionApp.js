@@ -69,14 +69,10 @@ const filteredModules = moduleEntries.map(([modName]) => modName.trim());
 setAvailableModules(filteredModules);
 
 // Ensure selected module is valid
-const trimmedModule = module.trim();
-if (!filteredModules.some(m => m.trim() === trimmedModule)) {
-  setModule(filteredModules[0] || '');
+if (!filteredModules.includes(module.trim())) {
+  setModule('');
 }
-
 }, [system, flowType, systemsData]);
-
-
 
 useEffect(() => {
   if (!module) return;
