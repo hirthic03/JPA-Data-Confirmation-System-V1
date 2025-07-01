@@ -1,0 +1,701 @@
+
+/* GLOBAL */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #287BC0;
+  color: black;
+  margin: 0;
+}
+
+.container {
+  width: 95%;
+  max-width: 13000px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* HEADINGS */
+.title, h3, h4 {
+  color: #FFFFFF;
+  font-weight: bold;
+  text-align: center;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* FORM ELEMENTS */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+label {
+  color: #AED9F4;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+select, input[type="text"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #AED9F4;
+  color: #005D9E;
+  font-size: 1rem;
+}
+
+select:focus, input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #FFFFFF55;
+}
+/*CONFIRMATION SECTION*/
+
+.confirmation-section {
+  width: 90%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background-color: #005691;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* DATA ELEMENTS */
+.element-section {
+  background-color: #3C99DC;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.group h4 {
+  color: #FFFFFF;
+  border-bottom: 1px solid #AED9F4;
+  padding-bottom: 0.25rem;
+}
+
+/* CHECKBOX STYLES */
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+.checkbox-item input[type="checkbox"] {
+  transform: scale(1.2);
+  accent-color: green;
+}
+
+.checkbox-item label {
+  color: #FFFFFF;
+  font-size: 0.95rem;
+}
+
+/* REMARKS */
+.remarks-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.remarks-input {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #FFFFFF;
+  color: #005D9E;
+  border: none;
+}
+
+.add-remark-btn {
+  background-color: #AED9F4;
+  color: #005D9E;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.add-remark-btn:hover {
+  background-color: green;
+  color: #005D9E;
+}
+
+/* REMARK LIST */
+.remarks-list .remark-item {
+  background-color: #1F4E79;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* BUTTONS */
+.button-group,
+.tab-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #287BC0;
+  color: #FFFFFF;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  background-color: #AED9F4;
+  color: #005D9E;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* SUBMISSION CARDS */
+.submission-card {
+  background-color: #FFFFFF;
+  color: #FFFFFF;
+  padding: 1rem;
+  margin-bottom: 1.2rem;
+  border-radius: 10px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .tab-buttons {
+    flex-direction: column;
+  }
+}
+
+/* Header bar layout */
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* Top Nav Bar Layout */
+
+/* Logo */
+.logo-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Title */
+.nav-title {
+  flex-grow: 1;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  margin-right: auto;
+}
+
+/* Nav Links */
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: #79c9ff; /* Light blue link color */
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  border-bottom: 2px solid #00b2ff;
+  color: #00d4ff;
+}
+
+/* ADMIN REPORTING PAGE */
+
+.admin-page {
+  width: 95%;
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #FFFFFF;
+  color: #005D9E;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.admin-page h2 {
+  font-size: 1.75rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #287BC0;
+  font-weight: bold;
+}
+
+.admin-submission {
+  background-color: #f1f9ff;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  border-left: 5px solid #287BC0;
+}
+
+.admin-submission h4 {
+  margin-top: 0;
+  color: #005D9E;
+  margin-bottom: 0.75rem;
+}
+
+.admin-submission p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  color: #003f6b;
+}
+
+.admin-submission ul {
+  margin: 0.5rem 0 0 1rem;
+  padding-left: 1rem;
+}
+
+.admin-submission li {
+  font-size: 0.95rem;
+  color: #003f6b;
+}
+
+/* === Admin Report Table Styling === */
+.admin-container {
+  max-width: 95%;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.admin-title {
+  font-size: 24px;
+  color: #0a65c5;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-buttons button {
+  background-color: #0a65c5;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.filter-buttons button:hover {
+  background-color: #084b9c;
+}
+
+.admin-table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.admin-table th {
+  background-color: #f5f8fb;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-table td {
+  color: #555;
+}
+
+.admin-table tr:hover {
+  background-color: #f1f9ff;
+}
+
+.question-block {
+  margin-bottom: 25px;
+}
+
+.question-label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+  color: #003366;
+}
+
+textarea, input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: vertical;
+}
+
+input[type="file"] {
+  margin-top: 5px;
+}
+
+.button-group button {
+  padding: 10px 20px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.button-group button:disabled {
+  background-color: #aaa;
+}
+
+/* Tooltip Info Icon Styling */
+.info-icon {
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.info-icon:hover {
+  background-color: #0056b3;
+  position: relative;
+}
+
+/* Optional: Show tooltip natively using title, or extend with custom popup if needed later */
+
+
+/* 🆕 Container that separates nav and content */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* 🆕 Distinct top menu styling */
+.top-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background-color: #003366;
+  color: white;
+}
+
+/* 🆕 To ensure the rest of the app doesn't share the menu background */
+.main-content {
+  flex: 1;
+  background-color: #f5f7fa; /* Light grey content background */
+  padding: 24px;
+}
+
+.logo-inside-card {
+  height: 60px; /* Adjust as needed */
+  width: auto;
+  margin-right: 20px;
+}
+
+.inbound-title {
+  color: #003366;
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.question-block {
+  margin-bottom: 25px;
+}
+
+.question-label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+}
+
+select,
+textarea,
+input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  font-size: 1rem;
+}
+
+.info-icon {
+  margin-left: 8px;
+  color: #007bff;
+  cursor: help;
+  font-weight: bold;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.button-group button {
+  padding: 10px 20px;
+  background-color: #0b5ed7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.button-group button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.tooltip-wrapper {
+  display: inline-block;
+  position: relative;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.info-icon {
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 18px;
+  user-select: none;
+}
+
+.tooltip-box {
+  position: absolute;
+  bottom: 130%;
+  left: 0;
+  width: 250px;
+  padding: 10px;
+  background-color: #f8f8f8;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  font-size: 0.85rem;
+  z-index: 10;
+}
+
+.progress-container {
+  margin-bottom: 20px;
+}
+
+.progress-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.progress-bar {
+  height: 20px;
+  background-color: #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #0b5ed7;
+  transition: width 0.4s ease;
+}
+
+.use-example-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.use-example-btn:hover {
+  background-color: #e0e0e0;
+}
+
+textarea {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  tab-size: 4;
+  padding: 10px;
+
+  white-space: pre;           /* Preserve whitespace and tabs */
+  overflow-x: auto;           /* Enable horizontal scroll */
+  overflow-y: auto;           /* Enable vertical scroll */
+  overflow-wrap: normal;      /* Prevent automatic word breaking */
+  word-break: keep-all;       /* Don't break inside words */
+
+  resize: both;               /* Allow manual resize */
+  min-height: 200px;
+  min-width: 100%;
+
+  border: 1px solid #ccc;     /* Subtle border */
+  background-color: #fdfdfd;  /* Light background for contrast */
+  color: #333;                /* Text color for readability */
+  border-radius: 6px;
+}
+
+.grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.grid-table input {
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.grid-table th {
+  background-color: #f0f0f0; /* Light grey background */
+  color: #333;              /* Dark text for visibility */
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.grid-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.mini-grid {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid black;
+  font-size: 13px;
+}
+
+.mini-grid th,
+.mini-grid td {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.submission-box {
+  border: 1px solid #ddd;
+  background: #fff;
+  padding: 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+/* ===== Popup styles ===== */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.popup-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.popup-option {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 8px 10px;
+  text-align: left;
+  background: #f1f5ff;
+  border: 1px solid #d5dbff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #003366; /* Dark blue text */
+}
+
+.popup-option:hover {
+  background: #e5ebff;
+}
+.close-btn {
+  margin-top: 10px;
+  background: #ff5d5d;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+
+
+
+
+

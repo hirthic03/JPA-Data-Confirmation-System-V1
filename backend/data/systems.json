@@ -1,0 +1,406 @@
+{
+  "Outbound": {
+    "eSILA": {
+      "Profil Pegawai": {
+        "title": "Maklumat Semakan Penjawat Awam",
+        "elements": [
+          {
+            "group": "Status Akses Pengguna",
+            "fields": [
+              "Status (Aktif/Tak Aktif)"
+            ]
+          },
+          {
+            "group": "Maklumat Pasangan",
+            "fields": [
+              "Nama Pasangan",
+              "Pekerjaan Pasangan",
+              "No KP Pasangan"
+            ]
+          },
+          {
+            "group": "Status Pemilik Kompetensi",
+            "fields": [
+              "Status",
+              "Kod Status"
+            ]
+          },
+          {
+            "group": "Maklumat Akaun",
+            "fields": [
+              "Tujuan Akaun",
+              "No Akaun"
+            ]
+          },
+          {
+            "group": "Maklumat Umum",
+            "fields": [
+              "Nama",
+              "Tarikh Besara",
+              "Gaji Pokok",
+              "Tarikh Cuti Separa Biasiswa",
+              "Status Iystihar Harta",
+              "Emel",
+              "Tarikh Cuti Tanpa Biasiswa",
+              "Jumlah Tanggungan",
+              "Sambungan Tel Pejabat",
+              "Tarikh Penamatan Perkhidmatan",
+              "Alamat Tetap",
+              "Gred Gaji",
+              "Status Lantikan",
+              "Telefon Bimbit",
+              "Nama Jawatan",
+              "No KP",
+              "Tarikh Iystihar Harta",
+              "Alamat Surat Menyurat",
+              "Status Penamatan Perkhidmatan",
+              "Tarikh Cuti Dengan Biasiswa",
+              "Alamat Pejabat",
+              "Unit Organisasi",
+              "Tarikh Lantikan Pertama",
+              "Umur",
+              "No Tel Pejabat"
+            ]
+          }
+        ]
+      },
+      "Pengurusan Penajaan Dalam Perkhidmatan": {
+        "title": "Maklumat Peminjam Senarai Hitam",
+        "elements": [
+          "No Kad Pengenalan",
+          "Tahun Mula Senarai Hitam",
+          "Tahun Akhir Senarai Hitam",
+          "Sepanjang Perkhidmatan (Ya/Tidak)"
+        ]
+      }
+    },
+    "Sistem Pengurusan Meja Bantuan (SPMB)": {
+      "Penilaian Prestasi Aktiviti": {
+  "title": "Maklumat Penilaian Prestasi Aktiviti (PPA)",
+  "elements": [
+    {
+      "group": "Maklumat Individu",
+      "fields": [
+        "No KP",
+        "Nama",
+        "Jawatan",
+        "Gred Gaji"
+      ]
+    },
+    {
+      "group": "Maklumat Perhubungan",
+      "fields": [
+        "No Tel Pej",
+        "No Tel CO",
+        "Emel"
+      ]
+    },
+    {
+      "group": "Maklumat Agensi Utama",
+      "fields": [
+        "Buid Main Agensi",
+        "Kod Main Agcy Org Chart",
+        "Main Agensi"
+      ]
+    },
+    {
+      "group": "Maklumat Agensi",
+      "fields": [
+        "Buid Agensi",
+        "Kod Agcy Org Chart",
+        "Agensi"
+      ]
+    },
+    {
+      "group": "Maklumat Unit Organisasi",
+      "fields": [
+        "Buid Unit Organisasi",
+        "Kod BU Org Chart",
+        "Unit Organisasi",
+        "Alamat Pej"
+      ]
+    }
+  ]
+}
+    },
+
+    "MyPsyD": {
+      "Profil Pegawai": {
+        "title": "Maklumat Peribadi dan Perkhidmatan",
+        "elements": [
+          "Nama",
+          "Agensi",
+          "Jantina",
+          "Jawatan KJ",
+          "Bangsa",
+          "Taraf Pendidikan",
+          "Emel",
+          "Gred KJ",
+          "Status Kahwin",
+          "Gred Gaji",
+          "Tarikh Lahir",
+          "Status Lantikan",
+          "BUID Kementerian",
+          "BMI",
+          "Tinggi",
+          "No KP",
+          "Emel KJ",
+          "Pendidikan Tertinggi",
+          "Nama KJ",
+          "Kod Skim Perkh",
+          "Kementerian",
+          "Kumpulan Perkh",
+          "Agama",
+          "Jawatan",
+          "BUID",
+          "Berat",
+          "Buid Agensi",
+          "Tarikh Lantikan",
+          "Unit Organisasi",
+          "Umur"
+        ]
+      }
+    },
+    "MyKehadiran": {
+      "Cuti": {
+        "title": "Maklumat Cuti",
+        "elements": [
+          "No KP",
+          "ID Cuti HRMIS",
+          "Jenis Cuti",
+          "Tarikh Mohon Cuti",
+          "Tujuan Cuti",
+          "Kod Status Cuti",
+          "Status Cuti",
+          "Tarikh Mula Cuti",
+          "Tarikh Akhir Cuti",
+          "Tarikh Status Cuti",
+          "Kod Jenis Cuti",
+          "Jumlah Hari Cuti",
+          "No KP Pelulus Cuti",
+          "Unit Organisasi Terkecil",
+          "Status (Status Pengguna)"
+        ]
+      }
+    },
+    "eCaller": {
+      "Profil Pegawai": {
+        "title": "Maklumat Peribadi",
+        "elements": [
+          "No KP",
+          "Nama",
+          "Jawatan",
+          "Gred Gaji",
+          "No Tel Pej",
+          "No Tel CO",
+          "Emel",
+          "Buid Main Agensi",
+          "Kod Main Agcy Org Chart",
+          "Main Agensi",
+          "Buid Agensi",
+          "Kod Agcy Org Chart",
+          "Agensi",
+          "Buid Unit Organisasi",
+          "Kod BU Org Chart",
+          "Unit Organisasi",
+          "Alamat Pejabat"
+        ]
+      }
+    },
+    "eVirement": {
+      "Profil Pegawai": {
+        "title": "Maklumat Peribadi",
+        "elements": [
+          "No KP",
+          "Nama",
+          "Jawatan",
+          "Gred Gaji",
+          "No Tel Pej",
+          "No Tel CO",
+          "Emel",
+          "Buid Main Agensi",
+          "Kod Main Agcy Org Chart",
+          "Main Agensi",
+          "Buid Agensi",
+          "Kod Agcy Org Chart",
+          "Agensi",
+          "Buid Unit Organisasi",
+          "Kod BU Org Chart",
+          "Unit Organisasi",
+          "Alamat Pejabat"
+        ]
+      }
+    }
+  },
+
+  "Inbound": {
+  "eSILA": {
+    "Pengurusan Penajaan Dalam Perkhidmatan": {
+      "title": "Pengesahan Tawaran Tetap",
+      "elements": [
+        {
+          "group": "Maklumat Tajaan",
+          "fields": [
+            "Kategori Kursus",
+            "Jenis Program Tajaan",
+            "Jenis Kursus Jangka Pendek",
+            "Nama Kursus Tajaan",
+            "Agensi Penaja",
+            "Tahun Penawaran"
+          ]
+        },
+        {
+          "group": "Maklumat Permohonan",
+          "fields": [
+            "No. Permohonan Kursus Tajaan/ Cuti Belajar",
+            "Nama Pemilik Kompetensi",
+            "No. Kad Pengenalan Pemilik Kompetensi",
+            "Jenis Kemudahan Cuti Belajar",
+            "Peringkat Pengajian",
+            "Kursus Pengajian",
+            "Institusi/ Pusat Pengajian",
+            "Tempoh Masa Graduate on Time"
+          ]
+        },
+        {
+          "group": "Maklumat Kewangan",
+          "fields": [
+            "Gaji dan Emolumen",
+            "Pergerakan Gaji Tahunan (PGT)",
+            "Imbuhan Tetap Perumahan (ITP)",
+            "Bantuan Sara Hidup (BSH)",
+            "Bayaran Imbuhan Wilayah (BIW)",
+            "Elaun Pemangkuan",
+            "Elaun Perumahan Wilayah",
+            "Bayaran Insentif Perkhidmatan Kritikal",
+            "Kemudahan Tambang Mengunjungi Wilayah Asal",
+            "Tempoh Ikatan Kontrak Berkhidmat Dengan Kerajaan"
+          ]
+        },
+        {
+          "group": "Maklumat Pengajian",
+          "fields": [
+            "Tarikh Mula Penajaan",
+            "Tarikh Akhir Penajaan",
+            "Tarikh Mula Perjalanan Ke Tempat Pengajian",
+            "Tarikh Akhir Perjalanan Ke Tempat Pengajian",
+            "Tarikh Mula Perjalanan Pulang",
+            "Tarikh Akhir Perjalanan Pulang"
+          ]
+        },
+        {
+          "group": "Maklumat Tuntutan",
+          "fields": [
+            "Tuntutan Ganti Rugi (RM)",
+            "Jenis Elaun Yang Layak Diperolehi oleh Pemilik Kompetensi",
+            "Jenis Kemudahan Tambang Yang Layak Diperolehi oleh Pemilik Kompetensi"
+          ]
+        },
+        {
+          "group": "Dokumen & Status",
+          "fields": [
+            "Dokumen Sokongan",
+            "Status Penyingkiran Kontrak Berkhidmat"
+          ]
+        }
+      ]
+    }
+  },
+  "Sistem Pengurusan Meja Bantuan (SPMB)": {
+    "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
+      "title": "Maklumat Aduan Pemilik Kompetensi",
+      "elements": [
+        {
+          "group": "Menghantar Aduan",
+          "fields": [
+            "Nama",
+            "No. Kad Pengenalan",
+            "Kategori Aduan",
+            "Keterangan Aduan",
+            "Status Aduan"
+          ]
+        },
+        {
+          "group": "Semak Status Aduan",
+          "fields": [
+            "Keterangan Aduan",
+            "Status Aduan"
+          ]
+        }
+      ]
+    },
+    "Aplikasi Mudah Alih": {
+      "title": "Maklumat Aduan / Cadangan (AMA)",
+      "elements": [
+        {
+          "group": "Menghantar Aduan / Cadangan",
+          "fields": [
+            "Tarikh",
+            "Aduan/ Cadangan",
+            "Jenis Aduan",
+            "Nama Pengadu",
+            "E-mel Pengadu",
+            "Gambar"
+          ]
+        },
+        {
+          "group": "Menyemak Status Aduan / Cadangan",
+          "fields": [
+            "Tarikh",
+            "Aduan/ Cadangan",
+            "Jenis Aduan",
+            "Status Aduan/ Cadangan"
+          ]
+        }
+      ]
+    }
+  },
+  "MyPsyD": {
+    "Psikologi": {
+      "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
+      "elements": [
+        {
+          "group": "Maklumat Profil",
+          "fields": [
+            "No KP Pemilik Kompetensi",
+            "Nama Pemilik Kompetensi",
+            "Jantina",
+            "Jawatan Sebenar",
+            "Unit Organisasi"
+          ]
+        },
+        {
+          "group": "Maklumat Ujian",
+          "fields": [
+            "Jenis Ujian",
+            "Tarikh Ujian",
+            "Hasil Ujian Psikologi dalam bentuk PDF"
+          ]
+        }
+      ]
+    }
+  },
+  "MyKehadiran": {
+    "Pengurusan Kehadiran": {
+      "title": "Maklumat Kehadiran",
+      "elements": [
+        {
+          "group": "Rekod Kehadiran",
+          "fields": [
+            "Agensi",
+            "Tarikh Integrasi",
+            "Status Integrasi",
+            "Tarikh Data Sistem Kehadiran",
+            "ID Pemilik Kompetensi",
+            "Tarikh dan Masa Masuk Bekerja",
+            "Tarikh dan Masa Keluar Pejabat",
+            "Tarikh dan Masa Masuk Semula Pejabat",
+            "Tarikh dan Masa Balik Bekerja"
+          ]
+        }
+      ]
+    }
+  }
+}
+
+}
