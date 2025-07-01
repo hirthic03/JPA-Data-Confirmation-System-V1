@@ -344,6 +344,10 @@ app.get('/systems', (req, res) => {
   });
 });
 
+// ✅ Root status route
+app.get('/', (req, res) => {
+  res.send('🟢 JPA Data Confirmation Backend is running!');
+});
 
 // 🚀 Launch
 app.listen(PORT, () => {
