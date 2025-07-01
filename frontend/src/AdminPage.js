@@ -14,25 +14,24 @@ export default function AdminReportPage() {
 
 
 useEffect(() => {
+  const BASE_URL = 'https://jpa-data-confirmation-system-v1.onrender.com';
+
   Promise.all([
-    fetch('http://localhost:3001/all-submissions').then(res => res.json()),
-    fetch('http://localhost:3001/inbound-submissions').then(res => res.json()),
-    fetch('http://localhost:3001/inbound-submissions-grouped').then(res => res.json())
+    fetch(`${BASE_URL}/all-submissions`).then(res => res.json()),
+    fetch(`${BASE_URL}/inbound-submissions`).then(res => res.json()),
+    fetch(`${BASE_URL}/inbound-submissions-grouped`).then(res => res.json())
   ])
     .then(([confirmRows, plainQuestions, groupedSubs]) => {
-      // ✅ 1. Outbound
       setData(confirmRows);
       setFilteredData(confirmRows);
-      // ✅ 2. Merge grid rows into the matching question-9 record
-const qWithGrid = plainQuestions.map(q => {
-  if (q.question_id !== 'dataInvolved') return q;
-  const g = groupedSubs.find(s => s.submission_uuid === q.submission_uuid);
-  return { ...q, gridData: g?.gridData || [] };
-});
-setInboundQuestions(qWithGrid);
 
-// ✅ 3. Grouped view (unchanged)
-setInboundGrouped(groupedSubs);
+      const qWithGrid = plainQuestions.map(q => {
+        if (q.question_id !== 'dataInvolved') return q;
+        const g = groupedSubs.find(s => s.submission_uuid === q.submission_uuid);
+        return { ...q, gridData: g?.gridData || [] };
+      });
+      setInboundQuestions(qWithGrid);
+      setInboundGrouped(groupedSubs);
     })
     .catch(err => console.error('Fetch error:', err))
     .finally(() => setLoading(false));
@@ -90,7 +89,7 @@ const renderInboundTable = () => (
                     <>
                       &nbsp;|&nbsp;
                       <a
-                        href={`http://localhost:3001/${q.file_path}`}
+                        href={`https://jpa-data-confirmation-system-v1.onrender.com/${q.file_path}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -230,7 +229,7 @@ const renderInboundTable = () => (
                     </td>
                     <td>
                       {row.file_path ? (
-                        <a href={`http://localhost:3001/${row.file_path}`} target="_blank" rel="noreferrer">Download</a>
+                        <a href={`${BASE_URL}/${row.file_path}`} target="_blank" rel="noreferrer">Download</a>
                       ) : '—'}
                     </td>
                     <td>{row.created_at}</td>
