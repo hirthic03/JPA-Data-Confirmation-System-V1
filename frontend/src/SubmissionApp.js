@@ -69,9 +69,11 @@ const filteredModules = moduleEntries.map(([modName]) => modName.trim());
 setAvailableModules(filteredModules);
 
 // Ensure selected module is valid
-if (!filteredModules.includes(module.trim())) {
-  setModule('');
+const trimmedModule = module.trim();
+if (!filteredModules.some(m => m.trim() === trimmedModule)) {
+  setModule(filteredModules[0] || '');
 }
+
 }, [system, flowType, systemsData]);
 
 
