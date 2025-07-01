@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 
+// eslint-disable-next-line no-undef
 const BASE_URL = 'https://jpa-data-confirmation-system-v1.onrender.com';
 
 export default function AdminReportPage() {
