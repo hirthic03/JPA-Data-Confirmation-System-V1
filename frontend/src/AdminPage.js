@@ -56,7 +56,7 @@ const renderInboundTable = () => (
 
         return (
           <div key={submission.id} className="submission-box">
-            {/* Header Table with Metadata */}
+            {/*Header Table with Metadata*/}
             <table className="submission-table">
               <thead>
                 <tr>
