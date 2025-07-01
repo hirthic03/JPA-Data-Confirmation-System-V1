@@ -27,7 +27,7 @@ export default function SubmissionApp() {
 
   useEffect(() => {
     // 🔄 Try backend first
-    axios.get('http://localhost:3001/systems')
+    axios.get('https://jpa-data-confirmation-system-v1.onrender.com/systems')
       .then(res => {
         setSystemsData(res.data);
         const flows = Object.keys(res.data).filter(flow => allowOutboundFlow || flow === 'Inbound');
@@ -170,7 +170,7 @@ const payload = {
 };
 
 
-  axios.post('http://localhost:3001/submit', payload)
+  axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit', payload)
   
     .then(() => {
       console.log("✅ Submitted payload:", payload);

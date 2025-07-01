@@ -14,7 +14,7 @@ function ReportingPage() {
   const [selectedSystem, setSelectedSystem] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:3001/inbound-submissions')
+    fetch('https://jpa-data-confirmation-system-v1.onrender.com/inbound-submissions')
       .then(res => res.json())
       .then(data => {
         setSubmissions(data);
@@ -39,7 +39,7 @@ function ReportingPage() {
   const handleDownloadFolders = () => {
     filteredSubmissions.forEach(sub => {
       const timestamp = sub.timestamp;
-      fetch(`http://localhost:3001/generate-submission-folder/${encodeURIComponent(timestamp)}`)
+      fetch(`https://jpa-data-confirmation-system-v1.onrender.com/generate-submission-folder/${encodeURIComponent(timestamp)}`)
         .then(res => {
           if (res.ok) return res.blob();
           else throw new Error('Failed to generate folder');
@@ -105,7 +105,7 @@ function ReportingPage() {
                     {Object.entries(sub.files).map(([qid, fileMeta]) => (
                       <li key={qid}>
                         <a
-                          href={`http://localhost:3001/download/${fileMeta.storedName}`}
+                          href={`https://jpa-data-confirmation-system-v1.onrender.com/download/${fileMeta.storedName}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

@@ -273,7 +273,7 @@ if (isGridEmpty) {
   try {
     form.append('dataGrid', JSON.stringify(gridRows));
     form.append('submission_id', `${formData.system}-${formData.module}`);
-await axios.post('http://localhost:3001/submit-inbound', form);
+await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
     alert("Borang pengumpulan keperluan berjaya dihantar.");
     setFormData({});
     setFiles({});
