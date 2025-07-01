@@ -30,6 +30,7 @@ useEffect(() => {
       const qWithGrid = plainQuestions.map(q => {
         if (q.question_id !== 'dataInvolved') return q;
         const g = groupedSubs.find(s => s.submission_uuid === q.submission_uuid);
+        console.log('Trigger redeploy');
         return { ...q, gridData: g?.gridData || [] };
       });
       setInboundQuestions(qWithGrid);
