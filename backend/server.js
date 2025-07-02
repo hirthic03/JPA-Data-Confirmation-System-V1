@@ -63,6 +63,12 @@ db.prepare(`
     FOREIGN KEY(submission_id) REFERENCES inbound_requirements(id)
   )
 `).run();
+// ✅ One-time migration: Add api_name column to inbound_requirements if it doesn't exist
+try {
+  db.prepare(`ALTER TABLE inbound_requirements ADD COLUMN api_name TEXT`).run();
+} catch (e) {
+  // Ignore if already exists
+}
 
 
 // Utility
@@ -87,21 +93,28 @@ function getQuestionTextById(id) {
 // ✅ Inbound Submission Handler (Fixed)
 app.post('/submit-inbound', upload, (req, res) => {
   try {
-    const { system, module, dataGrid } = req.body;
+   const {
+  system,
+  api:    apiNameRaw,   // preferred new field
+  module: apiNameOld,   // legacy field
+  module_group,
+  dataGrid
+} = req.body;
+const apiName = apiNameRaw || apiNameOld;   // canonical variable
     const submission_uuid = randomUUID();
     const created_at = new Date().toISOString();
 
     let q9RowId = null;          // 🔑 per-request, safe from race conditions
 
-    if (!system || !module) {
-      return res.status(400).json({ error: 'System and Module are required' });
+    if (!system || !apiName) {
+      return res.status(400).json({ error: 'System and API are required' });
     }
 
     const questionInsert = db.prepare(`
       INSERT INTO inbound_requirements
-       (submission_uuid, system_name, module_name,
-        question_id,  question_text, answer, file_path, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (submission_uuid, system_name, module_name, api_name,
+      question_id,  question_text, answer, file_path, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const uploadedFiles = {};
@@ -113,13 +126,22 @@ app.post('/submit-inbound', upload, (req, res) => {
 
     let result;
     Object.entries(req.body).forEach(([key, value]) => {
-      if (key === 'system' || key === 'module' || key === 'dataGrid') return;
-
+      if (['system', 'api', 'module_group', 'dataGrid'].includes(key)) return;
       const questionId = key;
       const questionText = getQuestionTextById(questionId);
       const filePath = uploadedFiles[questionId] || null;
 
-      result = questionInsert.run(submission_uuid,system, module, questionId, questionText, value, filePath, created_at);
+      result = questionInsert.run(
+  submission_uuid,
+  system,
+  module_group || '',   // goes into module_name column
+  apiName || '',        // goes into api_name column
+  questionId,
+  questionText,
+  value,
+  filePath,
+  created_at
+);
 
         if (questionId === 'dataInvolved') {
     q9RowId = result.lastInsertRowid;
@@ -247,6 +269,7 @@ app.get('/inbound-submissions-grouped', (req, res) => {
          submission_uuid: key,
           system: row.system_name,
           module: row.module_name,
+          api: row.api_name,
           created_at: row.created_at,
           questions: [],
           gridData: []

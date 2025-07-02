@@ -92,7 +92,7 @@ const renderInboundTable = () => (
               </thead>
               <tbody>
                 <tr><td><strong>system</strong></td><td>{submission.system}</td></tr>
-                <tr><td><strong>module</strong></td><td>{submission.module}</td></tr>
+                <tr><td><strong>api</strong></td><td>{submission.api}</td></tr>
                 <tr><td><strong>created_at</strong></td><td>{submission.created_at}</td></tr>
               </tbody>
             </table>
@@ -224,7 +224,7 @@ if (!authenticated) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>ID</th><th>System</th><th>Module</th>
+              <th>ID</th><th>System</th><th>API</th>
               <th>Data Element</th><th>Confirmed</th><th>Remarks</th>
               <th>Timestamp</th><th>Flow Type</th>
             </tr>
@@ -254,7 +254,7 @@ if (!authenticated) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th><th>System</th><th>Module</th>
+                <th>ID</th><th>System</th><th>API</th>
                 <th>Question ID</th><th>Question</th><th>Answer</th>
                 <th>File</th><th>Timestamp</th>
               </tr>

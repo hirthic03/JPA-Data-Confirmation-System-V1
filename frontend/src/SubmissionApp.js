@@ -165,6 +165,11 @@ const submit = (confirmed) => {
     alert('Sila pilih Sistem dan Modul sebelum hantar.');
     return;
   }
+  if (newElementInput.trim()) {
+    alert('Anda masih ada teks di ruangan "Tambah Elemen Data". ' +
+          'Sila tekan butang ➕ untuk menambah elemen tersebut dahulu.');
+    return;
+  }
   if (remarkInput) {
     alert("Sila tambah catatan terlebih dahulu.");
     return;

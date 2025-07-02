@@ -261,6 +261,7 @@ if (isGridEmpty) {
 
   // Add system and module selections
   form.append('system', formData.system || '');
+  form.append('module_group', confirmedModule || formData.module || '');
   form.append('module', formData.module || '');
 
   setIsSubmitting(true);
@@ -379,6 +380,17 @@ const handleUseExample = (id) => {
   <input
     type="text"
     value={confirmedSystem || 'Sistem Pengurusan Meja Bantuan (SPMB)'}
+    readOnly
+  />
+</div>
+
+{/* Module Name Field (read-only preview) */}
+<div className="question-block">
+  <label className="question-label">Nama Modul</label>
+  <input
+    type="text"
+    value={confirmedModule || formData.module || ''}
+    placeholder="Belum dipilih"
     readOnly
   />
 </div>
