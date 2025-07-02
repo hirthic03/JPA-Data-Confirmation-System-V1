@@ -14,6 +14,8 @@ export default function AdminReportPage() {
 
   const [filter, setFilter] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [pwInput, setPwInput] = useState('');
 
 const downloadBlob = (blob, filename) => {
   const url = URL.createObjectURL(blob);
@@ -157,6 +159,32 @@ const renderInboundTable = () => (
   </div>
 );
 
+// ─── Password Gate ─────────────────────────────────────────
+if (!authenticated) {
+  return (
+    <div className="admin-login">
+      <h2>🔒 Admin Access</h2>
+      <input
+        type="password"
+        placeholder="Enter admin password"
+        value={pwInput}
+        onChange={e => setPwInput(e.target.value)}
+      />
+      <button
+        onClick={() => {
+          if (pwInput === 'YourSecret123') {     // ← set your password here
+            setAuthenticated(true);
+          } else {
+            alert('Wrong password!');
+            setPwInput('');
+          }
+        }}
+      >
+        Login
+      </button>
+    </div>
+  );
+}
 
   if (loading) {
   return <div className="admin-container"><h2>📊 Admin Report Dashboard</h2><p>Loading data...</p></div>;

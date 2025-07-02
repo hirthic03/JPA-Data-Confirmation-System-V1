@@ -367,6 +367,39 @@ app.get('/export-backup', (req, res) => {
   fs.createReadStream(dbPath).pipe(res);
 });
 
+// ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first
+app.delete('/cleanup-test-data', (req, res) => {
+  try {
+    const testPattern = '%test%'; // 🔁 Modify this pattern if needed
+
+    // Delete related grid entries
+    db.prepare(`
+      DELETE FROM inbound_data_grid 
+      WHERE submission_uuid IN (
+        SELECT submission_uuid FROM inbound_requirements 
+        WHERE system_name LIKE ? OR module_name LIKE ?
+      )
+    `).run(testPattern, testPattern);
+
+    // Delete main inbound submissions
+    db.prepare(`
+      DELETE FROM inbound_requirements 
+      WHERE system_name LIKE ? OR module_name LIKE ?
+    `).run(testPattern, testPattern);
+
+    // Delete from confirmations table
+    db.prepare(`
+      DELETE FROM confirmations 
+      WHERE system_name LIKE ? OR module_name LIKE ?
+    `).run(testPattern, testPattern);
+
+    res.json({ success: true, message: 'Test data removed.' });
+  } catch (err) {
+    console.error('Cleanup failed:', err);
+    res.status(500).json({ error: 'Failed to clean up test data' });
+  }
+});
+
 
 // 🚀 Launch
 app.listen(PORT, () => {

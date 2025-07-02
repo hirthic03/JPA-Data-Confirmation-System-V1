@@ -661,6 +661,7 @@ textarea {
 }
 .popup-box {
   background: #fff;
+  color: black;
   padding: 20px;
   border-radius: 8px;
   max-height: 80vh;
@@ -693,8 +694,15 @@ textarea {
   cursor: pointer;
 }
 
-
-
+.admin-login{
+  max-width:300px;margin:120px auto;text-align:center;
+}
+.admin-login input{
+  width:100%;padding:10px;font-size:1rem;margin-bottom:10px;
+}
+.admin-login button{
+  padding:8px 20px;font-size:1rem;cursor:pointer;
+}
 
 
 
