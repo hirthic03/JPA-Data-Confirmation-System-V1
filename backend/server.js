@@ -368,38 +368,25 @@ app.get('/export-backup', (req, res) => {
 });
 
 // ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first
+// 🧹 FULL Cleanup Endpoint – deletes all data in admin and requirement tables
 app.delete('/cleanup-test-data', (req, res) => {
+  const secret = req.headers['x-admin-secret'];
+  const expected = process.env.ADMIN_CLEANUP_SECRET || 'YourSecret123';
+
+  if (secret !== expected) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid admin secret' });
+  }
+
   try {
-    const testPattern = '%test%'; // 🔁 Modify this pattern if needed
-
-    // Delete related grid entries
-    db.prepare(`
-      DELETE FROM inbound_data_grid 
-      WHERE submission_uuid IN (
-        SELECT submission_uuid FROM inbound_requirements 
-        WHERE system_name LIKE ? OR module_name LIKE ?
-      )
-    `).run(testPattern, testPattern);
-
-    // Delete main inbound submissions
-    db.prepare(`
-      DELETE FROM inbound_requirements 
-      WHERE system_name LIKE ? OR module_name LIKE ?
-    `).run(testPattern, testPattern);
-
-    // Delete from confirmations table
-    db.prepare(`
-      DELETE FROM confirmations 
-      WHERE system_name LIKE ? OR module_name LIKE ?
-    `).run(testPattern, testPattern);
-
-    res.json({ success: true, message: 'Test data removed.' });
+    db.prepare(`DELETE FROM inbound_data_grid`).run();
+    db.prepare(`DELETE FROM inbound_requirements`).run();
+    db.prepare(`DELETE FROM confirmations`).run();
+    res.json({ success: true, message: 'ALL data cleared.' });
   } catch (err) {
     console.error('Cleanup failed:', err);
-    res.status(500).json({ error: 'Failed to clean up test data' });
+    res.status(500).json({ error: 'Failed to clean up data' });
   }
 });
-
 
 // 🚀 Launch
 app.listen(PORT, () => {
