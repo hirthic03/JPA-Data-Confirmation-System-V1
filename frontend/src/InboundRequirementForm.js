@@ -92,14 +92,28 @@ const handleElementSelection = (element) => {
 };
 
 
+/* ---------------------------------------------------------
+ * Dynamically pull API names for the selected system (Inbound)
+ * -------------------------------------------------------- */
 useEffect(() => {
-  const systemName = "Sistem Pengurusan Meja Bantuan (SPMB)";
-  const inboundModules = systemsData?.Inbound?.[systemName] || {};
-  const moduleNames = Object.keys(inboundModules);
+  // 1.  Which system should we look at?
+  //     • Prefer the confirmed system (if the user arrived from the previous page)
+  //     • Otherwise default to SPMB so the field isn’t empty.
+  const systemName = confirmedSystem || "Sistem Pengurusan Meja Bantuan (SPMB)";
 
+  // 2.  Get all API names that sit under:
+  //     systemsData.Inbound[systemName]
+  const apiNames = Object.keys(
+    systemsData?.Inbound?.[systemName] || {}
+  );
+
+  // 3.  Store them in state → drives the <select> options.
+  setModules(apiNames);
+
+  // 4.  Pre-fill the read-only System field once.
   setFormData(prev => ({ ...prev, system: systemName }));
-  setModules(moduleNames);
-}, []);
+}, [confirmedSystem]);
+
 
 useEffect(() => {
   const handleClickOutside = () => {
@@ -392,10 +406,11 @@ const handleUseExample = (id) => {
     onChange={(e) => handleChange('module', e.target.value)}
   >
     <option value="">-- Pilih API --</option>
-    <option value="HantarMaklumatAduan">HantarMaklumatAduan</option>
-    <option value="GetStatusAduan">GetStatusAduan</option>
-    <option value="HantarMaklumatAduanCadangan">HantarMaklumatAduanCadangan</option>
-    <option value="GetStatusAduanCadangan">GetStatusAduanCadangan</option>
+  {modules.map((m) => (
+    <option key={m} value={m}>
+      {m}
+    </option>
+  ))}
   </select>
 </div>
 
