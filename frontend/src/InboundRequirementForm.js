@@ -392,12 +392,10 @@ const handleUseExample = (id) => {
     onChange={(e) => handleChange('module', e.target.value)}
   >
     <option value="">-- Pilih API --</option>
-    <option value="MaklumatPegawaiAPI">MaklumatPegawaiAPI</option>
-    <option value="PengesahanCutiAPI">PengesahanCutiAPI</option>
-    <option value="StatusSekatanAPI">StatusSekatanAPI</option>
-    <option value="PasportPemilikKompetensiAPI">PasportPemilikKompetensiAPI</option>
-    <option value="ProfilPenjawatAwamAPI">ProfilPenjawatAwamAPI</option>
-    <option value="LaporanSalahLakuAPI">LaporanSalahLakuAPI</option>
+    <option value="HantarMaklumatAduan">HantarMaklumatAduan</option>
+    <option value="GetStatusAduan">GetStatusAduan</option>
+    <option value="HantarMaklumatAduanCadangan">HantarMaklumatAduanCadangan</option>
+    <option value="GetStatusAduanCadangan">GetStatusAduanCadangan</option>
   </select>
 </div>
 
