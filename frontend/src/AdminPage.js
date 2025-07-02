@@ -70,7 +70,8 @@ const renderInboundTable = () => (
       <p>No submissions available.</p>
     ) : (
       inboundGrouped.map(submission => {
-        const matchingQuestions = submission.questions;
+        const matchingQuestions = submission.questions
+        .filter(q => q.question_id !== 'module');   // ⬅️ added filter
 
         return (
           <div key={submission.id} className="submission-box">
@@ -93,6 +94,7 @@ const renderInboundTable = () => (
               <tbody>
                 <tr><td><strong>system</strong></td><td>{submission.system}</td></tr>
                 <tr><td><strong>api</strong></td><td>{submission.api}</td></tr>
+                <tr><td><strong>module</strong></td><td>{submission.module}</td></tr>
                 <tr><td><strong>created_at</strong></td><td>{submission.created_at}</td></tr>
               </tbody>
             </table>
