@@ -4,6 +4,11 @@ import './App.css';
 import { saveConfirmed } from './utils/confirmedStore';
 import { useNavigate } from 'react-router-dom'; 
 
+// Debug helper – logs appear only in development builds
+const dbg = (...args) => {
+  if (process.env.NODE_ENV !== 'production') console.log(...args);
+};
+
 export default function SubmissionApp() {
   const [systemsData, setSystemsData] = useState({});
   const [flowType, setFlowType] = useState('Inbound');
@@ -31,6 +36,10 @@ export default function SubmissionApp() {
       .then(res => {
         setSystemsData(res.data);
         const flows = Object.keys(res.data).filter(flow => allowOutboundFlow || flow === 'Inbound');
+        if (!flows.length) {
+  dbg('Backend returned no valid flows – keeping existing state');
+  return; // stop here; avoid setting empty flowType
+}
         setFlowType(flows[0]);
       })
       .catch(() => {
@@ -60,7 +69,12 @@ useEffect(() => {
 
 useEffect(() => {
   if (!system || !systemsData[flowType]?.[system]) return;
- console.log("🔍 Available modules for", system, "→", Object.keys(systemsData[flowType][system]));
+   dbg(
+   "🔍 Available modules for",
+   system,
+   "→",
+   Object.keys(systemsData[flowType][system] || {})
+ );
   const moduleEntries = Object.entries(systemsData[flowType][system]);
 
 // Remove invisible whitespace from module names
@@ -79,8 +93,8 @@ useEffect(() => {
   const normalizedModules = Object.entries(systemsData?.[flowType]?.[system] || {});
   const selectedModule = normalizedModules.find(([name]) => name.trim() === module.trim());
   const modData = selectedModule?.[1]?.elements || [];
-  console.log("🧪 module:", module);
-  console.log("🧪 elements:", modData);
+ dbg("🧪 module:", module);
+ dbg("🧪 elements:", modData);
   setAvailableElements(modData);
   setElements(prev =>
     prev.filter(e => {
@@ -147,6 +161,10 @@ const addDataElement = () => {
 };
 
 const submit = (confirmed) => {
+    if (!system || !module) {
+    alert('Sila pilih Sistem dan Modul sebelum hantar.');
+    return;
+  }
   if (remarkInput) {
     alert("Sila tambah catatan terlebih dahulu.");
     return;
@@ -171,7 +189,7 @@ const payload = {
   axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit', payload)
   
     .then(() => {
-      console.log("✅ Submitted payload:", payload);
+      dbg("✅ Submitted payload:", payload);
        if (flowType === 'Inbound') {
       const confirmedNames = payload.elements.map(e => e.name);
       saveConfirmed(system, module, confirmedNames);
@@ -255,7 +273,7 @@ const payload = {
     // ✅ Case 2: Flat elements (simple strings)
     if (typeof item === 'string') {
       return (
-        <div key={idx} className="checkbox-item">
+        <div key={`${item}-${idx}`} className="checkbox-item">
           <input
             type="checkbox"
             checked={

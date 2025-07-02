@@ -228,11 +228,6 @@ const missingFields = questions.filter((q) => {
 const isGridEmpty = gridRows.every(row =>
   !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && !row.nullable.trim() && !row.rules.trim()
 );
-if (isGridEmpty) {
-  alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
-  return;
-}
-
 
 if (isGridEmpty) {
   alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");

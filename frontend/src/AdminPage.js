@@ -15,6 +15,19 @@ export default function AdminReportPage() {
   const [filter, setFilter] = useState('All');
   const [loading, setLoading] = useState(true);
 
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }, 500);
+};
+
 
 useEffect(() => {
 
@@ -30,7 +43,7 @@ useEffect(() => {
       const qWithGrid = plainQuestions.map(q => {
         if (q.question_id !== 'dataInvolved') return q;
         const g = groupedSubs.find(s => s.submission_uuid === q.submission_uuid);
-        console.log('Trigger redeploy');
+        if (process.env.NODE_ENV !== 'production') console.log('Trigger redeploy');
         return { ...q, gridData: g?.gridData || [] };
       });
       setInboundQuestions(qWithGrid);
@@ -119,7 +132,7 @@ const renderInboundTable = () => (
 </thead>
                   <tbody>
                     {submission.gridData.map((row, idx) => (
-                      <tr key={idx}>
+                      <tr key={`${row.data_element}-${idx}`}>
                         <td>{idx + 1}</td>
                         <td>{row.data_element}</td>
                         <td>{row.nama}</td>
@@ -151,6 +164,25 @@ const renderInboundTable = () => (
   return (
     <div className="admin-container">
       <h2 className="admin-title">📊 Admin Report Dashboard</h2>
+
+        {/* 💾 One-click backup */}
+  <button
+    className="backup-btn"
+    style={{ marginBottom: '1rem' }}
+    onClick={async () => {
+      try {
+        const resp = await fetch(`${BASE_URL}/export-backup`);
+        if (!resp.ok) throw new Error('Network response was not ok');
+        const blob = await resp.blob();
+        downloadBlob(blob, `confirmation_backup_${Date.now()}.db`);
+      } catch (err) {
+        console.error(err);
+        alert('Backup download failed – see console for details.');
+      }
+    }}
+  >
+    💾 Download Backup&nbsp;<small>(.db)</small>
+  </button>
 
       <div className="filter-buttons">
         <button onClick={() => setFilter('All')}>All</button>
@@ -219,7 +251,7 @@ const renderInboundTable = () => (
                           </thead>
                           <tbody>
                             {row.gridData.map((g, i) => (
-                              <tr key={i}>
+                              <tr key={`${g.data_element}-${i}`}>
                                 <td>{g.data_element}</td>
                                 <td>{g.nama}</td><td>{g.jenis}</td>
                                 <td>{g.saiz}</td><td>{g.nullable}</td>

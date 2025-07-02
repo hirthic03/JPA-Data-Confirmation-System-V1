@@ -10,7 +10,7 @@ const { randomUUID } = require('crypto');
 
 // Initialize
 const app = express();
-const db = new Database('./confirmation_data.db');
+const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
@@ -348,6 +348,25 @@ app.get('/systems', (req, res) => {
 app.get('/', (req, res) => {
   res.send('🟢 JPA Data Confirmation Backend is running!');
 });
+
+// 🔐 Simple DB export – streams the entire SQLite file
+app.get('/export-backup', (req, res) => {
+  const dbPath = path.join(__dirname, 'confirmation_data.db');
+
+  // If ever you protect admin with auth, wrap this in auth middleware
+  if (!fs.existsSync(dbPath)) {
+    return res.status(404).json({ error: 'DB file not found' });
+  }
+
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename=confirmation_backup_${Date.now()}.db`
+  );
+
+  fs.createReadStream(dbPath).pipe(res);
+});
+
 
 // 🚀 Launch
 app.listen(PORT, () => {
