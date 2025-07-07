@@ -757,5 +757,10 @@ textarea {
   margin-top: 2rem;
 }
 
+.meta-table td:first-child {
+  font-weight: 600;       /* Make label column bold */
+  color: #003366;         /* Optional: dark navy tone */
+  width: 140px;           /* Keep label column narrow */
+}
 
 
