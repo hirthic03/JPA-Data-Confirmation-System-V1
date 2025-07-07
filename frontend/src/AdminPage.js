@@ -138,7 +138,16 @@ const renderInboundTable = () => (
                     {submission.gridData.map((row, idx) => (
                       <tr key={`${row.data_element}-${idx}`}>
                         <td>{idx + 1}</td>
-                        <td>{row.data_element}</td>
+                        <td>
+  {row.data_element}
+  {row.group_name ? ` (${row.group_name})` : ''}
+  {submission.gridData.filter(
+    r => r.data_element === row.data_element
+  ).length > 1 && (
+    <span style={{ color: 'red', marginLeft: '5px' }}>⚠️</span>
+  )}
+</td>
+
                         <td>{row.nama}</td>
                         <td>{row.jenis}</td>
                         <td>{row.saiz}</td>
@@ -282,7 +291,15 @@ if (!authenticated) {
                           <tbody>
                             {row.gridData.map((g, i) => (
                               <tr key={`${g.data_element}-${i}`}>
-                                <td>{g.data_element}</td>
+                                <td>
+  {g.data_element}
+  {g.group_name ? ` (${g.group_name})` : ''}
+ {row.gridData.filter(
+   r => r.data_element === g.data_element
+ ).length > 1 && (
+    <span style={{ color: 'red', marginLeft: '5px' }}>⚠️</span>
+  )}
+</td>
                                 <td>{g.nama}</td><td>{g.jenis}</td>
                                 <td>{g.saiz}</td><td>{g.nullable}</td>
                                 <td>{g.rules}</td>

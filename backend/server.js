@@ -60,6 +60,7 @@ db.prepare(`
     nullable TEXT,
     rules TEXT,
     data_element TEXT,
+    group_name     TEXT,
     FOREIGN KEY(submission_id) REFERENCES inbound_requirements(id)
   )
 `).run();
@@ -154,13 +155,13 @@ const apiName = apiNameRaw || apiNameOld;   // canonical variable
     if (dataGrid) {
       const parsedGrid = JSON.parse(dataGrid);
       const stmt = db.prepare(`
-      INSERT INTO inbound_data_grid
-        (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       INSERT INTO inbound_data_grid
+    (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       parsedGrid.forEach(row => {
-        stmt.run([
+stmt.run([
   submission_uuid,
   q9RowId || null,
   row.nama,
@@ -168,8 +169,10 @@ const apiName = apiNameRaw || apiNameOld;   // canonical variable
   row.saiz,
   row.nullable,
   row.rules,
-  row.dataElement || ''   // ✅ correct key
+  row.dataElement || '',
+  row.groupName || ''
 ]);
+
       });
     }
 
@@ -289,13 +292,15 @@ app.get('/inbound-submissions-grouped', (req, res) => {
    for (const g of grid) {
       if (grouped[g.submission_uuid]) {
        grouped[g.submission_uuid].gridData.push({
-          data_element: g.data_element,
-          nama: g.nama,
-          jenis: g.jenis,
-          saiz: g.saiz,
-          nullable: g.nullable,
-          rules: g.rules
-        });
+  data_element: g.data_element,
+  group_name: g.group_name || '',
+  nama: g.nama,
+  jenis: g.jenis,
+  saiz: g.saiz,
+  nullable: g.nullable,
+  rules: g.rules
+});
+
       }
     }
 
