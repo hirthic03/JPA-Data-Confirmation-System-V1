@@ -40,9 +40,10 @@ export default function InboundRequirementForm() {
 
   const [modules, setModules] = useState([]);
 const [gridRows, setGridRows] = useState(
-  confirmedEls.map(n => ({
-    dataElement: n,
-    nama:'',         // pre-filled element name
+  confirmedEls.map(el => ({
+    dataElement: typeof el === 'string' ? el : el.name,
+    groupName:   typeof el === 'string' ? '' : el.group,  // ⭐ add this line
+    nama: '',
     jenis: '',
     saiz: '',
     nullable: '',
@@ -70,9 +71,11 @@ const removeGridRow = (index) => {
   setGridRows(updatedRows);
 };
 
-const handleElementSelection = (element) => {
-  const newRow = {
-    dataElement: element,
+const handleElementSelection = (elementObj) => {
+  const key       = typeof elementObj === 'string' ? elementObj : elementObj.name;
+  const newRow    = {
+    dataElement: key,
+    groupName:   typeof elementObj === 'string' ? '' : elementObj.group,
     nama: '',
     jenis: '',
     saiz: '',
@@ -81,7 +84,7 @@ const handleElementSelection = (element) => {
   };
 
   // Insert right after the last row of that data element (nice grouping)
-  const lastIndex = gridRows.map(r => r.dataElement).lastIndexOf(element);
+  const lastIndex = gridRows.map(r => r.dataElement).lastIndexOf(key);
   const insertAt = lastIndex === -1 ? gridRows.length : lastIndex + 1;
 
   const newRows = [...gridRows];
@@ -362,7 +365,7 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
           onClick={() => handleElementSelection(el)}
           className="popup-option"
         >
-          {el}
+          {typeof el === 'string' ? el : el.name}
         </button>
       ))}
       <button onClick={() => setPopupVisible(false)} className="close-btn">
@@ -530,11 +533,16 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
       <tbody>
     {gridRows.map((row, index) => (
       <tr key={index}>
-{/* ✅ 1. Data Elements (read-only + duplicate icon) */}
+
+{/* ✅ 1. Data Elements (read-only + group tag + duplicate icon) */}
 <td>
   <div style={{ display: 'flex', alignItems: 'center' }}>
     <input
-      value={row.dataElement}
+      value={
+        row.groupName         // ← we store the group when gridRows is built
+          ? `${row.dataElement} (${row.groupName})`
+          : row.dataElement
+      }
       readOnly
       style={{ background: '#f5f5f5' }}
     />
@@ -553,6 +561,7 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
     )}
   </div>
 </td>
+
 
 
   {/* ✅ 2. Nama Field (editable) */}

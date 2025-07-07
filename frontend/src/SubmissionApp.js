@@ -100,11 +100,21 @@ useEffect(() => {
  dbg("🧪 elements:", modData);
   setAvailableElements(modData);
   setElements(prev =>
-    prev.filter(e => {
-      const name = typeof e === 'string' ? e : e.name;
-      return modData.includes(name);
-    })
-  );
+  prev.filter(e => {
+    const name = typeof e === 'string' ? e : e.name;
+
+    // Inbound: modData can be objects with { group, fields }
+    const inGroup = modData.some(
+      it => typeof it === 'object' && it.fields?.includes(name)
+    );
+
+    return Array.isArray(modData) && (
+      modData.includes(name) ||   // Outbound / flat
+      inGroup                     // Inbound / grouped
+    );
+  })
+);
+
 }, [module, system, flowType, systemsData]);
 
 
@@ -253,10 +263,13 @@ const payload = {
     .then(() => {
       dbg("✅ Submitted payload:", payload);
        if (flowType === 'Inbound') {
-      const confirmedNames = payload.elements.map(e => e.name);
-      saveConfirmed(system, module, confirmedNames);
-      navigate('/requirement');
-    }
+  // store both name & group for use in requirement form
+  const confirmedFull = payload.elements.map(
+    ({ name, group }) => ({ name, group })
+  );
+  saveConfirmed(system, module, confirmedFull);
+  navigate('/requirement');
+}
       alert('Telah dihantar!');
       setElements([]);
      if (flowType === 'Outbound') {
