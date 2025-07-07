@@ -740,9 +740,13 @@ textarea {
 }
 
 .group-select-btn:hover {
-  background: #0059c1;
+  background: #AED9F4;
 }
 
+.group-select-btn:hover {
+  background: #0066d6;
+  color: #AED9F4;
+}
 .cancel-btn {
   background: #999;
   color: white;
@@ -764,14 +768,14 @@ textarea {
 }
 
 .modal-header {
-  color: black !important;
+  color: grey !important;
   font-weight: bold;
   font-size: 1.2rem;
   margin-bottom: 1rem;
 }
 
 .popup-header {
-  color: black !important;
+  color: grey !important;
   font-weight: bold;
   font-size: 1.2rem;
   margin-bottom: 1rem;
