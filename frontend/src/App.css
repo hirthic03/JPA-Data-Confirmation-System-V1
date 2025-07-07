@@ -777,3 +777,9 @@ textarea {
   margin-bottom: 1rem;
 }
 
+.highlight-label {
+  color: #0070f3;         /* Bright blue */
+  font-weight: bold;
+  font-style: italic;
+}
+
