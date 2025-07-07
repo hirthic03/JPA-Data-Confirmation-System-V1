@@ -302,20 +302,39 @@ app.get('/inbound-submissions-grouped', (req, res) => {
     }
 
     // Attach grid rows to their matching submission
-   for (const g of grid) {
-      if (grouped[g.submission_uuid]) {
-       grouped[g.submission_uuid].gridData.push({
-  data_element: g.data_element,
-  group_name: g.group_name || '',
-  nama: g.nama,
-  jenis: g.jenis,
-  saiz: g.saiz,
-  nullable: g.nullable,
-  rules: g.rules
-});
+  // we’ll also build a quick {group → [fields]} map so the
+  // frontend can show “(group name)” beside every data element.
+  const groupMaps = {};   // submission_uuid → { groupName: Set<fields> }
 
-      }
-    }
+  for (const g of grid) {
+    const sub = grouped[g.submission_uuid];
+    if (!sub) continue;
+
+    // 1️⃣  push raw row to gridData (existing behaviour)
+    sub.gridData.push({
+      data_element: g.data_element,
+      group_name : g.group_name || '',
+      nama       : g.nama,
+      jenis      : g.jenis,
+      saiz       : g.saiz,
+      nullable   : g.nullable,
+      rules      : g.rules
+    });
+
+    // 2️⃣  accumulate into groupMaps
+    if (!groupMaps[sub.submission_uuid]) groupMaps[sub.submission_uuid] = {};
+    const grp = g.group_name || '__ungrouped__';
+    if (!groupMaps[sub.submission_uuid][grp]) groupMaps[sub.submission_uuid][grp] = new Set();
+    groupMaps[sub.submission_uuid][grp].add(g.data_element);
+  }
+
+  // 3️⃣  convert each map →   elements:[{group,fields[]}]  and attach to object
+  for (const [subId, gm] of Object.entries(groupMaps)) {
+    grouped[subId].elements = Object.entries(gm).map(([group, set]) => ({
+      group,
+      fields: [...set]           // convert Set → Array
+    }));
+  }
 
     res.json(Object.values(grouped));
   } catch (err) {
