@@ -71,6 +71,12 @@ try {
   // Ignore if already exists
 }
 
+// ✅ One-time migration: Add group_name column to inbound_data_grid if it doesn't exist
+try {
+  db.prepare(`ALTER TABLE inbound_data_grid ADD COLUMN group_name TEXT`).run();
+} catch (e) {
+  // Ignore if already exists
+}
 
 // Utility
 function getQuestionTextById(id) {
@@ -152,29 +158,36 @@ const apiName = apiNameRaw || apiNameOld;   // canonical variable
     const submission_id = result?.lastInsertRowid;
 
     // ✅ Save Grid Data if present
-    if (dataGrid) {
-      const parsedGrid = JSON.parse(dataGrid);
-      const stmt = db.prepare(`
-       INSERT INTO inbound_data_grid
+if (dataGrid) {
+  let parsedGrid;
+  try {
+    parsedGrid = JSON.parse(dataGrid);
+  } catch (err) {
+    console.error('Invalid dataGrid JSON:', err);
+    return res.status(400).json({ error: 'Invalid dataGrid format' });
+  }
+
+  const stmt = db.prepare(`
+    INSERT INTO inbound_data_grid
     (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
 
-      parsedGrid.forEach(row => {
-stmt.run([
-  submission_uuid,
-  q9RowId || null,
-  row.nama,
-  row.jenis,
-  row.saiz,
-  row.nullable,
-  row.rules,
-  row.dataElement || '',
-  row.groupName || ''
-]);
+  parsedGrid.forEach(row => {
+    stmt.run([
+      submission_uuid,
+      q9RowId || null,
+      row.nama,
+      row.jenis,
+      row.saiz,
+      row.nullable,
+      row.rules,
+      row.dataElement || '',
+      row.groupName || ''
+    ]);
+  });
+}
 
-      });
-    }
 
     return res.status(200).json({ message: 'Inbound requirement saved.' });
   } catch (error) {
