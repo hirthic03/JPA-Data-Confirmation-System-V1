@@ -282,7 +282,16 @@ if (isGridEmpty) {
     form.append('dataGrid', JSON.stringify(gridRows));
     form.append('submission_id', `${formData.system}-${apiValue}`);
 await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
-    alert("Borang pengumpulan keperluan berjaya dihantar.");
+        /* ------- success prompt + redirect -------- */
+    if (
+      window.confirm(
+        "Borang pengumpulan keperluan berjaya dihantar.\n\n" +
+        "Tekan OK untuk kembali ke halaman submission."
+      )
+    ) {
+      navigate('/');            // 👉 replace "/" with your target route
+    }
+
     setFormData({});
     setFiles({});
   } catch (err) {
