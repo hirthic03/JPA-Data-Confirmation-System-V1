@@ -409,7 +409,6 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
   />
 </div>
 
-
 {/* API Name Field */}
 <div className="question-block">
   <label className="question-label">Nama API</label>
@@ -422,8 +421,20 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
     <option value="GetStatusAduan">GetStatusAduan</option>
     <option value="HantarMaklumatAduanCadangan">HantarMaklumatAduanCadangan</option>
     <option value="GetStatusAduanCadangan">GetStatusAduanCadangan</option>
+    <option value="Others">Others</option>
   </select>
+
+  {formData.module === 'Others' && (
+    <textarea
+      rows={3}
+      placeholder="Sila nyatakan Nama API lain..."
+      value={formData.module_other || ''}
+      onChange={(e) => handleChange('module_other', e.target.value)}
+      style={{ marginTop: '10px' }}
+    />
+  )}
 </div>
+
 
 {/* Loop for the 10 Questions */}
 
