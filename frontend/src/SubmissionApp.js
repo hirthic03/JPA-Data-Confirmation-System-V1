@@ -435,7 +435,7 @@ const payload = {
       {showGroupModal && (
   <div className="modal-overlay">
     <div className="modal">
-      <h3>Tambah "{pendingElementLabel}" ke dalam kumpulan mana?</h3>
+      <h3 className="modal-header">Tambah "{pendingElementLabel}" ke dalam kumpulan mana?</h3>
       {availableGroups.map((group, idx) => (
         <button
           key={idx}

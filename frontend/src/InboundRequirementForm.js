@@ -358,7 +358,7 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
 {isPopupVisible && (
   <div className="popup-overlay">
     <div className="popup-box">
-      <h4>Pilih Data Element</h4>
+      <h4 className="popup-header">Pilih Data Element</h4>
       {availableElements.map((el, idx) => (
         <button
           key={idx}

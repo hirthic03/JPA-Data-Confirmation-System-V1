@@ -763,4 +763,17 @@ textarea {
   width: 140px;           /* Keep label column narrow */
 }
 
+.modal-header {
+  color: black !important;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.popup-header {
+  color: black !important;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
 
