@@ -273,7 +273,8 @@ if (isGridEmpty) {
   // Add system and module selections
   form.append('system', formData.system || '');
   form.append('api', apiValue); 
-  form.append('module', confirmedModule || apiValue);
+ form.append('module_group', confirmedModule || '');
+ form.append('module',       apiValue); 
 
   setIsSubmitting(true);
   console.log('📤 Submitting Form with Grid Rows:', gridRows);

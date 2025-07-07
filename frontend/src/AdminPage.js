@@ -104,7 +104,10 @@ const renderInboundTable = () => (
               <tbody>
                 <tr><td><strong>system</strong></td><td>{submission.system}</td></tr>
                 <tr><td><strong>api</strong></td><td>{submission.api}</td></tr>
-                <tr><td><strong>module</strong></td><td>{submission.module}</td></tr>
+                <tr>
+  <td><strong>module</strong></td>
+  <td>{submission.module === 'Others' && submission.module_others ? submission.module_others : submission.module}</td>
+</tr>
                 <tr><td><strong>created_at</strong></td><td>{submission.created_at}</td></tr>
               </tbody>
             </table>
@@ -280,7 +283,7 @@ if (!authenticated) {
                 inboundQuestions.map(row => (
                   <tr key={row.id}>
                     <td>{row.id}</td><td>{row.system_name}</td>
-                    <td>{row.module_name}</td><td>{row.question_id}</td>
+                    <td>{row.api_name}</td><td>{row.question_id}</td>
                     <td>{row.question_text}</td>
                     <td>
                       <pre style={{ whiteSpace:'pre-wrap' }}>{row.answer}</pre>
