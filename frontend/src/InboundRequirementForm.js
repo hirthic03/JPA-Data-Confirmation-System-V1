@@ -281,16 +281,10 @@ if (isGridEmpty) {
   try {
     form.append('dataGrid', JSON.stringify(gridRows));
     form.append('submission_id', `${formData.system}-${apiValue}`);
-await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
+await axios.post('https://jpa-data-confirmation-system-v1.vercel.app/submission', form);
         /* ------- success prompt + redirect -------- */
-    if (
-      window.confirm(
-        "Borang pengumpulan keperluan berjaya dihantar.\n\n" +
-        "Tekan OK untuk kembali ke halaman submission."
-      )
-    ) {
-      navigate('/');            // 👉 replace "/" with your target route
-    }
+window.alert("Borang pengumpulan keperluan berjaya dihantar.");
+navigate('/');
 
     setFormData({});
     setFiles({});
