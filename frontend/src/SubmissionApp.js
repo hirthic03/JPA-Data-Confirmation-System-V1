@@ -20,6 +20,9 @@ export default function SubmissionApp() {
   const [remarkInput, setRemarkInput] = useState('');
   const [newElementInput, setNewElementInput] = useState('');
   const [remarks, setRemarks] = useState([]);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+const [pendingElementLabel, setPendingElementLabel] = useState('');
+const [availableGroups, setAvailableGroups] = useState([]);
   const showNotConfirmButton = false; // 🔒 Client-requested: hidden for now, re-enable if needed
   const allowOutboundFlow = false; // 🔒 Hide outbound for now; re-enable if client requests
   const allowedSystems = {
@@ -168,7 +171,6 @@ const addDataElement = () => {
   const label = newElementInput.trim();
   if (!label) return;
 
-  // Extract all current groups from the loaded module (grouped elements)
   const groups = (availableElements || [])
     .filter(e => typeof e === 'object' && e.group && Array.isArray(e.fields))
     .map(e => e.group);
@@ -178,26 +180,14 @@ const addDataElement = () => {
     return;
   }
 
-  // Prompt user to select a group
-  const selectedGroup = prompt(
-    `Tambah "${label}" ke dalam kumpulan mana?\n\n` +
-    groups.map((g, i) => `${i + 1}. ${g}`).join('\n')
-  );
+  setPendingElementLabel(label);
+  setAvailableGroups(groups);
+  setShowGroupModal(true);
+};
 
-  // Handle cancelled prompt or invalid selection
-  if (!selectedGroup) return;
+const confirmAddToGroup = (group) => {
+  const label = pendingElementLabel;
 
-  // Try to match by number or group name
-  const groupIndex = parseInt(selectedGroup, 10) - 1;
-  const group =
-    groups[groupIndex] || groups.find(g => g.toLowerCase() === selectedGroup.toLowerCase());
-
-  if (!group) {
-    alert("Kumpulan tidak sah dipilih.");
-    return;
-  }
-
-  // Dynamically inject the new field under the chosen group
   setAvailableElements(prev => {
     return prev.map(item => {
       if (typeof item === 'object' && item.group === group && Array.isArray(item.fields)) {
@@ -212,7 +202,6 @@ const addDataElement = () => {
     });
   });
 
-  // Automatically tick it
   setElements(prev => {
     const exists = prev.find(e => e.name === label && e.group === group);
     return exists
@@ -220,8 +209,12 @@ const addDataElement = () => {
       : [...prev, { name: label, group, confirmed: true }];
   });
 
-  setNewElementInput(''); // clear the box
+  setNewElementInput('');
+  setShowGroupModal(false);
+  setPendingElementLabel('');
 };
+
+
 
 
 const submit = (confirmed) => {
@@ -418,13 +411,33 @@ const payload = {
   </div>
 )}
 
-
       <div className="button-group">
         <button onClick={() => submit(true)}>Sahkan</button>
         {showNotConfirmButton && (
     <button onClick={() => submit(false)}>Tidak Disahkan</button>
   )}
       </div>
+
+      {showGroupModal && (
+  <div className="modal-overlay">
+    <div className="modal">
+      <h3>Tambah "{pendingElementLabel}" ke dalam kumpulan mana?</h3>
+      {availableGroups.map((group, idx) => (
+        <button
+          key={idx}
+          className="group-select-btn"
+          onClick={() => confirmAddToGroup(group)}
+        >
+          {group}
+        </button>
+      ))}
+      <button onClick={() => setShowGroupModal(false)} className="cancel-btn">
+        Batal
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
