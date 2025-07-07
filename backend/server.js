@@ -107,7 +107,9 @@ app.post('/submit-inbound', upload, (req, res) => {
   module_group,
   dataGrid
 } = req.body;
-const apiName = apiNameRaw || apiNameOld;   // canonical variable
+const apiName = apiNameRaw || apiNameOld;   // ← restore this
+const moduleName = module_group || apiName; // ← fallback if frontend omits module_group
+
     const submission_uuid = randomUUID();
     const created_at = new Date().toISOString();
 
@@ -133,7 +135,7 @@ const apiName = apiNameRaw || apiNameOld;   // canonical variable
 
     let result;
     Object.entries(req.body).forEach(([key, value]) => {
-      if (['system', 'api', 'module_group', 'dataGrid'].includes(key)) return;
+      if (['system', 'api', 'module', 'module_group', 'dataGrid'].includes(key)) return;
       const questionId = key;
       const questionText = getQuestionTextById(questionId);
       const filePath = uploadedFiles[questionId] || null;
@@ -141,7 +143,7 @@ const apiName = apiNameRaw || apiNameOld;   // canonical variable
       result = questionInsert.run(
   submission_uuid,
   system,
-  module_group || '',   // goes into module_name column
+   moduleName,     // goes into module_name column
   apiName || '',        // goes into api_name column
   questionId,
   questionText,

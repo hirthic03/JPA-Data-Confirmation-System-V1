@@ -188,6 +188,13 @@ useEffect(() => {
   const handleFileChange = (id, file) => {
     setFiles(prev => ({ ...prev, [id]: file }));
   };
+/* -----------------------------------------------------------
+   🔹 Helper – return real API name
+----------------------------------------------------------- */
+const getApiValue = () =>
+  formData.module === 'Others'
+    ? (formData.module_other || '').trim()
+    : formData.module;
 
   const handleSubmit = async () => {
   const form = new FormData();
@@ -222,11 +229,12 @@ const missingFields = questions.filter((q) => {
 });
 
 
-  if (!formData.module) {
-    window.alert("Sila pilih API Name.");
-    return;
-    
-  }
+ const apiValue = getApiValue();
+if (!apiValue) {
+  window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
+  return;
+}
+
   // 🆕 Grid row check for Q9
 const isGridEmpty = gridRows.every(row =>
   !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && !row.nullable.trim() && !row.rules.trim()
@@ -264,14 +272,14 @@ if (isGridEmpty) {
 
   // Add system and module selections
   form.append('system', formData.system || '');
-  form.append('module_group', confirmedModule || formData.module || '');
-  form.append('module', formData.module || '');
+  form.append('api', apiValue); 
+  form.append('module', confirmedModule || apiValue);
 
   setIsSubmitting(true);
   console.log('📤 Submitting Form with Grid Rows:', gridRows);
   try {
     form.append('dataGrid', JSON.stringify(gridRows));
-    form.append('submission_id', `${formData.system}-${formData.module}`);
+    form.append('submission_id', `${formData.system}-${apiValue}`);
 await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
     alert("Borang pengumpulan keperluan berjaya dihantar.");
     setFormData({});
@@ -414,8 +422,12 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
   <label className="question-label">Nama API</label>
   <select
     value={formData.module || confirmedModule || ''}
-    onChange={(e) => handleChange('module', e.target.value)}
-  >
+  onChange={(e) => {
+    const val = e.target.value;
+    handleChange('module', val);
+    if (val !== 'Others') handleChange('module_other', ''); // reset
+  }}
+>
     <option value="">-- Pilih API --</option>
     <option value="HantarMaklumatAduan">HantarMaklumatAduan</option>
     <option value="GetStatusAduan">GetStatusAduan</option>
