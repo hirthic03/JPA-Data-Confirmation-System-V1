@@ -119,18 +119,43 @@ const flattenOutboundElements = (confirmed) => {
 };
 
 
-  const handleSelect = (value) => {
-    if (flowType === 'Outbound') {
-      setElements(prev => prev.includes(value) ? prev.filter(el => el !== value) : [...prev, value]);
-    } else {
-      setElements(prev => {
-        const exist = prev.find(el => el.name === value);
-        return exist
-          ? prev.filter(el => el.name !== value)
-          : [...prev, { name: value, confirmed: true }];
-      });
-    }
-  };
+/**
+ * Toggle a checkbox.
+ * @param {string} value  – the field label (e.g. "Status Aduan")
+ * @param {string} group  – section/group name; defaults to "__ungrouped__"
+ */
+const handleSelect = (value, group = '__ungrouped__') => {
+  if (flowType === 'Outbound') {
+    // 🔄 Outbound: still store simple strings
+    setElements(prev =>
+      prev.includes(value)
+        ? prev.filter(el => el !== value)
+        : [...prev, value]
+    );
+  } else {
+    // ✅ Inbound: use { name, group } so identical labels in different
+    //             groups are treated independently.
+    setElements(prev => {
+      const exists = prev.find(
+        el => el.name === value && el.group === group
+      );
+
+      return exists
+        ? prev.filter(
+            el => !(el.name === value && el.group === group)
+          )
+        : [
+            ...prev,
+            {
+              name: value,
+              group,        // keep track of which section this comes from
+              confirmed: true
+            }
+          ];
+    });
+  }
+};
+
 
   const addRemark = () => {
     if (remarkInput.trim()) {
@@ -143,22 +168,61 @@ const addDataElement = () => {
   const label = newElementInput.trim();
   if (!label) return;
 
-  // simple confirm-dialog; replace with a custom modal if you prefer
-  if (!window.confirm(`Tambah "${label}" ke dalam modul ini?`)) return;
+  // Extract all current groups from the loaded module (grouped elements)
+  const groups = (availableElements || [])
+    .filter(e => typeof e === 'object' && e.group && Array.isArray(e.fields))
+    .map(e => e.group);
 
-  // Append to list (avoids duplicates)
-  setAvailableElements(prev =>
-    prev.includes(label) ? prev : [...prev, label]
+  if (groups.length === 0) {
+    alert("Tiada kumpulan yang tersedia untuk menambah elemen.");
+    return;
+  }
+
+  // Prompt user to select a group
+  const selectedGroup = prompt(
+    `Tambah "${label}" ke dalam kumpulan mana?\n\n` +
+    groups.map((g, i) => `${i + 1}. ${g}`).join('\n')
   );
 
-  // Tick it automatically for Inbound
-  setElements(prev => {
-    const exists = prev.find(e => e.name === label);
-    return exists ? prev : [...prev, { name: label, confirmed: true }];
+  // Handle cancelled prompt or invalid selection
+  if (!selectedGroup) return;
+
+  // Try to match by number or group name
+  const groupIndex = parseInt(selectedGroup, 10) - 1;
+  const group =
+    groups[groupIndex] || groups.find(g => g.toLowerCase() === selectedGroup.toLowerCase());
+
+  if (!group) {
+    alert("Kumpulan tidak sah dipilih.");
+    return;
+  }
+
+  // Dynamically inject the new field under the chosen group
+  setAvailableElements(prev => {
+    return prev.map(item => {
+      if (typeof item === 'object' && item.group === group && Array.isArray(item.fields)) {
+        return {
+          ...item,
+          fields: item.fields.includes(label)
+            ? item.fields
+            : [...item.fields, label]
+        };
+      }
+      return item;
+    });
   });
 
-  setNewElementInput('');   // clear the textbox
+  // Automatically tick it
+  setElements(prev => {
+    const exists = prev.find(e => e.name === label && e.group === group);
+    return exists
+      ? prev
+      : [...prev, { name: label, group, confirmed: true }];
+  });
+
+  setNewElementInput(''); // clear the box
 };
+
 
 const submit = (confirmed) => {
     if (!system || !module) {
@@ -185,7 +249,7 @@ const payload = {
   module,
   elements: flowType === 'Outbound'
     ? flattenOutboundElements(confirmed)
-    : elements.map(e => ({ name: e.name, confirmed })),
+    : elements.map(({ name, group, confirmed }) => ({ name, group, confirmed })),
   // Only Outbound still sends remarks
   ...(flowType === 'Outbound' && { remarks: remarks.join('; ') })
 };
@@ -252,28 +316,40 @@ const payload = {
       <h3>Elemen Data</h3>
 <div className="element-section">
   {Array.isArray(availableElements) && availableElements.map((item, idx) => {
-    // ✅ Case 1: Grouped elements (object with group and fields)
-    if (typeof item === 'object' && item.group && Array.isArray(item.fields)) {
-      return (
-        <div key={idx} className="group">
-          <h4>{item.group}</h4>
-          {item.fields.map((field, i) => (
-            <div key={i} className="checkbox-item">
-              <input
-                type="checkbox"
-                checked={
-                  flowType === 'Inbound'
-                    ? elements.some(e => e.name === field)
-                    : elements.includes(field)
-                }
-                onChange={() => handleSelect(field)}
-              />
-              <label>{field}</label>
-            </div>
-          ))}
-        </div>
-      );
-    }
+     // ✅ Case 1: Grouped elements (object with group and fields)
+  /* ---------- GROUPED ELEMENTS ---------- */
+  if (typeof item === 'object' && item.group && Array.isArray(item.fields)) {
+    /* 1️⃣  Append “ID Rujukan” once per group, but don’t duplicate */
+    const displayFields = item.fields.includes('ID Rujukan')
+      ? item.fields
+      : [...item.fields, 'ID Rujukan'];
+
+    /* 2️⃣  Render each field – group + name makes it UNIQUE */
+    return (
+      <div key={idx} className="group">
+        <h4>{item.group}</h4>
+
+        {displayFields.map((field, i) => (
+          <div key={i} className="checkbox-item">
+            <input
+              type="checkbox"
+              checked={
+                flowType === 'Inbound'
+                  ? elements.some(
+                      e => e.name === field && e.group === item.group
+                    )
+                  : elements.includes(field)
+              }
+              onChange={() => handleSelect(field, item.group)}
+            />
+            <label>{field}</label>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+
 
     // ✅ Case 2: Flat elements (simple strings)
     if (typeof item === 'string') {
