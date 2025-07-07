@@ -74,9 +74,9 @@ const renderInboundTable = () => (
         .filter(q => q.question_id !== 'module');   // ⬅️ added filter
 
         return (
-          <div key={submission.id} className="admin-submission">
+          <div key={submission.id} className="submission-box">
             {/*Header Table with Metadata*/}
-            <table className="admin-table">
+            <table className="submission-table">
               <thead>
                 <tr>
                   <th colSpan="2">
@@ -122,56 +122,38 @@ const renderInboundTable = () => (
             ))}
 
             {/* Grid Table if available */}
-           {submission.gridData?.length > 0 ? (
-  <>
-    <h4>Grid Data</h4>
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Data Element</th>
-          <th>Group</th>          {/* ✅ NEW */}
-          <th>Nama</th>
-          <th>Jenis</th>
-          <th>Saiz</th>
-          <th>Nullable</th>
-          <th>Rules</th>
-        </tr>
-      </thead>
-      <tbody>
-  {submission.gridData.map((row, idx) => {
-    const isDup = submission.gridData.filter(r => r.data_element === row.data_element).length > 1;
-    return (
-      <tr key={`${row.data_element}-${idx}`}>
-        <td>{idx + 1}</td>
-
-        {/* Data Element + duplicate icon */}
-        <td>
-          {row.data_element}
-          {isDup && <span style={{ color: 'red', marginLeft: '5px' }}>⚠️</span>}
-        </td>
-
-        {/* NEW Group column */}
-        <td>{row.group_name || '—'}</td>
-
-        {/* The rest stay the same */}
-        <td>{row.nama}</td>
-        <td>{row.jenis}</td>
-        <td>{row.saiz}</td>
-        <td>{row.nullable}</td>
-        <td>{row.rules}</td>
-      </tr>
-    );
-  })}
-</tbody>
-
-    </table>
-  </>
-) : (
-  <p style={{ fontStyle: 'italic', marginTop: '10px' }}>
-    No grid data for this submission.
-  </p>
-)}
+            {submission.gridData?.length > 0 ? (
+              <>
+                <h4>Grid Data</h4>
+                <table className="grid-table">
+                  <thead>
+  <tr>
+    <th>#</th>
+   <th>Data Element</th>
+    <th>Nama</th><th>Jenis</th>
+    <th>Saiz</th><th>Nullable</th><th>Rules</th>
+  </tr>
+</thead>
+                  <tbody>
+                    {submission.gridData.map((row, idx) => (
+                      <tr key={`${row.data_element}-${idx}`}>
+                        <td>{idx + 1}</td>
+                        <td>{row.data_element}</td>
+                        <td>{row.nama}</td>
+                        <td>{row.jenis}</td>
+                        <td>{row.saiz}</td>
+                        <td>{row.nullable}</td>
+                        <td>{row.rules}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <p style={{ fontStyle: 'italic', marginTop: '10px' }}>
+                No grid data for this submission.
+              </p>
+            )}
           </div>
         );
       })
@@ -210,7 +192,7 @@ if (!authenticated) {
   return <div className="admin-container"><h2>📊 Admin Report Dashboard</h2><p>Loading data...</p></div>;
 }
   return (
-    <div className="admin-page">
+    <div className="admin-container">
       <h2 className="admin-title">📊 Admin Report Dashboard</h2>
 
         {/* 💾 One-click backup */}
@@ -300,15 +282,7 @@ if (!authenticated) {
                           <tbody>
                             {row.gridData.map((g, i) => (
                               <tr key={`${g.data_element}-${i}`}>
-                                <td>
-  {g.data_element}
-  {g.group_name ? ` (${g.group_name})` : ''}
- {row.gridData.filter(
-   r => r.data_element === g.data_element
- ).length > 1 && (
-    <span style={{ color: 'red', marginLeft: '5px' }}>⚠️</span>
-  )}
-</td>
+                                <td>{g.data_element}</td>
                                 <td>{g.nama}</td><td>{g.jenis}</td>
                                 <td>{g.saiz}</td><td>{g.nullable}</td>
                                 <td>{g.rules}</td>
