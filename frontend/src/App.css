@@ -753,5 +753,9 @@ textarea {
   cursor: pointer;
 }
 
+.admin-submission + .admin-submission {
+  margin-top: 2rem;
+}
+
 
 
