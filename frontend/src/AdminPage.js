@@ -41,12 +41,13 @@ const getGroupNameForDataElement = (elementName, submission) => {
 useEffect(() => {
 
   Promise.all([
-    fetch(`${BASE_URL}/all-submissions`).then(res => res.json()),
-    fetch(`${BASE_URL}/inbound-submissions`).then(res => res.json()),
-    fetch(`${BASE_URL}/inbound-submissions-grouped`).then(res => res.json())
-  .then(data => data.map(d => ({ ...d, elements: d.elements || [] })))
+  fetch(`${BASE_URL}/all-submissions`).then(res => res.json()),
+  fetch(`${BASE_URL}/inbound-submissions`).then(res => res.json()),
+  fetch(`${BASE_URL}/inbound-submissions-grouped`)
+    .then(res => res.json())
+    .then(data => data.map(d => ({ ...d, elements: d.elements || [] })))
+])
 
-  ])
     .then(([confirmRows, plainQuestions, groupedSubs]) => {
       setData(confirmRows);
       setFilteredData(confirmRows);
