@@ -284,7 +284,7 @@ if (isGridEmpty) {
 await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
         /* ------- success prompt + redirect -------- */
 window.alert("Borang pengumpulan keperluan berjaya dihantar.");
-navigate('/');
+navigate('/submission');
 
     setFormData({});
     setFiles({});
