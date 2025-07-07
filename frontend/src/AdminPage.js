@@ -30,6 +30,13 @@ const downloadBlob = (blob, filename) => {
   }, 500);
 };
 
+// Helper: Get group name for a data element
+const getGroupNameForDataElement = (elementName, submission) => {
+  const matchedGroup = submission.elements?.find(group =>
+    group.fields.includes(elementName)
+  );
+  return matchedGroup ? ` (${matchedGroup.group})` : '';
+};
 
 useEffect(() => {
 
@@ -37,6 +44,8 @@ useEffect(() => {
     fetch(`${BASE_URL}/all-submissions`).then(res => res.json()),
     fetch(`${BASE_URL}/inbound-submissions`).then(res => res.json()),
     fetch(`${BASE_URL}/inbound-submissions-grouped`).then(res => res.json())
+  .then(data => data.map(d => ({ ...d, elements: d.elements || [] })))
+
   ])
     .then(([confirmRows, plainQuestions, groupedSubs]) => {
       setData(confirmRows);
@@ -138,7 +147,11 @@ const renderInboundTable = () => (
                     {submission.gridData.map((row, idx) => (
                       <tr key={`${row.data_element}-${idx}`}>
                         <td>{idx + 1}</td>
-                        <td>{row.data_element}</td>
+                        <td>
+  {row.data_element}
+  {getGroupNameForDataElement(row.data_element, submission)}
+</td>
+
                         <td>{row.nama}</td>
                         <td>{row.jenis}</td>
                         <td>{row.saiz}</td>

@@ -101,16 +101,17 @@ useEffect(() => {
   setAvailableElements(modData);
   setElements(prev =>
   prev.filter(e => {
-    const name = typeof e === 'string' ? e : e.name;
+    // support both “flat” and “grouped” modules
+    if (typeof e === 'string') {
+      return modData.includes(e);
+    }
 
-    // Inbound: modData can be objects with { group, fields }
-    const inGroup = modData.some(
-      it => typeof it === 'object' && it.fields?.includes(name)
-    );
-
-    return Array.isArray(modData) && (
-      modData.includes(name) ||   // Outbound / flat
-      inGroup                     // Inbound / grouped
+    // grouped element => keep only if the SAME group still exists
+    return modData.some(
+      it =>
+        typeof it === 'object' &&
+        it.group === e.group &&
+        it.fields?.includes(e.name)
     );
   })
 );
