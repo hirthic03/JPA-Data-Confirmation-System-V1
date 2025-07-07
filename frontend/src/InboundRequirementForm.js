@@ -335,7 +335,18 @@ const handleUseExample = (id) => {
   }));
 };
 
-
+/* ---------- DUPLICATE-NAME WARNING (same element used in ≥2 groups) ---------- */
+const nameGroupMap = {};
+confirmedEls.forEach(el => {
+  const { name, group = '__ungrouped__' } =
+    typeof el === 'string' ? { name: el, group: '__ungrouped__' } : el;
+  if (!nameGroupMap[name]) nameGroupMap[name] = new Set();
+  nameGroupMap[name].add(group);
+});
+const duplicateNames = Object.keys(nameGroupMap).filter(
+  n => nameGroupMap[n].size > 1
+);
+/* --------------------------------------------------------------------------- */
   return (
     <div className="container">
 
@@ -435,7 +446,6 @@ const handleUseExample = (id) => {
       }));
     };
 
-
     return (
       <div
         className="tooltip-wrapper"
@@ -520,14 +530,30 @@ const handleUseExample = (id) => {
       <tbody>
     {gridRows.map((row, index) => (
       <tr key={index}>
-  {/* ✅ 1. Data Elements (read-only) */}
-  <td>
+{/* ✅ 1. Data Elements (read-only + duplicate icon) */}
+<td>
+  <div style={{ display: 'flex', alignItems: 'center' }}>
     <input
       value={row.dataElement}
       readOnly
       style={{ background: '#f5f5f5' }}
     />
-  </td>
+    {duplicateNames.includes(row.dataElement) && (
+      <span
+        title="Elemen ini digunakan dalam lebih daripada satu kumpulan"
+        style={{
+          color: 'red',
+          marginLeft: '6px',
+          fontWeight: 'bold',
+          cursor: 'help'
+        }}
+      >
+        ⚠️
+      </span>
+    )}
+  </div>
+</td>
+
 
   {/* ✅ 2. Nama Field (editable) */}
   <td>
