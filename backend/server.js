@@ -30,26 +30,29 @@ if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 
 // Middleware
 // Middleware
-//-------------------------------------------------------------
-// ✅  Fine-grained CORS – only the URLs above are accepted
-//-------------------------------------------------------------
+
+// 🟢 ───────────────────────────── CORS SET-UP ────────────────────────────
+const allowedOrigins = [
+  'https://jpa-data-confirmation-system-v1.vercel.app',
+  'http://localhost:3000'           // local dev
+];
+
 const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    cb(new Error('❌  CORS blocked: Origin not allowed'));
+  origin(origin, callback) {
+    // allow Postman / curl (no Origin header) or any whitelisted domain
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('CORS not allowed for this origin: ' + origin));
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: (req, cb) => {
-    const hdr = req.header('Access-Control-Request-Headers');
-    cb(null, hdr ? hdr : 'Content-Type, Authorization');
-  },
-  optionsSuccessStatus: 200,
-  credentials: true
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-secret'],
+  credentials: true,
+  optionsSuccessStatus: 200        // older browsers prefer 200 over 204
 };
 
 app.use(cors(corsOptions));
-// handle the browser’s OPTIONS preflight automatically
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // pre-flight for every route
+// 🟢 ──────────────────────────────────────────────────────────────────────
+
 app.use(helmet()); // 🛡️ Adds security headers
 app.use(rateLimit({ // ⏱️ Basic rate limiter
   windowMs: 15 * 60 * 1000, // 15 min
