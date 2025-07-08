@@ -85,15 +85,14 @@ const handleGridChange = (index, key, value) => {
   setGridRows(updatedRows);
 };
 
+const getCurrentModule = () => {
+  if (confirmedModule) return confirmedModule;
+  return (formData.module || '').trim();
+};
+
+
 const addGridRow = () => {
   const currentMod = getCurrentModule();
-  const getCurrentModule = () => {
-  // 1. If the user already confirmed a module on the previous page, use it
-  if (confirmedModule) return confirmedModule;
-
-  // 2. Otherwise use whatever is chosen in the Nama API dropdown right now
-  return formData.module?.trim() || '';
-};
 
   if (!currentMod) {
     alert('Sila pilih “Nama Modul” dahulu.');
