@@ -285,9 +285,10 @@ const endpoint =
       dbg("✅ Submitted payload:", payload);
        if (flowType === 'Inbound') {
   // store both name & group for use in requirement form
-  const confirmedFull = payload.elements.map(
-    ({ name, group }) => ({ name, group })
-  );
+const confirmedFull = payload.elements.map(
+  ({ name, group_name }) => ({ name, group: group_name })
+);
+
   saveConfirmed(system, module, confirmedFull);
   navigate('/requirement');
 }
