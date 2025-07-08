@@ -412,21 +412,32 @@ app.get('/', (req, res) => {
 });
 
 // 🔐 Simple DB export – streams the entire SQLite file
-app.get('/export-backup', (req, res) => {
-  const dbPath = path.join(__dirname, 'confirmation_data.db');
+// 🔐 Improved DB Export – creates a safe SQLite backup before streaming
+app.get('/export-backup', async (req, res) => {
+  try {
+    const timestamp = Date.now();
+    const snapshotPath = path.join(__dirname, `snapshot_${timestamp}.db`);
 
-  // If ever you protect admin with auth, wrap this in auth middleware
-  if (!fs.existsSync(dbPath)) {
-    return res.status(404).json({ error: 'DB file not found' });
+    // Use built-in .backup() for atomic file copy
+    await db.backup(snapshotPath);
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=confirmation_backup_${timestamp}.db`
+    );
+
+    const stream = fs.createReadStream(snapshotPath);
+    stream.pipe(res);
+
+    // Auto-delete temp file after download finishes
+    stream.on('close', () => {
+      fs.unlink(snapshotPath, () => {});
+    });
+  } catch (err) {
+    console.error('DB backup failed:', err);
+    res.status(500).json({ error: 'Failed to create DB backup' });
   }
-
-  res.setHeader('Content-Type', 'application/octet-stream');
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename=confirmation_backup_${Date.now()}.db`
-  );
-
-  fs.createReadStream(dbPath).pipe(res);
 });
 
 // ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first
