@@ -603,8 +603,6 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
   </>
 )}
 
-
-
     {q.id === 'dataInvolved' && (
   <>
     <table className="grid-table">
@@ -651,8 +649,6 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
   </div>
 </td>
 
-
-
   {/* ✅ 2. Nama Field (editable) */}
   <td>
     <input
@@ -662,10 +658,34 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
   </td>
 
   {/* ✅ 3–6. Editable fields */}
-  <td><input value={row.jenis} onChange={(e) => handleGridChange(index, 'jenis', e.target.value)} /></td>
-  <td><input value={row.saiz} onChange={(e) => handleGridChange(index, 'saiz', e.target.value)} /></td>
-  <td><input value={row.nullable} onChange={(e) => handleGridChange(index, 'nullable', e.target.value)} /></td>
-  <td><input value={row.rules} onChange={(e) => handleGridChange(index, 'rules', e.target.value)} /></td>
+  <td>
+    <input
+      value={row.jenis}
+      onChange={(e) => handleGridChange(index, 'jenis', e.target.value)}
+      placeholder="Contoh: varchar / int"
+    />
+  </td>
+  <td>
+    <input
+      value={row.saiz}
+      onChange={(e) => handleGridChange(index, 'saiz', e.target.value)}
+      placeholder="Contoh: 150"
+    />
+  </td>
+  <td>
+    <input
+      value={row.nullable}
+      onChange={(e) => handleGridChange(index, 'nullable', e.target.value)}
+      placeholder="Contoh: Y / N"
+    />
+  </td>
+  <td>
+    <input
+      value={row.rules}
+      onChange={(e) => handleGridChange(index, 'rules', e.target.value)}
+      placeholder="Contoh: Newid / Format dd/mm/yyyy"
+    />
+  </td>
 
   {/* ✅ 7. Delete row */}
   <td>
