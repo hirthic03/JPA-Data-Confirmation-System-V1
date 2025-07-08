@@ -3,6 +3,8 @@ import axios from 'axios';
 import './App.css';
 import { saveConfirmed } from './utils/confirmedStore';
 import { useNavigate } from 'react-router-dom'; 
+// ☝️ Put this right after the dbg() helper
+const API_BASE = 'https://jpa-data-confirmation-system-v1.onrender.com';
 
 // Debug helper – logs appear only in development builds
 const dbg = (...args) => {
@@ -34,31 +36,44 @@ const [availableGroups, setAvailableGroups] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 🔄 Try backend first
-    axios.get('https://jpa-data-confirmation-system-v1.onrender.com/systems')
+  /* 1️⃣  Wake Render so the first real call never 502s */
+  fetch(`${API_BASE}/`).catch(() => {});
+
+  /* 2️⃣  Now load systems, retry up to 3× if container still cold */
+  function loadSystems(attempt = 1) {
+    axios
+      .get(`${API_BASE}/systems`)
       .then(res => {
         setSystemsData(res.data);
-        const flows = Object.keys(res.data).filter(flow => allowOutboundFlow || flow === 'Inbound');
-        if (!flows.length) {
-  dbg('Backend returned no valid flows – keeping existing state');
-  return; // stop here; avoid setting empty flowType
-}
-        setFlowType(flows[0]);
+        const flows = Object.keys(res.data).filter(
+          f => allowOutboundFlow || f === 'Inbound'
+        );
+        if (flows.length) setFlowType(flows[0]);
       })
-      .catch(() => {
-        // 🔁 Fallback to public/systems.json
-        fetch('/systems.json')
-          .then(res => res.json())
-          .then(data => {
-  setSystemsData(data);
-  const flows = Object.keys(data)                 // grab both flows in file
-    .filter(flow => allowOutboundFlow || flow === 'Inbound'); // keep only Inbound
-  setFlowType(flows[0]);
-})
-
-          .catch(err => console.error("❌ Failed to load systems.json:", err));
+      .catch(err => {
+        if (attempt < 3) {
+          setTimeout(() => loadSystems(attempt + 1), 2000);
+        } else {
+          console.warn('Backend unreachable, using local systems.json', err);
+          fetch('/systems.json')
+            .then(r => r.json())
+            .then(data => {
+              setSystemsData(data);
+              const flows = Object.keys(data).filter(
+                f => allowOutboundFlow || f === 'Inbound'
+              );
+              if (flows.length) setFlowType(flows[0]);
+            })
+            .catch(e =>
+              console.error('❌ Failed to load local systems.json:', e)
+            );
+        }
       });
-  }, []);
+  }
+
+  loadSystems();
+}, []);
+
 
 useEffect(() => {
   if (!systemsData[flowType]) return;
@@ -259,9 +274,11 @@ const payload = {
 };
 
 
- const endpoint = flowType === 'Inbound'
-   ? 'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound'
-   : 'https://jpa-data-confirmation-system-v1.onrender.com/submit';
+const endpoint =
+  flowType === 'Inbound'
+    ? `${API_BASE}/submit-inbound`
+    : `${API_BASE}/submit`;
+
  axios.post(endpoint, payload)
   
     .then(() => {
@@ -329,10 +346,6 @@ const payload = {
      // ✅ Case 1: Grouped elements (object with group and fields)
   /* ---------- GROUPED ELEMENTS ---------- */
   if (typeof item === 'object' && item.group && Array.isArray(item.fields)) {
-    /* 1️⃣  Append “ID Rujukan” once per group, but don’t duplicate */
-    const displayFields = item.fields.includes('ID Rujukan')
-      ? item.fields
-      : [...item.fields, 'ID Rujukan'];
 
     /* 2️⃣  Render each field – group + name makes it UNIQUE */
     return (
