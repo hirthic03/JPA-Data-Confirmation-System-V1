@@ -787,3 +787,10 @@ textarea {
   font-style: italic;
 }
 
+input::placeholder,
+textarea::placeholder {
+  font-style: italic;
+  font-size: 14px;
+  color: #999;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
