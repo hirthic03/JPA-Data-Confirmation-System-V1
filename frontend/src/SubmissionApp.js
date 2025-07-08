@@ -336,7 +336,7 @@ const payload = {
       <div key={idx} className="group">
         <h4>{item.group}</h4>
 
-        {displayFields.map((field, i) => (
+        {item.fields.map((field, i) => (
           <div key={i} className="checkbox-item">
             <input
               type="checkbox"

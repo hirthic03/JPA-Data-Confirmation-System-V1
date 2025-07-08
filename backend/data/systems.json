@@ -317,14 +317,16 @@
             "No. Kad Pengenalan",
             "Kategori Aduan",
             "Keterangan Aduan",
-            "Status Aduan"
+            "Status Aduan",
+            "ID Rujukan"
           ]
         },
         {
           "group": "Semak Status Aduan",
           "fields": [
             "Keterangan Aduan",
-            "Status Aduan"
+            "Status Aduan",
+            "ID Rujukan"
           ]
         }
       ]
@@ -340,7 +342,8 @@
             "Jenis Aduan",
             "Nama Pengadu",
             "E-mel Pengadu",
-            "Gambar"
+            "Gambar",
+            "ID Rujukan"
           ]
         },
         {
@@ -349,7 +352,8 @@
             "Tarikh",
             "Aduan/ Cadangan",
             "Jenis Aduan",
-            "Status Aduan/ Cadangan"
+            "Status Aduan/ Cadangan",
+            "ID Rujukan"
           ]
         }
       ]
