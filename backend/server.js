@@ -234,6 +234,30 @@ if (dataGrid) {
 }
 
 
+    /* ────────────────────────────────────────────────────────────────
+       🌟 NEW: if the front-end sends `elements` (array) instead of
+       `dataGrid`, store each one in `inbound_data_grid`.
+       – keeps older “dataGrid” flow working
+       – stops the 500 because nothing was inserted before
+    ──────────────────────────────────────────────────────────────── */
+    if (!dataGrid && Array.isArray(req.body.elements) && req.body.elements.length) {
+      const stmtElem = db.prepare(`
+        INSERT INTO inbound_data_grid
+        (submission_uuid, submission_id, data_element, group_name, nama,
+         jenis, saiz, nullable, rules)
+        VALUES (?, NULL, ?, ?, '', '', '', '', '')
+      `);
+
+      req.body.elements.forEach(el => {
+        // Front-end sends { name , group_name , confirmed }
+        // We only need name + group_name for now – blank the rest
+        stmtElem.run(
+          submission_uuid,
+          el.name || '',
+          (el.group_name || el.group || '__ungrouped__')
+        );
+      });
+    }
     return res.status(200).json({ message: 'Inbound requirement saved.' });
   } catch (error) {
     console.error('Error saving inbound:', error);
