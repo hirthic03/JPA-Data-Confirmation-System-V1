@@ -6,6 +6,8 @@ const path = require('path');
 const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 //-------------------------------------------------------------
 // 🌍  Front-end domains that are allowed to call this backend
 //-------------------------------------------------------------
@@ -19,6 +21,8 @@ const ALLOWED_ORIGINS = [
 // Initialize
 const app = express();
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
+db.pragma('journal_mode = WAL'); // Improves SQLite concurrency + crash safety
+
 const upload = multer({ dest: 'uploads/' }).any();
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
@@ -31,18 +35,29 @@ if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 //-------------------------------------------------------------
 const corsOptions = {
   origin: (origin, cb) => {
-    // allow tools like Postman (no Origin header) or the whitelisted domains
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
     cb(new Error('❌  CORS blocked: Origin not allowed'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: (req, cb) => {
+    const hdr = req.header('Access-Control-Request-Headers');
+    cb(null, hdr ? hdr : 'Content-Type, Authorization');
+  },
+  optionsSuccessStatus: 200,
+  credentials: true
 };
+
 app.use(cors(corsOptions));
 // handle the browser’s OPTIONS preflight automatically
 app.options('*', cors(corsOptions));
+app.use(helmet()); // 🛡️ Adds security headers
+app.use(rateLimit({ // ⏱️ Basic rate limiter
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 300 // limit each IP to 300 requests per window
+}));
 
-app.use(express.json());
+
+app.use(express.json({ limit: '1mb' })); // Prevent huge JSON payloads
 
 app.use('/uploads', express.static('uploads'));
 
