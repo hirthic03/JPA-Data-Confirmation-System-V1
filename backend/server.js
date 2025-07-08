@@ -178,7 +178,7 @@ const moduleName = module_group || apiName; // ← fallback if frontend omits mo
 
     let result;
     Object.entries(req.body).forEach(([key, value]) => {
-      if (['system', 'api', 'module', 'module_group', 'dataGrid'].includes(key)) return;
+       if (['system', 'api', 'module', 'module_group', 'dataGrid', 'flowType', 'elements'].includes(key)) return;
       const questionId = key;
       const questionText = getQuestionTextById(questionId);
       const filePath = uploadedFiles[questionId] || null;
