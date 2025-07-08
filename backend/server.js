@@ -6,6 +6,14 @@ const path = require('path');
 const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
+//-------------------------------------------------------------
+// 🌍  Front-end domains that are allowed to call this backend
+//-------------------------------------------------------------
+const ALLOWED_ORIGINS = [
+  'https://jpa-data-confirmation-system-v1.vercel.app', // production UI
+  'http://localhost:3000'                               // dev UI (optional)
+];
+
 
 
 // Initialize
@@ -17,8 +25,25 @@ const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 
 // Middleware
-app.use(cors());
+// Middleware
+//-------------------------------------------------------------
+// ✅  Fine-grained CORS – only the URLs above are accepted
+//-------------------------------------------------------------
+const corsOptions = {
+  origin: (origin, cb) => {
+    // allow tools like Postman (no Origin header) or the whitelisted domains
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error('❌  CORS blocked: Origin not allowed'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
+// handle the browser’s OPTIONS preflight automatically
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
+
 app.use('/uploads', express.static('uploads'));
 
 // Table Creation
