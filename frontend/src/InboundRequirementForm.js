@@ -86,11 +86,22 @@ const handleGridChange = (index, key, value) => {
 };
 
 const addGridRow = () => {
-  if (!popupModule) {
-    alert('Tiada modul tersedia.');
+  const currentMod = getCurrentModule();
+  const getCurrentModule = () => {
+  // 1. If the user already confirmed a module on the previous page, use it
+  if (confirmedModule) return confirmedModule;
+
+  // 2. Otherwise use whatever is chosen in the Nama API dropdown right now
+  return formData.module?.trim() || '';
+};
+
+  if (!currentMod) {
+    alert('Sila pilih “Nama Modul” dahulu.');
     return;
   }
-  setAvailableElements(getSelectable(popupModule)); // freshly filtered
+
+  setPopupModule(currentMod);                    // 🔒 lock in
+  setAvailableElements(getSelectable(currentMod));
   setPopupVisible(true);
 };
 
@@ -401,23 +412,10 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
     <div className="popup-box">
       <h4 className="popup-header">Tambah Baris – Pilih Modul &amp; Data Element</h4>
 
-      {/* --- Module selector ---------------------------------- */}
-      <label className="popup-label">Modul</label>
-      <select
-        className="popup-select"
-        value={popupModule}
-        onChange={(e) => {
-          const mod = e.target.value;
-          setPopupModule(mod);
-          setAvailableElements(getSelectable(mod));
-        }}
-      >
-        {modules.map((m, idx) => (
-          <option key={idx} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+ {/* --- Locked module (read-only) -------------------------- */}
+ <p style={{ fontWeight: 600, marginBottom: 6 }}>
+   Modul: <span style={{ color: '#0a74ff' }}>{popupModule}</span>
+ </p>
 
       {/* --- Dynamic element list ----------------------------- */}
       <div className="popup-elements" style={{ marginTop: '12px' }}>
@@ -698,6 +696,7 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
     <button type="button" onClick={addGridRow} style={{ marginTop: '10px' }}>
       ➕ Tambah Baris
     </button>
+    
 {/* 
     <p style={{ fontStyle: 'italic', color: '#888', marginTop: '10px' }}>
       Anda boleh senaraikan struktur data di atas atau muat naik fail jika lebih mudah.
