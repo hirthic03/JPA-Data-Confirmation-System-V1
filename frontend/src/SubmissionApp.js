@@ -268,7 +268,7 @@ const payload = {
   module,
   elements: flowType === 'Outbound'
     ? flattenOutboundElements(confirmed)
-    : elements.map(({ name, group, confirmed }) => ({ name, group, confirmed })),
+    : elements.map(({ name, group, confirmed }) => ({ name, group_name: group, confirmed })),
   // Only Outbound still sends remarks
   ...(flowType === 'Outbound' && { remarks: remarks.join('; ') })
 };
