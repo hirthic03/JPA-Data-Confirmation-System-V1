@@ -13,6 +13,9 @@ export default function InboundRequirementForm() {
     elements: confirmedEls = []
   } = loadConfirmed();
 
+const DEFAULT_SYSTEM = "Sistem Pengurusan Meja Bantuan (SPMB)";
+const activeSystem   = confirmedSystem || DEFAULT_SYSTEM; 
+
   // 🚧 Kick users back if they haven’t confirmed data elements first
   useEffect(() => {
     if (!confirmedEls.length) {
@@ -53,6 +56,29 @@ const [gridRows, setGridRows] = useState(
 const [isPopupVisible, setPopupVisible] = useState(false);
 const [availableElements, setAvailableElements] = useState([]);
 
+/* ---------- Popup helper state & utils (NEW) ------------------- */
+const [popupModule, setPopupModule] = useState(confirmedModule || '');
+
+/*  flattenElements()  → converts grouped/flat     */
+/*  getSelectable()    → returns only NOT-yet-picked */
+const flattenElements = (arr) =>
+  arr.flatMap((e) =>
+    typeof e === 'string'
+      ? [{ name: e, group: '__ungrouped__' }]
+      : e.fields.map((f) => ({ name: f, group: e.group }))
+  );
+
+const getSelectable = (modName) => {
+  const raw = systemsData?.Inbound?.[activeSystem]?.[modName]?.elements || [];
+  const flat = flattenElements(raw);
+  return flat.filter(
+    ({ name, group }) =>
+      !gridRows.some((r) => r.dataElement === name && r.groupName === group)
+  );
+};
+/* --------------------------------------------------------------- */
+
+
 const handleGridChange = (index, key, value) => {
   const updatedRows = [...gridRows];
   updatedRows[index][key] = value;
@@ -60,8 +86,11 @@ const handleGridChange = (index, key, value) => {
 };
 
 const addGridRow = () => {
-  // Show *all* confirmed elements every time
-  setAvailableElements(confirmedEls);
+  if (!popupModule) {
+    alert('Tiada modul tersedia.');
+    return;
+  }
+  setAvailableElements(getSelectable(popupModule)); // freshly filtered
   setPopupVisible(true);
 };
 
@@ -96,11 +125,9 @@ const handleElementSelection = (elementObj) => {
 
 
 useEffect(() => {
-  const systemName = "Sistem Pengurusan Meja Bantuan (SPMB)";
-  const inboundModules = systemsData?.Inbound?.[systemName] || {};
-  const moduleNames = Object.keys(inboundModules);
-
-  setFormData(prev => ({ ...prev, system: systemName }));
+  const inboundModules = systemsData?.Inbound?.[activeSystem] || {};
+  const moduleNames    = Object.keys(inboundModules);
+  setFormData(prev => ({ ...prev, system: activeSystem }));
   setModules(moduleNames);
 }, []);
 
@@ -372,22 +399,55 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
 {isPopupVisible && (
   <div className="popup-overlay">
     <div className="popup-box">
-      <h4 className="popup-header">Pilih Data Element</h4>
-      {availableElements.map((el, idx) => (
-        <button
-          key={idx}
-          onClick={() => handleElementSelection(el)}
-          className="popup-option"
-        >
-          {typeof el === 'string' ? el : el.name}
-        </button>
-      ))}
-      <button onClick={() => setPopupVisible(false)} className="close-btn">
+      <h4 className="popup-header">Tambah Baris – Pilih Modul &amp; Data Element</h4>
+
+      {/* --- Module selector ---------------------------------- */}
+      <label className="popup-label">Modul</label>
+      <select
+        className="popup-select"
+        value={popupModule}
+        onChange={(e) => {
+          const mod = e.target.value;
+          setPopupModule(mod);
+          setAvailableElements(getSelectable(mod));
+        }}
+      >
+        {modules.map((m, idx) => (
+          <option key={idx} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+
+      {/* --- Dynamic element list ----------------------------- */}
+      <div className="popup-elements" style={{ marginTop: '12px' }}>
+        {availableElements.length === 0 && (
+          <p style={{ fontStyle: 'italic' }}>
+            Semua elemen bagi modul ini sudah ditambah.
+          </p>
+        )}
+        {availableElements.map(({ name, group }, idx) => (
+          <button
+            key={idx}
+            className="popup-option"
+            onClick={() => handleElementSelection({ name, group })}
+          >
+            {group !== '__ungrouped__' ? `${name} (${group})` : name}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setPopupVisible(false)}
+        className="close-btn"
+        style={{ marginTop: '15px' }}
+      >
         ❌ Tutup
       </button>
     </div>
   </div>
 )}
+
 {/* === End popup ============================================ */}
 
   <div className="progress-label">Kemajuan Borang: {calculateProgress()}%</div>
