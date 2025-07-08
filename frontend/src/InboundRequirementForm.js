@@ -53,6 +53,17 @@ const [gridRows, setGridRows] = useState(
     rules: ''
   }))
 );
+// ⚠️ Live duplicate-name detector — recalculates whenever gridRows change
+const duplicateNames = React.useMemo(() => {
+  const map = {};
+  gridRows.forEach(({ dataElement, groupName = '__ungrouped__' }) => {
+    if (!map[dataElement]) map[dataElement] = new Set();
+    map[dataElement].add(groupName);
+  });
+  // keep only names that appear in ≥ 2 distinct groups
+  return Object.keys(map).filter((name) => map[name].size > 1);
+}, [gridRows]);
+
 const [isPopupVisible, setPopupVisible] = useState(false);
 const [availableElements, setAvailableElements] = useState([]);
 
@@ -69,7 +80,26 @@ const flattenElements = (arr) =>
   );
 
 const getSelectable = (modName) => {
-  const raw = systemsData?.Inbound?.[activeSystem]?.[modName]?.elements || [];
+    // Ensures every group always exposes “ID Rujukan” even
+  // when a backend / JSON author forgot to list it.
+  const raw =
+    (systemsData?.Inbound?.[activeSystem]?.[modName]?.elements || []).map(
+      (item) => {
+        if (
+          typeof item === "object" &&
+          item.group &&
+          Array.isArray(item.fields)
+        ) {
+          return {
+            ...item,
+            fields: item.fields.includes("ID Rujukan")
+              ? item.fields
+              : [...item.fields, "ID Rujukan"],
+          };
+        }
+        return item; // flat element – unchanged
+      }
+    );
   const flat = flattenElements(raw);
   return flat.filter(
     ({ name, group }) =>
@@ -389,18 +419,6 @@ const handleUseExample = (id) => {
   }));
 };
 
-/* ---------- DUPLICATE-NAME WARNING (same element used in ≥2 groups) ---------- */
-const nameGroupMap = {};
-confirmedEls.forEach(el => {
-  const { name, group = '__ungrouped__' } =
-    typeof el === 'string' ? { name: el, group: '__ungrouped__' } : el;
-  if (!nameGroupMap[name]) nameGroupMap[name] = new Set();
-  nameGroupMap[name].add(group);
-});
-const duplicateNames = Object.keys(nameGroupMap).filter(
-  n => nameGroupMap[n].size > 1
-);
-/* --------------------------------------------------------------------------- */
   return (
     <div className="container">
 
