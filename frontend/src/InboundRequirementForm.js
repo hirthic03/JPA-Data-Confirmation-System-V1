@@ -654,10 +654,9 @@ const duplicateNames = Object.keys(nameGroupMap).filter(
     <input
       value={row.nama}
       onChange={(e) => handleGridChange(index, 'nama', e.target.value)}
+      placeholder="Contoh: Nama / No Kad Pengenalan"
     />
   </td>
-
-  {/* ✅ 3–6. Editable fields */}
   <td>
     <input
       value={row.jenis}
