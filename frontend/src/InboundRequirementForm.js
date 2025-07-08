@@ -163,7 +163,7 @@ useEffect(() => {
   },
   {
     id: 'response',
-    label: '7. Respond',
+    label: '7. Respond (Optional)',
     tooltip: 'Contoh atau struktur mesej jawapan dari sistem anda.',
     type: 'text'
   },
@@ -201,6 +201,8 @@ const getApiValue = () =>
     // Validate all fields before submission
 const missingFields = questions.filter((q) => {
   const value = formData[q.id];
+
+  if (q.id === 'response') return false;
 
   if (q.id === 'dataInvolved') {
     // Check if all grid rows are empty
