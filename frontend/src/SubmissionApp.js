@@ -259,7 +259,10 @@ const payload = {
 };
 
 
-  axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit', payload)
+ const endpoint = flowType === 'Inbound'
+   ? 'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound'
+   : 'https://jpa-data-confirmation-system-v1.onrender.com/submit';
+ axios.post(endpoint, payload)
   
     .then(() => {
       dbg("✅ Submitted payload:", payload);
