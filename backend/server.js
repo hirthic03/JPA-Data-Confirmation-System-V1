@@ -16,12 +16,14 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,          // 465 = SSL/TLS  |  use 587 + secure:false if 465 blocked
-  secure: true,       // true → use TLS from the start
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.NOTIF_EMAIL,  // full Gmail address
-    pass: process.env.NOTIF_PASS    // 16-char Gmail **App Password**
-  }
+    user: process.env.NOTIF_EMAIL,
+    pass: process.env.NOTIF_PASS
+  },
+  logger: true,   // <-- adds winston-style logs
+  debug : true    // <-- prints SMTP conversation
 });
 
 // One-off health-check — shows up in Render logs on boot
@@ -212,6 +214,8 @@ if (dataGrid) {
 }
 // ✉️  Fire-and-forget e-mail (does NOT block the response)
 try {
+  console.log('🔑 NOTIF_EMAIL =', process.env.NOTIF_EMAIL);
+  console.log('📨 About to call transporter.sendMail …');
   await transporter.sendMail({
     from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
     to:   'hirthic1517@gmail.com',          // ✔️ change or make dynamic
