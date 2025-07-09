@@ -214,7 +214,7 @@ if (dataGrid) {
 try {
   await transporter.sendMail({
     from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
-    to:   'hirthic@pernec.com.my',          // ✔️ change or make dynamic
+    to:   'hirthic1517@gmail.com',          // ✔️ change or make dynamic
     subject: '✅ New Inbound Requirement Submitted by SPMB',
     html: `
       <h3>New Inbound Submission</h3>
