@@ -23,7 +23,11 @@ const app = express();
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 db.pragma('journal_mode = WAL'); // Improves SQLite concurrency + crash safety
 
-const upload = multer({ dest: 'uploads/' }).any();
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB limit
+}).any();
+
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
@@ -54,13 +58,14 @@ app.options('*', cors(corsOptions)); // pre-flight for every route
 // 🟢 ──────────────────────────────────────────────────────────────────────
 
 app.use(helmet()); // 🛡️ Adds security headers
-app.use(rateLimit({ // ⏱️ Basic rate limiter
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 300 // limit each IP to 300 requests per window
+const isProd = process.env.NODE_ENV === 'production';
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 300 : 3000
 }));
 
+app.use(express.json({ limit: '1mb' })); // ✅ Re-add JSON parser
 
-app.use(express.json({ limit: '1mb' })); // Prevent huge JSON payloads
 
 app.use('/uploads', express.static('uploads'));
 
@@ -115,11 +120,11 @@ try {
 }
 
 // ✅ One-time migration: Add group_name column to inbound_data_grid if it doesn't exist
-try {
+/*try {
   db.prepare(`ALTER TABLE inbound_data_grid ADD COLUMN group_name TEXT`).run();
 } catch (e) {
   // Ignore if already exists
-}
+}*/
 
 // Utility
 function getQuestionTextById(id) {
@@ -141,129 +146,155 @@ function getQuestionTextById(id) {
 
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  next(err);
+});
+
+/* ──────────────────────────────────────────────────────────
+   POST  /submit-inbound
+   Saves: ① stub row ➜ ② Q&A rows ➜ ③ grid rows (dataGrid or elements[])
+   Transaction-wrapped so it’s all-or-nothing.
+────────────────────────────────────────────────────────── */
 app.post('/submit-inbound', upload, (req, res) => {
   try {
-   const {
-  system,
-  api:    apiNameRaw,   // preferred new field
-  module: apiNameOld,   // legacy field
-  module_group,
-  dataGrid
-} = req.body;
-const apiName = apiNameRaw || apiNameOld;   // ← restore this
-const moduleName = module_group || apiName; // ← fallback if frontend omits module_group
+    // ---------- 1.  Pre-parse basic fields ----------
+    const {
+      system,
+      api:    apiNameRaw,   // preferred new field
+      module: apiNameOld,   // legacy field
+      module_group,
+      dataGrid
+    } = req.body;
 
-    const submission_uuid = randomUUID();
-    const created_at = new Date().toISOString();
-
-    let q9RowId = null;          // 🔑 per-request, safe from race conditions
-
+    const apiName    = apiNameRaw || apiNameOld;
+    const moduleName = module_group || apiName;         // fallback
     if (!system || !apiName) {
       return res.status(400).json({ error: 'System and API are required' });
     }
 
-    const questionInsert = db.prepare(`
-      INSERT INTO inbound_requirements
-      (submission_uuid, system_name, module_name, api_name,
-      question_id,  question_text, answer, file_path, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    const submission_uuid = req.body.submission_uuid || randomUUID();
+    const created_at      = new Date().toISOString();
 
-    const uploadedFiles = {};
-    if (req.files) {
-      for (const file of req.files) {
-        uploadedFiles[file.fieldname] = file.path;
-      }
-    }
+    /* ---------- 2.  Run everything inside one transaction ---------- */
+    db.transaction(() => {
 
-    let result;
-    Object.entries(req.body).forEach(([key, value]) => {
-       if (['system', 'api', 'module', 'module_group', 'dataGrid', 'flowType', 'elements'].includes(key)) return;
-      const questionId = key;
-      const questionText = getQuestionTextById(questionId);
-      const filePath = uploadedFiles[questionId] || null;
+      /* 2-A  Stub parent row (always) */
+      const stubId = db.prepare(`
+        INSERT INTO inbound_requirements
+          (submission_uuid, system_name, module_name, api_name,
+           question_id, question_text, answer, file_path, created_at)
+        VALUES (?, ?, ?, ?, 'confirm', 'Confirmed data elements', '', '', ?)
+      `).run(
+        submission_uuid,
+        system,
+        moduleName,
+        apiName,
+        created_at
+      ).lastInsertRowid;
 
-      result = questionInsert.run(
-  submission_uuid,
-  system,
-   moduleName,     // goes into module_name column
-  apiName || '',        // goes into api_name column
-  questionId,
-  questionText,
-  value,
-  filePath,
-  created_at
-);
-
-        if (questionId === 'dataInvolved') {
-    q9RowId = result.lastInsertRowid;
-  }
-    });
-
-    const submission_id = result?.lastInsertRowid;
-
-    // ✅ Save Grid Data if present
-if (dataGrid) {
-  let parsedGrid;
-  try {
-    parsedGrid = JSON.parse(dataGrid);
-  } catch (err) {
-    console.error('Invalid dataGrid JSON:', err);
-    return res.status(400).json({ error: 'Invalid dataGrid format' });
-  }
-
-  const stmt = db.prepare(`
-    INSERT INTO inbound_data_grid
-    (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  parsedGrid.forEach(row => {
-    stmt.run([
-      submission_uuid,
-      q9RowId || null,
-      row.nama,
-      row.jenis,
-      row.saiz,
-      row.nullable,
-      row.rules,
-      row.dataElement || '',
-      row.groupName || ''
-    ]);
-  });
-}
-
-
-    /* ────────────────────────────────────────────────────────────────
-       🌟 NEW: if the front-end sends `elements` (array) instead of
-       `dataGrid`, store each one in `inbound_data_grid`.
-       – keeps older “dataGrid” flow working
-       – stops the 500 because nothing was inserted before
-    ──────────────────────────────────────────────────────────────── */
-    if (!dataGrid && Array.isArray(req.body.elements) && req.body.elements.length) {
-      const stmtElem = db.prepare(`
-        INSERT INTO inbound_data_grid
-        (submission_uuid, submission_id, data_element, group_name, nama,
-         jenis, saiz, nullable, rules)
-        VALUES (?, NULL, ?, ?, '', '', '', '', '')
+      /* 2-B  Insert Q&A rows (loop over req.body keys) */
+      const questionInsert = db.prepare(`
+        INSERT INTO inbound_requirements
+          (submission_uuid, system_name, module_name, api_name,
+           question_id, question_text, answer, file_path, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      req.body.elements.forEach(el => {
-        // Front-end sends { name , group_name , confirmed }
-        // We only need name + group_name for now – blank the rest
-        stmtElem.run(
+      const uploadedFiles = {};
+      if (req.files) {
+        for (const f of req.files) uploadedFiles[f.fieldname] = f.path;
+      }
+
+      let q9RowId = null;
+      Object.entries(req.body).forEach(([key, val]) => {
+        if (['system', 'api', 'module', 'module_group',
+             'dataGrid', 'flowType', 'elements', 'submission_uuid'].includes(key)) return;
+
+        const row = questionInsert.run(
           submission_uuid,
-          el.name || '',
-          (el.group_name || el.group || '__ungrouped__')
+          system,
+          moduleName,
+          apiName,
+          key,
+          getQuestionTextById(key),
+          val,
+          uploadedFiles[key] || null,
+          created_at
         );
+
+        if (key === 'dataInvolved') q9RowId = row.lastInsertRowid;
       });
-    }
+
+      const gridSubmissionId = q9RowId || stubId;
+
+      /* 2-C  Insert grid rows (dataGrid JSON) */
+      if (dataGrid) {
+        let gridRows;
+        try {
+          gridRows = JSON.parse(dataGrid);
+        } catch (err) {
+          throw new Error('Invalid dataGrid JSON');
+        }
+
+        const gridStmt = db.prepare(`
+          INSERT INTO inbound_data_grid
+            (submission_uuid, submission_id, nama, jenis, saiz,
+             nullable, rules, data_element, group_name)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        gridRows.forEach(r => {
+          gridStmt.run(
+            submission_uuid,
+            gridSubmissionId,
+            r.nama,
+            r.jenis,
+            r.saiz,
+            r.nullable,
+            r.rules,
+            r.dataElement || '',
+            r.groupName   || ''
+          );
+        });
+      }
+
+      /* 2-D  Fallback: elements[] array (legacy confirm-only flow) */
+      if (!dataGrid && Array.isArray(req.body.elements) && req.body.elements.length) {
+        const elemStmt = db.prepare(`
+          INSERT INTO inbound_data_grid
+            (submission_uuid, submission_id, data_element, group_name,
+             nama, jenis, saiz, nullable, rules)
+          VALUES (?, ?, ?, ?, '', '', '', '', '')
+        `);
+
+        req.body.elements.forEach(el => {
+          elemStmt.run(
+            submission_uuid,
+            gridSubmissionId,
+            el.name        || '',
+            el.group_name  || el.group || '__ungrouped__'
+          );
+        });
+      }
+
+    })(); // ← end transaction
+
+    /* ---------- 3.  Success ---------- */
     return res.status(200).json({ message: 'Inbound requirement saved.' });
-  } catch (error) {
-    console.error('Error saving inbound:', error);
+
+  } catch (err) {
+    /* ---------- 4.  Failure ---------- */
+    if (err.message === 'Invalid dataGrid JSON') {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error('Error saving inbound:', err);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 
