@@ -7,12 +7,31 @@ const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
-const PDFDocument  = require('pdfkit'); 
-
+const pdf        = require('html-pdf');
 
 
 // Initialize
 const app = express();
+// ────────────────────────────────────────────────────────────────
+// CORS - allow only your Vercel frontend + localhost (dev)
+// ────────────────────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  'https://jpa-data-confirmation-system-v1.vercel.app', // production UI
+  'http://localhost:3000'                               // local React dev
+];
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      // `origin` will be undefined for tools like curl / Postman – allow them
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error('CORS - origin not allowed'));
+    },
+    credentials: true,
+    optionsSuccessStatus: 200   // some legacy browsers choke on 204
+  })
+);
+
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
 const transporter = nodemailer.createTransport({
@@ -38,10 +57,8 @@ transporter.verify((err, ok) => {
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
-const TMP_PDF_DIR = process.env.TMPDIR || '/tmp';
 
-// Middleware
-app.use(cors());
+
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
@@ -122,70 +139,6 @@ function getQuestionTextById(id) {
 /** ------------------------------------------------------------------
  * buildInboundEmail – returns nicely-formatted HTML for the mail body
  * -----------------------------------------------------------------*/
-/* ---------------------------------------------------------
- * generatePDF – turns the same data you e-mail as HTML into
- *               a one-page PDF, returns its absolute path.
- * --------------------------------------------------------*/
-function generatePDF(meta, reqBody, gridRows) {
-  return new Promise((resolve, reject) => {
-    const filename = `${meta.submission_uuid}.pdf`;
-    const pdfPath  = path.join(TMP_PDF_DIR, filename);
-
-    const doc   = new PDFDocument({ margin: 40 });
-    const write = fs.createWriteStream(pdfPath);
-
-    doc.pipe(write);
-
-    // — Header —
-    doc.fontSize(16).text('Inbound Requirement Submission', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(11);
-    doc.text(`System   : ${meta.system}`);
-    doc.text(`API Name : ${meta.apiName}`);
-    doc.text(`Module   : ${meta.moduleName}`);
-    doc.text(`Submitted: ${meta.created_at}`);
-    doc.moveDown();
-
-    // — Q&A —
-    const line = (lbl, v) =>
-      doc.font('Helvetica-Bold').text(lbl, { continued: true })
-         .font('Helvetica').text(` ${v || '-'}`);
-
-    line('Q1', reqBody.integrationMethod);
-    line('Q2', reqBody.messageFormat);
-    line('Q3', reqBody.transactionType);
-    line('Q4', reqBody.frequency);
-    line('Q5', reqBody.url);
-    doc.moveDown().font('Helvetica-Bold').text('Q6 Request');
-    doc.font('Courier').fontSize(9).text(reqBody.request || '-', { indent: 10 });
-    doc.moveDown();
-    doc.font('Helvetica-Bold').text('Q7 Response');
-    doc.font('Courier').fontSize(9).text(reqBody.response || '-', { indent: 10 });
-    doc.moveDown();
-    line('Q8', reqBody.remarks);
-    line('Submission-ID', reqBody.submission_id || '-');
-
-    // — Table —
-    doc.moveDown().fontSize(11).font('Helvetica-Bold')
-       .text('Data Elements:', { underline: true });
-    doc.moveDown(0.5);
-
-    gridRows.forEach((r, idx) => {
-      doc.font('Helvetica-Bold').text(`${idx + 1}. ${r.dataElement || r.data_element}`);
-      doc.font('Helvetica').text(`   Nama    : ${r.nama}`);
-      doc.text(`   Jenis   : ${r.jenis}`);
-      doc.text(`   Saiz    : ${r.saiz}`);
-      doc.text(`   Nullable: ${r.nullable}`);
-      doc.text(`   Rules   : ${r.rules}`);
-      doc.moveDown(0.5);
-    });
-
-    doc.end();
-    write.on('finish', () => resolve(pdfPath));
-    write.on('error',  reject);
-  });
-}
-
 
 function buildInboundEmail(reqBody, gridRows, meta) {
   const q = (id) => reqBody[id] || '-';
@@ -301,10 +254,10 @@ const moduleName = module_group || apiName; // ← fallback if frontend omits mo
     });
 
     const submission_id = result?.lastInsertRowid;
-
+// ✅ Declare this ONCE at the top – always available
+    let parsedGrid = [];
     // ✅ Save Grid Data if present
 if (dataGrid) {
-  let parsedGrid;
   try {
     parsedGrid = JSON.parse(dataGrid);
   } catch (err) {
@@ -331,33 +284,39 @@ if (dataGrid) {
       row.groupName || ''
     ]);
   });
+
 }
-// ✉️  Full-detail notification e-mail  ----------------------------
-try {
- const meta      = { system, apiName, moduleName, created_at, submission_uuid };  
-  const htmlBody  = buildInboundEmail(req.body, parsedGrid || [], meta);           
-  const pdfPath   = await generatePDF(meta, req.body, parsedGrid || []);           
+ // ✅ SEND EMAIL + PDF — only if main fields exist
+    if (system && apiName && req.body.integrationMethod) {
+      const htmlBody = buildInboundEmail(req.body, parsedGrid, {
+        system,
+        apiName,
+        moduleName,
+        created_at
+      });
 
-  await transporter.sendMail({
-    from   : `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
-    to     : 'hirthic1517@gmail.com',          // 🔄 add more if needed
-    subject: `✅ Inbound Submission – ${system} / ${apiName}`,
-    html   : htmlBody,
-    attachments: [
-      {
-        filename: `${submission_uuid}.pdf`,
-        path    : pdfPath
-      }
-    ]
-  });
-  // optional: delete temp PDF after e-mail sent
-  fs.unlink(pdfPath, () => {});    
+      // 🧾 Generate a PDF version of the HTML
+      const pdfOptions = { format: 'A4', border: '10mm' };
 
-  console.log('📧 Full-detail notification e-mail sent');
-} catch (mailErr) {
-  console.error('❌ Email send failed:', mailErr);
-}
+      pdf.create(htmlBody, pdfOptions).toBuffer(async (err, buffer) => {
+        if (err) {
+          console.error('❌ PDF generation error:', err);
+        } else {
+          await transporter.sendMail({
+            from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
+            to: 'hirthic1517@gmail.com',
+            subject: `✅ Inbound Submission – ${system} / ${apiName}`,
+            html: htmlBody,
+            attachments: [{
+              filename: `Inbound_${system}_${apiName}.pdf`,
+              content: buffer
+            }]
+          });
 
+          console.log('📧 Email with PDF attachment sent');
+        }
+      });
+    }
 
 
     return res.status(200).json({ message: 'Inbound requirement saved.' });
