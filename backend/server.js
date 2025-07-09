@@ -406,12 +406,12 @@ app.post('/submit', (req, res) => {
 // 📥 Inbound submissions view
 app.get('/inbound-submissions', (req, res) => {
   try {
-    // 1. fetch all question rows
+    // 1. Fetch all question rows
     const questions = db
       .prepare('SELECT * FROM inbound_requirements ORDER BY created_at DESC')
       .all();
 
-    // 2. attach grid rows (if any) to each question row
+    // 2. Attach grid rows (if any) to each question row
     const gridStmt = db.prepare(
       'SELECT * FROM inbound_data_grid WHERE submission_uuid = ?'
     );
