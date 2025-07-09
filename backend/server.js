@@ -158,19 +158,29 @@ app.use((err, req, res, next) => {
    Saves: ① stub row ➜ ② Q&A rows ➜ ③ grid rows (dataGrid or elements[])
    Transaction-wrapped so it’s all-or-nothing.
 ────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   POST  /submit-inbound   (final, with extra safety logs)
+────────────────────────────────────────────────────────── */
 app.post('/submit-inbound', upload, (req, res) => {
   try {
-    // ---------- 1.  Pre-parse basic fields ----------
+    // ---------- 1. Debug info -----------
+    console.log('🆕 /submit-inbound hit - form keys:', Object.keys(req.body));
+    if (req.files?.length) {
+      console.log('🆕 Upload files:', req.files.map(f => f.fieldname));
+    }
+
+    // ---------- 2.  Pre-parse basic fields ----------
     const {
       system,
-      api:    apiNameRaw,   // preferred new field
-      module: apiNameOld,   // legacy field
+      api       : apiNameRaw,     // preferred new field
+      module    : apiNameOld,     // legacy field
       module_group,
       dataGrid
     } = req.body;
 
     const apiName    = apiNameRaw || apiNameOld;
-    const moduleName = module_group || apiName;         // fallback
+    const moduleName = module_group || apiName;     // fallback
+
     if (!system || !apiName) {
       return res.status(400).json({ error: 'System and API are required' });
     }
@@ -178,24 +188,18 @@ app.post('/submit-inbound', upload, (req, res) => {
     const submission_uuid = req.body.submission_uuid || randomUUID();
     const created_at      = new Date().toISOString();
 
-    /* ---------- 2.  Run everything inside one transaction ---------- */
+    /* ---------- 3.   Run everything inside one transaction ---------- */
     db.transaction(() => {
 
-      /* 2-A  Stub parent row (always) */
+      /* 3-A  Stub parent row (always) */
       const stubId = db.prepare(`
         INSERT INTO inbound_requirements
           (submission_uuid, system_name, module_name, api_name,
-           question_id, question_text, answer, file_path, created_at)
+           question_id,  question_text, answer, file_path, created_at)
         VALUES (?, ?, ?, ?, 'confirm', 'Confirmed data elements', '', '', ?)
-      `).run(
-        submission_uuid,
-        system,
-        moduleName,
-        apiName,
-        created_at
-      ).lastInsertRowid;
+      `).run(submission_uuid, system, moduleName, apiName, created_at).lastInsertRowid;
 
-      /* 2-B  Insert Q&A rows (loop over req.body keys) */
+      /* 3-B  Q&A rows */
       const questionInsert = db.prepare(`
         INSERT INTO inbound_requirements
           (submission_uuid, system_name, module_name, api_name,
@@ -209,9 +213,14 @@ app.post('/submit-inbound', upload, (req, res) => {
       }
 
       let q9RowId = null;
+
       Object.entries(req.body).forEach(([key, val]) => {
-        if (['system', 'api', 'module', 'module_group',
-             'dataGrid', 'flowType', 'elements', 'submission_uuid'].includes(key)) return;
+        if (
+          [
+            'system', 'api', 'module', 'module_group',
+            'dataGrid', 'flowType', 'elements', 'submission_uuid'
+          ].includes(key)
+        ) return;
 
         const row = questionInsert.run(
           submission_uuid,
@@ -230,22 +239,27 @@ app.post('/submit-inbound', upload, (req, res) => {
 
       const gridSubmissionId = q9RowId || stubId;
 
-      /* 2-C  Insert grid rows (dataGrid JSON) */
+      /* 3-C  Insert grid rows  */
+      let gridRows = [];
+
       if (dataGrid) {
-        let gridRows;
+        // Guarantee JSON parse
         try {
-          gridRows = JSON.parse(dataGrid);
-        } catch (err) {
-          throw new Error('Invalid dataGrid JSON');
+          gridRows = typeof dataGrid === 'string' ? JSON.parse(dataGrid) : dataGrid;
+        } catch (e) {
+          console.error('❌ Invalid dataGrid JSON:', dataGrid);
+          throw new Error('Invalid dataGrid JSON');   // handled below
         }
+      }
 
-        const gridStmt = db.prepare(`
-          INSERT INTO inbound_data_grid
-            (submission_uuid, submission_id, nama, jenis, saiz,
-             nullable, rules, data_element, group_name)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
+      const gridStmt = db.prepare(`
+        INSERT INTO inbound_data_grid
+          (submission_uuid, submission_id, nama, jenis, saiz,
+           nullable, rules, data_element, group_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
+      if (Array.isArray(gridRows) && gridRows.length) {
         gridRows.forEach(r => {
           gridStmt.run(
             submission_uuid,
@@ -261,8 +275,8 @@ app.post('/submit-inbound', upload, (req, res) => {
         });
       }
 
-      /* 2-D  Fallback: elements[] array (legacy confirm-only flow) */
-      if (!dataGrid && Array.isArray(req.body.elements) && req.body.elements.length) {
+      /* 3-D  Legacy elements[] fallback */
+      if (!gridRows.length && Array.isArray(req.body.elements) && req.body.elements.length) {
         const elemStmt = db.prepare(`
           INSERT INTO inbound_data_grid
             (submission_uuid, submission_id, data_element, group_name,
@@ -274,24 +288,22 @@ app.post('/submit-inbound', upload, (req, res) => {
           elemStmt.run(
             submission_uuid,
             gridSubmissionId,
-            el.name        || '',
-            el.group_name  || el.group || '__ungrouped__'
+            el.name || '',
+            el.group_name || el.group || '__ungrouped__'
           );
         });
       }
 
-    })(); // ← end transaction
+    })(); // commit transaction
 
-    /* ---------- 3.  Success ---------- */
     return res.status(200).json({ message: 'Inbound requirement saved.' });
 
   } catch (err) {
-    /* ---------- 4.  Failure ---------- */
     if (err.message === 'Invalid dataGrid JSON') {
       return res.status(400).json({ error: err.message });
     }
-    console.error('Error saving inbound:', err);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error('🔥 ERROR during /submit-inbound:', err);
+    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
 
