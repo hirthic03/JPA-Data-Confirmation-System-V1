@@ -253,10 +253,10 @@ const submit = (confirmed) => {
           'Sila tekan butang ➕ untuk menambah elemen tersebut dahulu.');
     return;
   }
-  if (remarkInput) {
-    alert("Sila tambah catatan terlebih dahulu.");
-    return;
-  }
+ if (flowType === 'Outbound' && remarkInput) {
+   alert("Sila tambah catatan terlebih dahulu.");
+   return;
+ }
   if (!elements || elements.length === 0) {
     alert("Sila pilih sekurang-kurangnya satu elemen data.");
     return;
@@ -279,29 +279,66 @@ const endpoint =
     ? `${API_BASE}/submit-inbound`
     : `${API_BASE}/submit`;
 
- axios.post(endpoint, payload)
-  
-    .then(() => {
-      dbg("✅ Submitted payload:", payload);
-       if (flowType === 'Inbound') {
-  // store both name & group for use in requirement form
-const confirmedFull = payload.elements.map(
-  ({ name, group_name }) => ({ name, group: group_name })
-);
+ if (flowType === 'Inbound') {
+   /* --- build multipart/form-data --- */
+   const fd = new FormData();
 
-  saveConfirmed(system, module, confirmedFull);
-  navigate('/requirement');
-}
-      alert('Telah dihantar!');
-      setElements([]);
-     if (flowType === 'Outbound') {
-        setRemarks([]);
-        setRemarkInput('');
-      }
-    }).catch(err => {
-      console.error('Submission failed:', err);
-      alert('Something went wrong while submitting.');
-    });
+   // basic scalar fields
+   fd.append('system',  system);
+   fd.append('api',     module);           // backend accepts `api`
+   fd.append('module',  module);           // …and legacy `module`
+
+   /* elements → dataGrid rows (what your backend expects) */
+   const dataGrid = elements.map(({ name, group }) => ({
+     // NOTE: backend looks for dataElement + groupName keys
+     dataElement: name,
+     groupName  : group || ''
+   }));
+   fd.append('dataGrid', JSON.stringify(dataGrid));
+
+   // 🔧 add files later if you support uploads
+
+   axios.post(endpoint, fd, {
+     headers: { 'Content-Type': 'multipart/form-data' }
+   })
+   .then(onSuccess)
+   .catch(onError);
+
+ } else {
+   /* --- Outbound: still JSON --- */
+   axios.post(endpoint, {
+     flowType,
+     system,
+     module,
+     elements: flattenOutboundElements(confirmed),
+     remarks : remarks.join('; ')
+   })
+   .then(onSuccess)
+   .catch(onError);
+ }
+function onSuccess() {
+    dbg('✅ Submitted payload');
+    if (flowType === 'Inbound') {
+      const confirmedFull = elements.map(({ name, group }) => ({
+      name,
+      group
+    }));
+    saveConfirmed(system, module, confirmedFull);
+    navigate('/requirement');
+  }
+
+  alert('Telah dihantar!');
+  setElements([]);
+  if (flowType === 'Outbound') {
+    setRemarks([]);
+    setRemarkInput('');
+  }
+  }
+
+  function onError(err) {
+    console.error('Submission failed:', err);
+    alert('Something went wrong while submitting.');
+  }
 };
 
 
