@@ -6,12 +6,22 @@ const path = require('path');
 const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
+const nodemailer = require('nodemailer');
+
 
 
 // Initialize
 const app = express();
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
+const transporter = nodemailer.createTransport({
+  // Gmail is simplest; switch to SMTP / SendGrid / Mailgun anytime
+  service: 'gmail',
+  auth: {
+    user: process.env.NOTIF_EMAIL,
+    pass: process.env.NOTIF_PASS   // 👉 use a Gmail *App Password*
+  }
+});
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
@@ -98,7 +108,7 @@ function getQuestionTextById(id) {
 
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
-app.post('/submit-inbound', upload, (req, res) => {
+app.post('/submit-inbound', upload, async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
   try {
    const {
@@ -190,6 +200,26 @@ if (dataGrid) {
     ]);
   });
 }
+// ✉️  Fire-and-forget e-mail (does NOT block the response)
+try {
+  await transporter.sendMail({
+    from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
+    to:   'hirthic1517@gmail.com',          // ✔️ change or make dynamic
+    subject: '✅ New Inbound Requirement Submitted by SPMB',
+    html: `
+      <h3>New Inbound Submission</h3>
+      <p><b>System:</b> ${system}</p>
+      <p><b>API Name:</b> ${apiName}</p>
+      <p><b>Submission UUID:</b> ${submission_uuid}</p>
+      <p><b>Submitted At:</b> ${created_at}</p>
+    `
+  });
+  console.log('📧 Notification email sent');
+} catch (mailErr) {
+  // Do NOT fail the request—just log it
+  console.error('❌ Email send failed:', mailErr.message);
+}
+
 
 
     return res.status(200).json({ message: 'Inbound requirement saved.' });
