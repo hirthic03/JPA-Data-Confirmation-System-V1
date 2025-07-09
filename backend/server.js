@@ -46,6 +46,11 @@ const transporter = nodemailer.createTransport({
   debug : true    // <-- prints SMTP conversation
 });
 
+const CC_LIST = (process.env.NOTIF_CC || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+  
 // One-off health-check — shows up in Render logs on boot
 transporter.verify((err, ok) => {
   if (err) {
@@ -305,6 +310,7 @@ if (dataGrid) {
           await transporter.sendMail({
             from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
             to: 'hirthic1517@gmail.com',
+            cc : CC_LIST,  
             subject: `✅ Inbound Submission – ${system} / ${apiName}`,
             html: htmlBody,
             attachments: [{
