@@ -7,6 +7,7 @@ const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
+const PDFDocument  = require('pdfkit'); 
 
 
 
@@ -37,6 +38,8 @@ transporter.verify((err, ok) => {
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
+const TMP_PDF_DIR = 'tmp_pdfs';
+if (!fs.existsSync(TMP_PDF_DIR)) fs.mkdirSync(TMP_PDF_DIR); 
 
 // Middleware
 app.use(cors());
@@ -120,6 +123,71 @@ function getQuestionTextById(id) {
 /** ------------------------------------------------------------------
  * buildInboundEmail – returns nicely-formatted HTML for the mail body
  * -----------------------------------------------------------------*/
+/* ---------------------------------------------------------
+ * generatePDF – turns the same data you e-mail as HTML into
+ *               a one-page PDF, returns its absolute path.
+ * --------------------------------------------------------*/
+function generatePDF(meta, reqBody, gridRows) {
+  return new Promise((resolve, reject) => {
+    const filename = `${meta.submission_uuid}.pdf`;
+    const pdfPath  = path.join(TMP_PDF_DIR, filename);
+
+    const doc   = new PDFDocument({ margin: 40 });
+    const write = fs.createWriteStream(pdfPath);
+
+    doc.pipe(write);
+
+    // — Header —
+    doc.fontSize(16).text('Inbound Requirement Submission', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(11);
+    doc.text(`System   : ${meta.system}`);
+    doc.text(`API Name : ${meta.apiName}`);
+    doc.text(`Module   : ${meta.moduleName}`);
+    doc.text(`Submitted: ${meta.created_at}`);
+    doc.moveDown();
+
+    // — Q&A —
+    const line = (lbl, v) =>
+      doc.font('Helvetica-Bold').text(lbl, { continued: true })
+         .font('Helvetica').text(` ${v || '-'}`);
+
+    line('Q1', reqBody.integrationMethod);
+    line('Q2', reqBody.messageFormat);
+    line('Q3', reqBody.transactionType);
+    line('Q4', reqBody.frequency);
+    line('Q5', reqBody.url);
+    doc.moveDown().font('Helvetica-Bold').text('Q6 Request');
+    doc.font('Courier').fontSize(9).text(reqBody.request || '-', { indent: 10 });
+    doc.moveDown();
+    doc.font('Helvetica-Bold').text('Q7 Response');
+    doc.font('Courier').fontSize(9).text(reqBody.response || '-', { indent: 10 });
+    doc.moveDown();
+    line('Q8', reqBody.remarks);
+    line('Submission-ID', reqBody.submission_id || '-');
+
+    // — Table —
+    doc.moveDown().fontSize(11).font('Helvetica-Bold')
+       .text('Data Elements:', { underline: true });
+    doc.moveDown(0.5);
+
+    gridRows.forEach((r, idx) => {
+      doc.font('Helvetica-Bold').text(`${idx + 1}. ${r.dataElement || r.data_element}`);
+      doc.font('Helvetica').text(`   Nama    : ${r.nama}`);
+      doc.text(`   Jenis   : ${r.jenis}`);
+      doc.text(`   Saiz    : ${r.saiz}`);
+      doc.text(`   Nullable: ${r.nullable}`);
+      doc.text(`   Rules   : ${r.rules}`);
+      doc.moveDown(0.5);
+    });
+
+    doc.end();
+    write.on('finish', () => resolve(pdfPath));
+    write.on('error',  reject);
+  });
+}
+
+
 function buildInboundEmail(reqBody, gridRows, meta) {
   const q = (id) => reqBody[id] || '-';
 
@@ -267,18 +335,24 @@ if (dataGrid) {
 }
 // ✉️  Full-detail notification e-mail  ----------------------------
 try {
-  const htmlBody = buildInboundEmail(
-    req.body,
-    parsedGrid || [],                     // rows already in memory
-    { system, apiName, moduleName, created_at }
-  );
+ const meta      = { system, apiName, moduleName, created_at, submission_uuid };  
+  const htmlBody  = buildInboundEmail(req.body, parsedGrid || [], meta);           
+  const pdfPath   = await generatePDF(meta, req.body, parsedGrid || []);           
 
   await transporter.sendMail({
     from   : `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
-    to     : 'hirthic1517@gmail.com',     // ↔️  change / array for multi-recipients
+    to     : 'hirthic1517@gmail.com',          // 🔄 add more if needed
     subject: `✅ Inbound Submission – ${system} / ${apiName}`,
-    html   : htmlBody
+    html   : htmlBody,
+    attachments: [
+      {
+        filename: `${submission_uuid}.pdf`,
+        path    : pdfPath
+      }
+    ]
   });
+  // optional: delete temp PDF after e-mail sent
+  fs.unlink(pdfPath, () => {});    
 
   console.log('📧 Full-detail notification e-mail sent');
 } catch (mailErr) {
