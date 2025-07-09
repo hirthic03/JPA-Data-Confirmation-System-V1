@@ -71,13 +71,13 @@ try {
   // Ignore if already exists
 }
 
-// ✅ One-time migration: Add group_name column to inbound_data_grid if it doesn't exist
-try {
+// ✅ Ensure group_name column exists even on an old DB
+const gridCols = db.prepare(`PRAGMA table_info(inbound_data_grid)`).all()
+                    .map(c => c.name);
+if (!gridCols.includes('group_name')) {
   db.prepare(`ALTER TABLE inbound_data_grid ADD COLUMN group_name TEXT`).run();
-} catch (e) {
-  // Ignore if already exists
+  console.log('ℹ️  Added missing group_name column to inbound_data_grid');
 }
-
 // Utility
 function getQuestionTextById(id) {
   const questionMap = {
@@ -99,6 +99,7 @@ function getQuestionTextById(id) {
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
 app.post('/submit-inbound', upload, (req, res) => {
+  console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
   try {
    const {
   system,
