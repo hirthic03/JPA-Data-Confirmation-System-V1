@@ -38,8 +38,7 @@ transporter.verify((err, ok) => {
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
-const TMP_PDF_DIR = 'tmp_pdfs';
-if (!fs.existsSync(TMP_PDF_DIR)) fs.mkdirSync(TMP_PDF_DIR); 
+const TMP_PDF_DIR = process.env.TMPDIR || '/tmp';
 
 // Middleware
 app.use(cors());
