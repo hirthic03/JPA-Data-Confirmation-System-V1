@@ -117,6 +117,59 @@ function getQuestionTextById(id) {
   return questionMap[id] || id;
 }
 
+/** ------------------------------------------------------------------
+ * buildInboundEmail – returns nicely-formatted HTML for the mail body
+ * -----------------------------------------------------------------*/
+function buildInboundEmail(reqBody, gridRows, meta) {
+  const q = (id) => reqBody[id] || '-';
+
+  return /* html */ `
+    <h2>📥 Inbound Requirement Submission</h2>
+    <p><b>System:</b> ${meta.system}</p>
+    <p><b>API Name:</b> ${meta.apiName}</p>
+    <p><b>Module (Group):</b> ${meta.moduleName}</p>
+    <p><b>Submitted At:</b> ${meta.created_at}</p>
+
+    <h3>📝 Q&A</h3>
+    <ul>
+      <li><b>Q1 (Kaedah Integrasi)</b> – ${q('integrationMethod')}</li>
+      <li><b>Q2 (Format Mesej)</b> – ${q('messageFormat')}</li>
+      <li><b>Q3 (Jenis Transaksi)</b> – ${q('transactionType')}</li>
+      <li><b>Q4 (Frekuensi)</b> – ${q('frequency')}</li>
+      <li><b>Q5 (URL)</b> – ${q('url')}</li>
+      <li><b>Q6 (Request)</b><br><pre>${q('request')}</pre></li>
+      <li><b>Q7 (Response)</b><br><pre>${q('response')}</pre></li>
+      <li><b>Q8 (Remarks)</b> – ${q('remarks')}</li>
+      <li><b>Q9 (Submission ID)</b> – ${q('submission_id')}</li>
+    </ul>
+
+    <h3>📊 Data Elements (${gridRows.length})</h3>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+      <thead>
+        <tr>
+          <th>#</th><th>Data Element</th><th>Nama</th><th>Jenis</th>
+          <th>Saiz</th><th>Nullable</th><th>Rules</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${gridRows
+          .map(
+            (r, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${r.dataElement || r.data_element}</td>
+                <td>${r.nama}</td>
+                <td>${r.jenis}</td>
+                <td>${r.saiz}</td>
+                <td>${r.nullable}</td>
+                <td>${r.rules}</td>
+              </tr>`
+          )
+          .join('')}
+      </tbody>
+    </table>
+  `;
+}
 
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
@@ -212,26 +265,24 @@ if (dataGrid) {
     ]);
   });
 }
-// ✉️  Fire-and-forget e-mail (does NOT block the response)
+// ✉️  Full-detail notification e-mail  ----------------------------
 try {
-  console.log('🔑 NOTIF_EMAIL =', process.env.NOTIF_EMAIL);
-  console.log('📨 About to call transporter.sendMail …');
+  const htmlBody = buildInboundEmail(
+    req.body,
+    parsedGrid || [],                     // rows already in memory
+    { system, apiName, moduleName, created_at }
+  );
+
   await transporter.sendMail({
-    from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
-    to:   'hirthic1517@gmail.com',          // ✔️ change or make dynamic
-    subject: '✅ New Inbound Requirement Submitted by SPMB',
-    html: `
-      <h3>New Inbound Submission</h3>
-      <p><b>System:</b> ${system}</p>
-      <p><b>API Name:</b> ${apiName}</p>
-      <p><b>Submission UUID:</b> ${submission_uuid}</p>
-      <p><b>Submitted At:</b> ${created_at}</p>
-    `
+    from   : `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
+    to     : 'hirthic1517@gmail.com',     // ↔️  change / array for multi-recipients
+    subject: `✅ Inbound Submission – ${system} / ${apiName}`,
+    html   : htmlBody
   });
-  console.log('📧 Notification email sent');
+
+  console.log('📧 Full-detail notification e-mail sent');
 } catch (mailErr) {
-  // Do NOT fail the request—just log it
-  console.error('❌ Email send failed:', mailErr.message);
+  console.error('❌ Email send failed:', mailErr);
 }
 
 
@@ -242,7 +293,6 @@ try {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 
 // 📄 Outbound Submission Handler

@@ -19,6 +19,7 @@
     "json2csv": "^6.0.0-alpha.2",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.5",
+    "pdfkit": "^0.17.1",
     "uuid": "^11.1.0"
   }
 }
