@@ -6,67 +6,19 @@ const path = require('path');
 const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-//-------------------------------------------------------------
-// 🌍  Front-end domains that are allowed to call this backend
-//-------------------------------------------------------------
-const ALLOWED_ORIGINS = [
-  'https://jpa-data-confirmation-system-v1.vercel.app', // production UI
-  'http://localhost:3000'                               // dev UI (optional)
-];
-
 
 
 // Initialize
 const app = express();
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
-db.pragma('journal_mode = WAL'); // Improves SQLite concurrency + crash safety
-
-const upload = multer({
-  dest: 'uploads/',
-  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB limit
-}).any();
-
+const upload = multer({ dest: 'uploads/' }).any();
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 
 // Middleware
-// Middleware
-
-// 🟢 ───────────────────────────── CORS SET-UP ────────────────────────────
-const allowedOrigins = [
-  'https://jpa-data-confirmation-system-v1.vercel.app',
-  'http://localhost:3000'           // local dev
-];
-
-const corsOptions = {
-  origin(origin, callback) {
-    // allow Postman / curl (no Origin header) or any whitelisted domain
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('CORS not allowed for this origin: ' + origin));
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-secret', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200        // older browsers prefer 200 over 204
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // pre-flight for every route
-// 🟢 ──────────────────────────────────────────────────────────────────────
-
-app.use(helmet()); // 🛡️ Adds security headers
-const isProd = process.env.NODE_ENV === 'production';
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: isProd ? 300 : 3000
-}));
-
-app.use(express.json({ limit: '1mb' })); // ✅ Re-add JSON parser
-
-
+app.use(cors());
+app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 // Table Creation
@@ -120,11 +72,11 @@ try {
 }
 
 // ✅ One-time migration: Add group_name column to inbound_data_grid if it doesn't exist
-/*try {
+try {
   db.prepare(`ALTER TABLE inbound_data_grid ADD COLUMN group_name TEXT`).run();
 } catch (e) {
   // Ignore if already exists
-}*/
+}
 
 // Utility
 function getQuestionTextById(id) {
@@ -146,168 +98,105 @@ function getQuestionTextById(id) {
 
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
-app.use((err, req, res, next) => {
-  if (err.type === 'entity.too.large') {
-    return res.status(413).json({ error: 'Payload too large' });
-  }
-  next(err);
-});
-
-/* ──────────────────────────────────────────────────────────
-   POST  /submit-inbound
-   Saves: ① stub row ➜ ② Q&A rows ➜ ③ grid rows (dataGrid or elements[])
-   Transaction-wrapped so it’s all-or-nothing.
-────────────────────────────────────────────────────────── */
-/* ──────────────────────────────────────────────────────────
-   POST  /submit-inbound   (final, with extra safety logs)
-────────────────────────────────────────────────────────── */
 app.post('/submit-inbound', upload, (req, res) => {
   try {
-    // ---------- 1. Debug info -----------
-    console.log('🆕 /submit-inbound hit - form keys:', Object.keys(req.body));
-    if (req.files?.length) {
-      console.log('🆕 Upload files:', req.files.map(f => f.fieldname));
-    }
+   const {
+  system,
+  api:    apiNameRaw,   // preferred new field
+  module: apiNameOld,   // legacy field
+  module_group,
+  dataGrid
+} = req.body;
+const apiName = apiNameRaw || apiNameOld;   // ← restore this
+const moduleName = module_group || apiName; // ← fallback if frontend omits module_group
 
-    // ---------- 2.  Pre-parse basic fields ----------
-    const {
-      system,
-      api       : apiNameRaw,     // preferred new field
-      module    : apiNameOld,     // legacy field
-      module_group,
-      dataGrid
-    } = req.body;
+    const submission_uuid = randomUUID();
+    const created_at = new Date().toISOString();
 
-    const apiName    = apiNameRaw || apiNameOld;
-    const moduleName = module_group || apiName;     // fallback
+    let q9RowId = null;          // 🔑 per-request, safe from race conditions
 
     if (!system || !apiName) {
       return res.status(400).json({ error: 'System and API are required' });
     }
 
-    const submission_uuid = req.body.submission_uuid || randomUUID();
-    const created_at      = new Date().toISOString();
+    const questionInsert = db.prepare(`
+      INSERT INTO inbound_requirements
+      (submission_uuid, system_name, module_name, api_name,
+      question_id,  question_text, answer, file_path, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    /* ---------- 3.   Run everything inside one transaction ---------- */
-    db.transaction(() => {
-
-      /* 3-A  Stub parent row (always) */
-      const stubId = db.prepare(`
-        INSERT INTO inbound_requirements
-          (submission_uuid, system_name, module_name, api_name,
-           question_id,  question_text, answer, file_path, created_at)
-        VALUES (?, ?, ?, ?, 'confirm', 'Confirmed data elements', '', '', ?)
-      `).run(submission_uuid, system, moduleName, apiName, created_at).lastInsertRowid;
-
-      /* 3-B  Q&A rows */
-      const questionInsert = db.prepare(`
-        INSERT INTO inbound_requirements
-          (submission_uuid, system_name, module_name, api_name,
-           question_id, question_text, answer, file_path, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      const uploadedFiles = {};
-      if (req.files) {
-        for (const f of req.files) uploadedFiles[f.fieldname] = f.path;
+    const uploadedFiles = {};
+    if (req.files) {
+      for (const file of req.files) {
+        uploadedFiles[file.fieldname] = file.path;
       }
+    }
 
-      let q9RowId = null;
+    let result;
+    Object.entries(req.body).forEach(([key, value]) => {
+      if (['system', 'api', 'module', 'module_group', 'dataGrid'].includes(key)) return;
+      const questionId = key;
+      const questionText = getQuestionTextById(questionId);
+      const filePath = uploadedFiles[questionId] || null;
 
-      Object.entries(req.body).forEach(([key, val]) => {
-        if (
-          [
-            'system', 'api', 'module', 'module_group',
-            'dataGrid', 'flowType', 'elements', 'submission_uuid'
-          ].includes(key)
-        ) return;
-
-        const row = questionInsert.run(
-          submission_uuid,
-          system,
-          moduleName,
-          apiName,
-          key,
-          getQuestionTextById(key),
-          val,
-          uploadedFiles[key] || null,
-          created_at
-        );
-
-        if (key === 'dataInvolved') q9RowId = row.lastInsertRowid;
-      });
-
-      const gridSubmissionId = q9RowId || stubId;
-
-      /* 3-C  Insert grid rows  */
-      let gridRows = [];
-
-      if (dataGrid) {
-        // Guarantee JSON parse
-        try {
-          gridRows = typeof dataGrid === 'string' ? JSON.parse(dataGrid) : dataGrid;
-        } catch (e) {
-          console.error('❌ Invalid dataGrid JSON:', dataGrid);
-          throw new Error('Invalid dataGrid JSON');   // handled below
-        }
-      }
-
-      const gridStmt = db.prepare(`
-        INSERT INTO inbound_data_grid
-          (submission_uuid, submission_id, nama, jenis, saiz,
-           nullable, rules, data_element, group_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      if (Array.isArray(gridRows) && gridRows.length) {
-        gridRows.forEach(r => {
-         gridStmt.run(
+      result = questionInsert.run(
   submission_uuid,
-  gridSubmissionId,
-  r.nama      || '',
-  r.jenis     || '',
-  r.saiz      || '',
-  r.nullable  || '',
-  r.rules     || '',
-  r.dataElement || '',
-  r.groupName   || ''
+  system,
+   moduleName,     // goes into module_name column
+  apiName || '',        // goes into api_name column
+  questionId,
+  questionText,
+  value,
+  filePath,
+  created_at
 );
 
-        });
-      }
+        if (questionId === 'dataInvolved') {
+    q9RowId = result.lastInsertRowid;
+  }
+    });
 
-      /* 3-D  Legacy elements[] fallback */
-      if (!gridRows.length && Array.isArray(req.body.elements) && req.body.elements.length) {
-        const elemStmt = db.prepare(`
-          INSERT INTO inbound_data_grid
-            (submission_uuid, submission_id, data_element, group_name,
-             nama, jenis, saiz, nullable, rules)
-          VALUES (?, ?, ?, ?, '', '', '', '', '')
-        `);
+    const submission_id = result?.lastInsertRowid;
 
-        req.body.elements.forEach(el => {
-          elemStmt.run(
-            submission_uuid,
-            gridSubmissionId,
-            el.name || '',
-            el.group_name || el.group || '__ungrouped__'
-          );
-        });
-      }
+    // ✅ Save Grid Data if present
+if (dataGrid) {
+  let parsedGrid;
+  try {
+    parsedGrid = JSON.parse(dataGrid);
+  } catch (err) {
+    console.error('Invalid dataGrid JSON:', err);
+    return res.status(400).json({ error: 'Invalid dataGrid format' });
+  }
 
-    })(); // commit transaction
+  const stmt = db.prepare(`
+    INSERT INTO inbound_data_grid
+    (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  parsedGrid.forEach(row => {
+    stmt.run([
+      submission_uuid,
+      q9RowId || null,
+      row.nama,
+      row.jenis,
+      row.saiz,
+      row.nullable,
+      row.rules,
+      row.dataElement || '',
+      row.groupName || ''
+    ]);
+  });
+}
+
 
     return res.status(200).json({ message: 'Inbound requirement saved.' });
-
-  } catch (err) {
-    if (err.message === 'Invalid dataGrid JSON') {
-      return res.status(400).json({ error: err.message });
-    }
-    console.error('🔥 ERROR during /submit-inbound:', err);
-    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  } catch (error) {
+    console.error('Error saving inbound:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 
 
@@ -523,32 +412,21 @@ app.get('/', (req, res) => {
 });
 
 // 🔐 Simple DB export – streams the entire SQLite file
-// 🔐 Improved DB Export – creates a safe SQLite backup before streaming
-app.get('/export-backup', async (req, res) => {
-  try {
-    const timestamp = Date.now();
-    const snapshotPath = path.join(__dirname, `snapshot_${timestamp}.db`);
+app.get('/export-backup', (req, res) => {
+  const dbPath = path.join(__dirname, 'confirmation_data.db');
 
-    // Use built-in .backup() for atomic file copy
-    await db.backup(snapshotPath);
-
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename=confirmation_backup_${timestamp}.db`
-    );
-
-    const stream = fs.createReadStream(snapshotPath);
-    stream.pipe(res);
-
-    // Auto-delete temp file after download finishes
-    stream.on('close', () => {
-      fs.unlink(snapshotPath, () => {});
-    });
-  } catch (err) {
-    console.error('DB backup failed:', err);
-    res.status(500).json({ error: 'Failed to create DB backup' });
+  // If ever you protect admin with auth, wrap this in auth middleware
+  if (!fs.existsSync(dbPath)) {
+    return res.status(404).json({ error: 'DB file not found' });
   }
+
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename=confirmation_backup_${Date.now()}.db`
+  );
+
+  fs.createReadStream(dbPath).pipe(res);
 });
 
 // ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first
