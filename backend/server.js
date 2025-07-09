@@ -261,17 +261,18 @@ app.post('/submit-inbound', upload, (req, res) => {
 
       if (Array.isArray(gridRows) && gridRows.length) {
         gridRows.forEach(r => {
-          gridStmt.run(
-            submission_uuid,
-            gridSubmissionId,
-            r.nama,
-            r.jenis,
-            r.saiz,
-            r.nullable,
-            r.rules,
-            r.dataElement || '',
-            r.groupName   || ''
-          );
+         gridStmt.run(
+  submission_uuid,
+  gridSubmissionId,
+  r.nama      || '',
+  r.jenis     || '',
+  r.saiz      || '',
+  r.nullable  || '',
+  r.rules     || '',
+  r.dataElement || '',
+  r.groupName   || ''
+);
+
         });
       }
 
