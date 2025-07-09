@@ -15,11 +15,21 @@ const app = express();
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
 const transporter = nodemailer.createTransport({
-  // Gmail is simplest; switch to SMTP / SendGrid / Mailgun anytime
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,          // 465 = SSL/TLS  |  use 587 + secure:false if 465 blocked
+  secure: true,       // true → use TLS from the start
   auth: {
-    user: process.env.NOTIF_EMAIL,
-    pass: process.env.NOTIF_PASS   // 👉 use a Gmail *App Password*
+    user: process.env.NOTIF_EMAIL,  // full Gmail address
+    pass: process.env.NOTIF_PASS    // 16-char Gmail **App Password**
+  }
+});
+
+// One-off health-check — shows up in Render logs on boot
+transporter.verify((err, ok) => {
+  if (err) {
+    console.error('❌ SMTP login failed:', err.message);
+  } else {
+    console.log('✅ SMTP server is ready to take our messages');
   }
 });
 const PORT = process.env.PORT || 3001;
