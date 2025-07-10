@@ -182,7 +182,7 @@ function buildInboundEmail(reqBody, gridRows, meta) {
             (r, i) => `
               <tr>
                 <td>${i + 1}</td>
-                <td>${r.dataElement || r.data_element}</td>
+                <td>${(r.dataElement || r.data_element) + (r.group_name ? ` (${r.group_name})` : '')}</td>
                 <td>${r.nama}</td>
                 <td>${r.jenis}</td>
                 <td>${r.saiz}</td>
