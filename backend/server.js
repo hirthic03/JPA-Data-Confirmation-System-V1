@@ -72,13 +72,13 @@ app.use('/uploads', express.static('uploads'));
 
 // Table Creation
 
-db.run(`
+db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT,
     password TEXT
   )
-`);
+`).run();
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS confirmations (
