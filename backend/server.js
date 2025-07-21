@@ -84,17 +84,15 @@ db.prepare(`
   )
 `).run();
 
-db.prepare(`
+db.run(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    agency_name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'agency', -- roles: agency | admin
-    created_at TEXT
+    email TEXT UNIQUE,
+    password TEXT,
+    role TEXT,
+    agency TEXT
   )
-`).run();
-
+`);
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS inbound_requirements (
@@ -381,29 +379,67 @@ if (dataGrid) {
   }
 });
 
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
-  // Fake user database — expand as needed
-  const users = {
-    'admin@example.com': { role: 'admin', agency: null },
-    'reviewer@agencyA.com': { role: 'reviewer', agency: 'Agency A' },
-    'reviewer@agencyB.com': { role: 'reviewer', agency: 'Agency B' }
-  };
-
-  const user = users[username];
-
-  if (user && password === 'password123') {
-    const tokenPayload = {
-      username,
-      role: user.role,
-      agency: user.agency
-    };
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '2h' });
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+app.post('/register', async (req, res) => {
+  const { email, password, role, agency } = req.body;
+  if (!email || !password || !role) {
+    return res.status(400).json({ error: 'Email, password, and role required' });
   }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    db.run(
+      'INSERT INTO users (email, password, role, agency) VALUES (?, ?, ?, ?)',
+      [email, hashedPassword, role, agency || ''],
+      function (err) {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: 'User already exists or DB error' });
+        }
+        res.json({ success: true, id: this.lastID });
+      }
+    );
+  } catch (e) {
+    res.status(500).json({ error: 'Hashing failed' });
+  }
+});
+
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const token = jwt.sign(
+      { email: user.email, role: user.role, agency: user.agency },
+      'secret',
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      token,
+      user: {
+        email: user.email,
+        role: user.role,
+        agency: user.agency
+      }
+    });
+  });
 });
 
 
