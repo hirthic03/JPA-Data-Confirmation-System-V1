@@ -72,13 +72,15 @@ app.use('/uploads', express.static('uploads'));
 
 // Table Creation
 
-await db.run(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL,
-    password TEXT NOT NULL
-  )
-`);
+(async () => {
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL
+    )
+  `);
+})();
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS confirmations (
