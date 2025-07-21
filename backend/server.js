@@ -716,6 +716,10 @@ app.delete('/cleanup-test-data', (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('🟢 Backend is running properly!');
+});
+
 // 🚀 Launch
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
