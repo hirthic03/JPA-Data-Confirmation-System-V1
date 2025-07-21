@@ -390,7 +390,7 @@ if (dataGrid) {
   }
 });
 
-const bcrypt = require('bcryptjs');
+
 const saltRounds = 10;
 
 // Add this near your other app.post(...) routes
