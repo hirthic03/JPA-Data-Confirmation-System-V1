@@ -3,6 +3,7 @@ import axios from 'axios';
 import './App.css';
 import { saveConfirmed } from './utils/confirmedStore';
 import { useNavigate } from 'react-router-dom'; 
+
 // ☝️ Put this right after the dbg() helper
 const API_BASE = 'https://jpa-data-confirmation-system-v1.onrender.com';
 
@@ -34,6 +35,11 @@ const [availableGroups, setAvailableGroups] = useState([]);
 
  
   const navigate = useNavigate();
+  const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  navigate('/');
+};
 
   useEffect(() => {
   /* 1️⃣  Wake Render so the first real call never 502s */
@@ -344,6 +350,9 @@ function onSuccess() {
 
   return (
     <div className="confirmation-section">
+      <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+  <button onClick={handleLogout} className="logout-btn">Log Keluar</button>
+</div>
       <h1 className="nav-title">Pengesahan Data JPA</h1>
       <div className="form-group">
         <label>Aliran Data:</label>

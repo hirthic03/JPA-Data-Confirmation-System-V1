@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import SubmissionApp from './SubmissionApp';
+import LoginPage from './LoginPage';
 import InboundRequirementForm from './InboundRequirementForm';
 import { loadConfirmed } from './utils/confirmedStore';
 import './App.css';
@@ -125,49 +126,43 @@ function ReportingPage() {
   );
 }
 
-export default function App() {
-  const hasConfirmedInboundData = (() => {
-  try {
-    const data = loadConfirmed();
-    return Object.values(data || {}).some(modules =>
-      Object.values(modules).some(arr => Array.isArray(arr) && arr.length > 0)
-    );
-  } catch {
-    return false;
-  }
-})();
+function RequirementPage() {
+  return (
+    <div className="reporting-page">
+      <h2>Requirement Page</h2>
+      <p>This is a placeholder for requirement view or actions.</p>
+      {/* You can later insert a table or other components here */}
+    </div>
+  );
+}
+
+
+const isLoggedIn = () => !!localStorage.getItem('token');
+
+function App() {
   return (
     <Router>
-      <div className="app-container">
-        <div className="top-nav-bar">
-          <div className="logo-left">
-            <img
-              src="/images/PernecLogoTRANSPERENT.png"
-              alt="Pernec Logo"
-              className="logo-inside-card"
-            />
-          </div>
-          <nav className="nav-links">
-            <Link to="/submission">Penghantaran Data</Link>
-{hasConfirmedInboundData ? (
-  <Link to="/requirement">Pengumpulan Keperluan (Inbound)</Link>
-) : (
-  <span style={{ color: 'gray', cursor: 'not-allowed', opacity: 0.5 }}>
-    Penghantaran Data (Inbound)
-  </span>
-)}
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/submission"
+          element={isLoggedIn() ? <SubmissionApp /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/"
+          element={<Navigate to={isLoggedIn() ? '/submission' : '/login'} />}
+        />
+        {/* ✅ Phase 4 Route - now correctly placed */}
+       <Route
+  path="/requirement"
+  element={isLoggedIn() ? <RequirementPage /> : <Navigate to="/login" />}
+/>
 
-          </nav>
-        </div>
-    <div className="main-content">
-        <Routes>
-          <Route path="/" element={<Navigate to="/submission" replace />} />
-          <Route path="/submission" element={<SubmissionApp />} />
-          <Route path="/requirement" element={<InboundRequirementForm />} />
-          <Route path="/admin" element={<AdminPage />} />
-        </Routes>
-      </div>
-    </div>
+      </Routes>
+      
     </Router>
   );
 }
+
+export default App;
+

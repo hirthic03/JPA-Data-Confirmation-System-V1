@@ -4,6 +4,7 @@ import './App.css';
 import systemsData from './systems.json'; // adjust path if needed
 import { useNavigate } from 'react-router-dom';
 import { loadConfirmed } from './utils/confirmedStore';
+import { useNavigate } from 'react-router-dom';
 
 export default function InboundRequirementForm() {
   const navigate = useNavigate();
@@ -12,6 +13,11 @@ export default function InboundRequirementForm() {
     module: confirmedModule,
     elements: confirmedEls = []
   } = loadConfirmed();
+
+  const handleLogout = () => {
+  localStorage.clear();
+  navigate('/login');
+};
 
 const DEFAULT_SYSTEM = "Sistem Pengurusan Meja Bantuan (SPMB)";
 const activeSystem   = confirmedSystem || DEFAULT_SYSTEM; 
@@ -163,6 +169,9 @@ const handleElementSelection = (elementObj) => {
   setPopupVisible(false);
 };
 
+<button onClick={handleLogout} style={{ float: 'right', margin: '10px' }}>
+  🚪 Log Keluar
+</button>
 
 useEffect(() => {
   const inboundModules = systemsData?.Inbound?.[activeSystem] || {};

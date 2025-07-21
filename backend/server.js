@@ -8,6 +8,9 @@ const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
 const pdf        = require('html-pdf');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = 'yourSuperSecretKey123!'; // 🔐 Replace with env var later
 
 
 // Initialize
@@ -82,6 +85,18 @@ db.prepare(`
 `).run();
 
 db.prepare(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agency_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT DEFAULT 'agency', -- roles: agency | admin
+    created_at TEXT
+  )
+`).run();
+
+
+db.prepare(`
   CREATE TABLE IF NOT EXISTS inbound_requirements (
   submission_uuid TEXT,
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,6 +139,40 @@ if (!gridCols.includes('group_name')) {
   db.prepare(`ALTER TABLE inbound_data_grid ADD COLUMN group_name TEXT`).run();
   console.log('ℹ️  Added missing group_name column to inbound_data_grid');
 }
+
+async function seedUsers() {
+  const existing = db.prepare('SELECT COUNT(*) as count FROM users').get();
+  if (existing.count > 0) {
+    console.log('⚠️ Users already seeded, skipping.');
+    return;
+  }
+
+  const testUsers = [
+    {
+      agency_name: 'Jabatan A',
+      email: 'agency1@jpa.gov.my',
+      password: 'agency123',
+      role: 'agency'
+    },
+    {
+      agency_name: 'Jabatan Digital',
+      email: 'admin@jpa.gov.my',
+      password: 'admin123',
+      role: 'admin'
+    }
+  ];
+
+  for (const u of testUsers) {
+    const hash = await bcrypt.hash(u.password, 10);
+    db.prepare(`
+      INSERT INTO users (agency_name, email, password_hash, role, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(u.agency_name, u.email, hash, u.role, new Date().toISOString());
+    console.log(`✅ Created user: ${u.email}`);
+  }
+}
+seedUsers();
+
 // Utility
 function getQuestionTextById(id) {
   const questionMap = {
@@ -332,6 +381,32 @@ if (dataGrid) {
   }
 });
 
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Fake user database — expand as needed
+  const users = {
+    'admin@example.com': { role: 'admin', agency: null },
+    'reviewer@agencyA.com': { role: 'reviewer', agency: 'Agency A' },
+    'reviewer@agencyB.com': { role: 'reviewer', agency: 'Agency B' }
+  };
+
+  const user = users[username];
+
+  if (user && password === 'password123') {
+    const tokenPayload = {
+      username,
+      role: user.role,
+      agency: user.agency
+    };
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ token });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+
 
 // 📄 Outbound Submission Handler
 app.post('/submit', (req, res) => {
@@ -538,6 +613,20 @@ app.get('/systems', (req, res) => {
     res.json(JSON.parse(data));
   });
 });
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user; // Attach to request for downstream use
+    next();
+  });
+}
+
 
 // ✅ Root status route
 app.get('/', (req, res) => {
