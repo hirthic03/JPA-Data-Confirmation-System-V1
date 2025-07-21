@@ -246,27 +246,33 @@ const confirmAddToGroup = (group) => {
   setPendingElementLabel('');
 };
 
-
-
-
 const submit = (confirmed) => {
-    if (!system || !module) {
+  if (!system || !module) {
     alert('Sila pilih Sistem dan Modul sebelum hantar.');
     return;
   }
+
   if (newElementInput.trim()) {
-    alert('Anda masih ada teks di ruangan "Tambah Elemen Data". ' +
-          'Sila tekan butang ➕ untuk menambah elemen tersebut dahulu.');
+    alert('Anda masih ada teks di ruangan "Tambah Elemen Data"...');
     return;
   }
- if (flowType === 'Outbound' && remarkInput) {
-   alert("Sila tambah catatan terlebih dahulu.");
-   return;
- }
+
+  if (flowType === 'Outbound' && remarkInput) {
+    alert("Sila tambah catatan terlebih dahulu.");
+    return;
+  }
+
   if (!elements || elements.length === 0) {
     alert("Sila pilih sekurang-kurangnya satu elemen data.");
     return;
   }
+
+  const token = localStorage.getItem('token');
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+  const endpoint =
+    flowType === 'Inbound'
+      ? `${API_BASE}/submit-inbound`
+      : `${API_BASE}/submit`;
 
   if (flowType === 'Inbound') {
     const fd = new FormData();
@@ -288,7 +294,6 @@ const submit = (confirmed) => {
     })
     .then(onSuccess)
     .catch(onError);
-
   } else {
     axios.post(endpoint, {
       flowType,
@@ -305,89 +310,23 @@ const submit = (confirmed) => {
     .catch(onError);
   }
 
-const payload = {
-  flowType,
-  system,
-  module,
-  elements: flowType === 'Outbound'
-    ? flattenOutboundElements(confirmed)
-    : elements.map(({ name, group, confirmed }) => ({ name, group_name: group, confirmed })),
-  // Only Outbound still sends remarks
-  ...(flowType === 'Outbound' && { remarks: remarks.join('; ') })
-};
-
-
-const endpoint =
-  flowType === 'Inbound'
-    ? `${API_BASE}/submit-inbound`
-    : `${API_BASE}/submit`;
-
- if (flowType === 'Inbound') {
-   /* --- build multipart/form-data --- */
-   const fd = new FormData();
-
-   // basic scalar fields
-   fd.append('system',  system);
-   fd.append('api',     module);           // backend accepts `api`
-   fd.append('module',  module);           // …and legacy `module`
-
-   /* elements → dataGrid rows (what your backend expects) */
-   const dataGrid = elements.map(({ name, group }) => ({
-     // NOTE: backend looks for dataElement + groupName keys
-     dataElement: name,
-     groupName  : group || ''
-   }));
-   fd.append('dataGrid', JSON.stringify(dataGrid));
-
-   // 🔧 add files later if you support uploads
-
-   axios.post(endpoint, fd, {
-  headers: {
-    'Content-Type': 'multipart/form-data',
-    ...authHeader
-  }
-})
-   .then(onSuccess)
-   .catch(onError);
-
-   const token = localStorage.getItem('token');
-const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
-
-
- } else {
-   /* --- Outbound: still JSON --- */
- axios.post(endpoint, {
-  flowType,
-  system,
-  module,
-  elements: flattenOutboundElements(confirmed),
-  remarks : remarks.join('; ')
-}, {
-  headers: {
-    ...authHeader
-  }
-})
-   .then(onSuccess)
-   .catch(onError);
- }
- 
-function onSuccess() {
+  function onSuccess() {
     dbg('✅ Submitted payload');
     if (flowType === 'Inbound') {
       const confirmedFull = elements.map(({ name, group }) => ({
-      name,
-      group
-    }));
-    saveConfirmed(system, module, confirmedFull);
-    navigate('/requirement');
-  }
+        name,
+        group
+      }));
+      saveConfirmed(system, module, confirmedFull);
+      navigate('/requirement');
+    }
 
-  alert('Telah dihantar!');
-  setElements([]);
-  if (flowType === 'Outbound') {
-    setRemarks([]);
-    setRemarkInput('');
-  }
+    alert('Telah dihantar!');
+    setElements([]);
+    if (flowType === 'Outbound') {
+      setRemarks([]);
+      setRemarkInput('');
+    }
   }
 
   function onError(err) {
@@ -395,6 +334,7 @@ function onSuccess() {
     alert('Something went wrong while submitting.');
   }
 };
+
 
 
   return (

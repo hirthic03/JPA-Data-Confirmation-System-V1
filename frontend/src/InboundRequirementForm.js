@@ -4,7 +4,6 @@ import './App.css';
 import systemsData from './systems.json'; // adjust path if needed
 import { useNavigate } from 'react-router-dom';
 import { loadConfirmed } from './utils/confirmedStore';
-import { useNavigate } from 'react-router-dom';
 
 export default function InboundRequirementForm() {
   const navigate = useNavigate();
