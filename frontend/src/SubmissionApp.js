@@ -268,6 +268,43 @@ const submit = (confirmed) => {
     return;
   }
 
+  if (flowType === 'Inbound') {
+    const fd = new FormData();
+    fd.append('system', system);
+    fd.append('api', module);
+    fd.append('module', module);
+
+    const dataGrid = elements.map(({ name, group }) => ({
+      dataElement: name,
+      groupName: group || ''
+    }));
+    fd.append('dataGrid', JSON.stringify(dataGrid));
+
+    axios.post(endpoint, fd, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...authHeader
+      }
+    })
+    .then(onSuccess)
+    .catch(onError);
+
+  } else {
+    axios.post(endpoint, {
+      flowType,
+      system,
+      module,
+      elements: flattenOutboundElements(confirmed),
+      remarks: remarks.join('; ')
+    }, {
+      headers: {
+        ...authHeader
+      }
+    })
+    .then(onSuccess)
+    .catch(onError);
+  }
+
 const payload = {
   flowType,
   system,
@@ -305,23 +342,35 @@ const endpoint =
    // 🔧 add files later if you support uploads
 
    axios.post(endpoint, fd, {
-     headers: { 'Content-Type': 'multipart/form-data' }
-   })
+  headers: {
+    'Content-Type': 'multipart/form-data',
+    ...authHeader
+  }
+})
    .then(onSuccess)
    .catch(onError);
 
+   const token = localStorage.getItem('token');
+const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+
  } else {
    /* --- Outbound: still JSON --- */
-   axios.post(endpoint, {
-     flowType,
-     system,
-     module,
-     elements: flattenOutboundElements(confirmed),
-     remarks : remarks.join('; ')
-   })
+ axios.post(endpoint, {
+  flowType,
+  system,
+  module,
+  elements: flattenOutboundElements(confirmed),
+  remarks : remarks.join('; ')
+}, {
+  headers: {
+    ...authHeader
+  }
+})
    .then(onSuccess)
    .catch(onError);
  }
+ 
 function onSuccess() {
     dbg('✅ Submitted payload');
     if (flowType === 'Inbound') {
