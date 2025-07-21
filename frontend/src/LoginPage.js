@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css'; // optional styling
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -22,8 +22,8 @@ function LoginPage({ onLogin }) {
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      
-const decoded = jwt_decode(token);
+
+const decoded = jwtDecode(token);
     localStorage.setItem('role', decoded.role);
     localStorage.setItem('agency', decoded.agency || '');
 
