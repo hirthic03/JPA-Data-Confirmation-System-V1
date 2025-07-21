@@ -251,6 +251,8 @@ const submit = (confirmed) => {
     alert('Sila pilih Sistem dan Modul sebelum hantar.');
     return;
   }
+  const token = localStorage.getItem('token');
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
   if (newElementInput.trim()) {
     alert('Anda masih ada teks di ruangan "Tambah Elemen Data"...');
@@ -266,9 +268,6 @@ const submit = (confirmed) => {
     alert("Sila pilih sekurang-kurangnya satu elemen data.");
     return;
   }
-
-  const token = localStorage.getItem('token');
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
   const endpoint =
     flowType === 'Inbound'
       ? `${API_BASE}/submit-inbound`
