@@ -71,6 +71,15 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 // Table Creation
+
+await db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL
+  )
+`);
+
 db.prepare(`
   CREATE TABLE IF NOT EXISTS confirmations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -382,27 +391,27 @@ if (dataGrid) {
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
+// Add this near your other app.post(...) routes
 app.post('/register', async (req, res) => {
-  const { email, password, role, agency } = req.body;
-  if (!email || !password || !role) {
-    return res.status(400).json({ error: 'Email, password, and role required' });
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
   }
 
   try {
+    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    db.run(
-      'INSERT INTO users (email, password, role, agency) VALUES (?, ?, ?, ?)',
-      [email, hashedPassword, role, agency || ''],
-      function (err) {
-        if (err) {
-          console.error(err);
-          return res.status(500).json({ error: 'User already exists or DB error' });
-        }
-        res.json({ success: true, id: this.lastID });
-      }
-    );
-  } catch (e) {
-    res.status(500).json({ error: 'Hashing failed' });
+
+    const insertQuery = `
+      INSERT INTO users (username, password)
+      VALUES (?, ?)
+    `;
+    await db.run(insertQuery, [username, hashedPassword]);
+
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    console.error('Error in /register:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
