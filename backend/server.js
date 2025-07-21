@@ -402,11 +402,11 @@ app.post('/register', async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const insertQuery = `
-      INSERT INTO users (username, password)
-      VALUES (?, ?)
-    `;
-    await db.run(insertQuery, [username, hashedPassword]);
+const insertQuery = `
+  INSERT INTO users (username, password)
+  VALUES (?, ?)
+`;
+db.prepare(insertQuery).run(username, hashedPassword);
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
