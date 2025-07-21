@@ -8,7 +8,7 @@ const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
 const pdf        = require('html-pdf');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'yourSuperSecretKey123!'; // 🔐 Replace with env var later
 
@@ -390,7 +390,7 @@ if (dataGrid) {
   }
 });
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 
 // Add this near your other app.post(...) routes
@@ -452,7 +452,6 @@ app.post('/login', (req, res) => {
     });
   });
 });
-
 
 
 // 📄 Outbound Submission Handler
