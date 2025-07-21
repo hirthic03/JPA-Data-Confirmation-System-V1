@@ -16,6 +16,7 @@ export default function AdminReportPage() {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [pwInput, setPwInput] = useState('');
+  const userRole = localStorage.getItem('role');
 
 const downloadBlob = (blob, filename) => {
   const url = URL.createObjectURL(blob);
@@ -177,6 +178,16 @@ const renderInboundTable = () => (
     )}
   </div>
 );
+
+if (userRole !== 'admin') {
+  return (
+    <div className="admin-login">
+      <h2>❌ Access Denied</h2>
+      <p>You do not have permission to view this page.</p>
+    </div>
+  );
+}
+
 
 // ─── Password Gate ─────────────────────────────────────────
 if (!authenticated) {
