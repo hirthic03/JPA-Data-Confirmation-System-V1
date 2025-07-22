@@ -7,7 +7,7 @@ const archiver = require('archiver');
 const Database = require('better-sqlite3');
 const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
-const pdf        = require('html-pdf');
+const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
@@ -351,25 +351,44 @@ if (dataGrid) {
       // 🧾 Generate a PDF version of the HTML
       const pdfOptions = { format: 'A4', border: '10mm' };
 
-      pdf.create(htmlBody, pdfOptions).toBuffer(async (err, buffer) => {
-        if (err) {
-          console.error('❌ PDF generation error:', err);
-        } else {
-          await transporter.sendMail({
-            from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
-            to: 'hirthic1517@gmail.com',
-            cc : CC_LIST,  
-            subject: `✅ Inbound Submission – ${system} / ${apiName}`,
-            html: htmlBody,
-            attachments: [{
-              filename: `Inbound_${system}_${apiName}.pdf`,
-              content: buffer
-            }]
-          });
+     try {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+  });
+  const page = await browser.newPage();
+  await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
 
-          console.log('📧 Email with PDF attachment sent');
-        }
-      });
+  const buffer = await page.pdf({
+    format: 'A4',
+    printBackground: true,
+    margin: {
+      top: '10mm',
+      bottom: '10mm',
+      left: '10mm',
+      right: '10mm',
+    }
+  });
+
+  await browser.close();
+
+  await transporter.sendMail({
+    from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
+    to: 'hirthic1517@gmail.com',
+    cc: CC_LIST,
+    subject: `✅ Inbound Submission – ${system} / ${apiName}`,
+    html: htmlBody,
+    attachments: [{
+      filename: `Inbound_${system}_${apiName}.pdf`,
+      content: buffer
+    }]
+  });
+
+  console.log('📧 Email with PDF attachment sent');
+} catch (err) {
+  console.error('❌ PDF/email error:', err);
+}
+
     }
 
 
