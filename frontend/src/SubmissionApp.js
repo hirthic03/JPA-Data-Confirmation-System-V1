@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import './App.css';
 import { saveConfirmed } from './utils/confirmedStore';
 import { useNavigate } from 'react-router-dom'; 
 
-// ☝️ Put this right after the dbg() helper
-const API_BASE = 'https://jpa-data-confirmation-system-v1.onrender.com';
 
 // Debug helper – logs appear only in development builds
 const dbg = (...args) => {
@@ -43,12 +41,12 @@ const [availableGroups, setAvailableGroups] = useState([]);
 
   useEffect(() => {
   /* 1️⃣  Wake Render so the first real call never 502s */
-  fetch(`${API_BASE}/`).catch(() => {});
+  api.get('/').catch(() => {});
 
   /* 2️⃣  Now load systems, retry up to 3× if container still cold */
   function loadSystems(attempt = 1) {
-    axios
-      .get(`${API_BASE}/systems`)
+    api
+      .get('/systems')
       .then(res => {
         setSystemsData(res.data);
         const flows = Object.keys(res.data).filter(
@@ -270,8 +268,8 @@ const submit = (confirmed) => {
   }
   const endpoint =
     flowType === 'Inbound'
-      ? `${API_BASE}/submit-inbound`
-      : `${API_BASE}/submit`;
+      ? '/submit-inbound'
+      : '/submit';
 
   if (flowType === 'Inbound') {
     const fd = new FormData();
@@ -285,7 +283,7 @@ const submit = (confirmed) => {
     }));
     fd.append('dataGrid', JSON.stringify(dataGrid));
 
-    axios.post(endpoint, fd, {
+    api.post(endpoint, fd, {
       headers: {
         'Content-Type': 'multipart/form-data',
         ...authHeader
@@ -294,7 +292,7 @@ const submit = (confirmed) => {
     .then(onSuccess)
     .catch(onError);
   } else {
-    axios.post(endpoint, {
+      api.post(endpoint, {
       flowType,
       system,
       module,
