@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css'; // optional styling
 import { jwtDecode } from 'jwt-decode';
+import api from './utils/api';
+
 
 const api = axios.create({
   baseURL: 'https://jpa-data-confirmation-system-v1.onrender.com',
