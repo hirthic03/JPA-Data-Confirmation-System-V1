@@ -85,7 +85,7 @@ db.prepare(`
   )
 `).run();
 
-db.run(`
+db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE,
@@ -93,7 +93,7 @@ db.run(`
     role TEXT,
     agency TEXT
   )
-`);
+`).run();
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS inbound_requirements (
