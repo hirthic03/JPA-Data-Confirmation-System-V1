@@ -13,10 +13,7 @@ function LoginPage({ onLogin }) {
     setError('');
 
     try {
-      const response = await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/login', {
-        email,
-        password
-      });
+      const response = await api.post('/login', { email, password });
 
       const { token, user } = response.data;
 
