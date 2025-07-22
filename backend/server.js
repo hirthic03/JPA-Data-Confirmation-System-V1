@@ -10,7 +10,8 @@ const nodemailer = require('nodemailer');
 const pdf        = require('html-pdf');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'yourSuperSecretKey123!'; // 🔐 Replace with env var later
+const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
+
 
 
 // Initialize
@@ -71,15 +72,6 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 // Table Creation
-
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    password TEXT
-  )
-`).run();
-
 db.prepare(`
   CREATE TABLE IF NOT EXISTS confirmations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -171,10 +163,10 @@ async function seedUsers() {
 
   for (const u of testUsers) {
     const hash = await bcrypt.hash(u.password, 10);
-    db.prepare(`
-      INSERT INTO users (agency_name, email, password_hash, role, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(u.agency_name, u.email, hash, u.role, new Date().toISOString());
+db.prepare(`
+  INSERT INTO users (email, password, role, agency)
+  VALUES (?, ?, ?, ?)
+`).run(u.email, hash, u.role, u.agency_name);
     console.log(`✅ Created user: ${u.email}`);
   }
 }
@@ -393,20 +385,17 @@ const saltRounds = 10;
 
 // Add this near your other app.post(...) routes
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+  const { email, password, role = 'agency', agency = '' } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
-    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-const insertQuery = `
-  INSERT INTO users (username, password)
-  VALUES (?, ?)
-`;
-db.prepare(insertQuery).run(username, hashedPassword);
+    db.prepare(`
+      INSERT INTO users (email, password, role, agency)
+      VALUES (?, ?, ?, ?)
+    `).run(email, hashedPassword, role, agency);
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -414,6 +403,7 @@ db.prepare(insertQuery).run(username, hashedPassword);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 app.post('/login', (req, res) => {
