@@ -3,6 +3,10 @@ import axios from 'axios';
 import './App.css'; // optional styling
 import { jwtDecode } from 'jwt-decode';
 
+const api = axios.create({
+  baseURL: 'https://jpa-data-confirmation-system-v1.onrender.com',
+});
+
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
