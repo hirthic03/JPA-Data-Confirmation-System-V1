@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://your-backend-app.onrender.com', // ✅ Replace with real backend URL
+  baseURL: process.env.REACT_APP_API_BASE_URL, // ✅ Replace with real backend URL
   withCredentials: true                             // ✅ Required for auth headers / cookies
 });
 

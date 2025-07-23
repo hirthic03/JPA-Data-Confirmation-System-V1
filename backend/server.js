@@ -26,23 +26,20 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
 const cors = require('cors');
-// Allow only your frontend domains
-const ALLOWED_ORIGINS = [
-  'https://jpa-data-confirmation-system-v1.vercel.app',
-  'http://localhost:3000'
-];
+require('dotenv').config();
+
+const allowedOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:3000';
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin || origin === allowedOrigin) {
       callback(null, true);
     } else {
-      callback(new Error('CORS not allowed from this origin: ' + origin));
+      callback(new Error(`❌ Not allowed by CORS: ${origin}`));
     }
   },
-  credentials: true, // ✅ Important for cookies and headers
+  credentials: true,
 }));
-
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
