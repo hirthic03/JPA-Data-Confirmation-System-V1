@@ -3,6 +3,7 @@ import axios from 'axios';
 import './App.css'; // optional styling
 import { jwtDecode } from 'jwt-decode';
 import api from './utils/api';
+import { Link } from 'react-router-dom';
 
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -52,8 +53,11 @@ const decoded = jwtDecode(token);
         {error && <p className="error">{error}</p>}
         <button type="submit">Log In</button>
       </form>
+       {/* ✅ Register link added below */}
+    <p style={{ marginTop: '12px' }}>
+      Don't have an account? <Link to="/register">Register here</Link>
+    </p>
     </div>
   );
 }
-
 export default LoginPage;

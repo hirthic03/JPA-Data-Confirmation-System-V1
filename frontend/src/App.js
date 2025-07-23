@@ -6,6 +6,7 @@ import InboundRequirementForm from './InboundRequirementForm';
 import { loadConfirmed } from './utils/confirmedStore';
 import './App.css';
 import AdminPage from './AdminPage';
+import RegisterPage from './RegisterPage';
 
 
 function ReportingPage() {
@@ -144,6 +145,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />  // ✅ New line for registration
         <Route
           path="/submission"
           element={isLoggedIn() ? <SubmissionApp /> : <Navigate to="/login" />}
