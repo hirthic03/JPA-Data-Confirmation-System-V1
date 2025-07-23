@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -20,7 +22,7 @@ const app = express();
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = new Set([
-  'https://jpa-data-confirmation-system-v1.vercel.app',  // ✅ Vercel frontend
+   process.env.FRONTEND_ORIGIN,  // ✅ Vercel frontend
   'http://localhost:3000',                                // ✅ Local frontend
   'https://jpa-data-confirmation-system-v1.vercel.app/'   // ✅ Handles trailing slash
 ]);
