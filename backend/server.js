@@ -47,7 +47,7 @@ app.use(
 );
 
 
-const db = new Database(path.join(__dirname, 'confirmation_data.db'));
+const db = new Database(path.join(__dirname, 'db', 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -96,15 +96,22 @@ db.prepare(`
   )
 `).run();
 
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE,
-    password TEXT,
-    role TEXT,
-    agency TEXT
-  )
-`).run();
+function initDatabase() {
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE,
+      password TEXT,
+      role TEXT,
+      agency TEXT
+    )
+  `).run();
+
+  // ✅ Optional log to confirm creation
+  console.log('✅ Users table initialized.');
+}
+
+initDatabase();
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS inbound_requirements (
@@ -414,29 +421,24 @@ if (dataGrid) {
 const saltRounds = 10;
 
 app.post('/register', async (req, res) => {
-  const { email, password, role = 'agency', agency = '' } = req.body;
-
-  // ✅ Basic field validation
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
   try {
-    // ✅ Secure password hashing
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const { email, password, role, agency } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const { randomUUID } = require('crypto');
 
-    // ✅ Insert into SQLite
     db.prepare(`
-      INSERT INTO users (email, password, role, agency)
-      VALUES (?, ?, ?, ?)
-    `).run(email, hashedPassword, role, agency);
+      INSERT INTO users (id, email, password, role, agency)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(id, email, hashedPassword, role, agency);
 
-    // ✅ Success response
     res.status(201).json({ message: 'User registered successfully' });
-  } catch (error) {
-    // ✅ Error logging for debugging
-    console.error('Error in /register:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (err) {
+    console.error('❌ Registration Error:', err.message);
+    if (err.message.includes('UNIQUE constraint failed')) {
+      res.status(409).json({ error: 'Email already registered' });
+    } else {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
 });
 
