@@ -28,18 +28,19 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
 const cors = require('cors');
 // ✅ CORS - must come first
-const allowedOrigins = [
-  'https://jpa-data-confirmation-system-v1.vercel.app',
-  'http://localhost:3000'
-];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+    origin(origin, callback) {
+      const allowedOrigins = [
+        'https://jpa-data-confirmation-system-v1.vercel.app',
+        'http://localhost:3000'
+      ];
+
+      if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        console.error("CORS BLOCKED:", origin);
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true
