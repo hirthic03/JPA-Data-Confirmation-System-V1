@@ -28,15 +28,15 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
 const cors = require('cors');
 // ✅ CORS - must come first
-const allowedOrigins = [
-  'https://jpa-data-confirmation-system-v1.vercel.app',
-  'http://localhost:3000'
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',                                // dev
+  'https://jpa-data-confirmation-system-v1.vercel.app'    // production
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -45,10 +45,9 @@ app.use(
     credentials: true
   })
 );
+app.options('*', cors()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.options('*', cors()); // ✅ This line handles preflight
 
 app.use(express.json());
 
