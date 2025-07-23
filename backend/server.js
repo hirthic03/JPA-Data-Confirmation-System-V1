@@ -27,23 +27,26 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 // ────────────────────────────────────────────────────────────────
 
 const cors = require('cors');
+// ✅ CORS - must come first
 const allowedOrigins = [
   'https://jpa-data-confirmation-system-v1.vercel.app',
-  'http://localhost:3000',
+  'http://localhost:3000'
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true
+  })
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.options('*', cors()); // ✅ This line handles preflight
 
@@ -460,40 +463,45 @@ app.post('/register', async (req, res) => {
 
 
 
-app.post('/login', async (req, res) => {
+app.post('/login', (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // VALIDATE INPUT
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // QUERY USER
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+    const passwordMatch = bcrypt.compareSync(password, user.password);
 
-    // VERIFY PASSWORD
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
 
-    // GENERATE TOKEN
     const token = jwt.sign(
       {
         id: user.id,
         role: user.role,
-        agency: user.agency,
-        email: user.email
+        agency: user.agency
       },
       JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '2h' }
     );
 
-    // RESPOND
-    res.json({ token, user });
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        agency: user.agency,
+        role: user.role
+      }
+    });
   } catch (err) {
-    console.error('❌ LOGIN ERROR:', err); // <--- This will show the real cause!
-    res.status(500).json({ error: 'Server error during login' });
+    console.error('Login error:', err);
+    return res.status(500).json({ error: 'Internal server error during login' });
   }
 });
 
