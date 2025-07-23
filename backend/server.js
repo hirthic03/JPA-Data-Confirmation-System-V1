@@ -34,12 +34,13 @@ const ALLOWED_ORIGINS = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('CORS not allowed from this origin: ' + origin));
     }
-  }
+  },
+  credentials: true
 }));
 
 db.prepare(`
