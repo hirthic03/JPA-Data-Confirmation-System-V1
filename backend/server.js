@@ -28,19 +28,18 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
 const cors = require('cors');
 // ✅ CORS - must come first
+const allowedOrigins = [
+  'https://jpa-data-confirmation-system-v1.vercel.app',
+  'http://localhost:3000'
+];
+
 app.use(
   cors({
-    origin(origin, callback) {
-      const allowedOrigins = [
-        'https://jpa-data-confirmation-system-v1.vercel.app',
-        'http://localhost:3000'
-      ];
-
-      if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.error("CORS BLOCKED:", origin);
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true
@@ -460,49 +459,40 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-
-
-
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // VALIDATE INPUT
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    // QUERY USER
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+    // VERIFY PASSWORD
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
 
-    const passwordMatch = bcrypt.compareSync(password, user.password);
-
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
+    // GENERATE TOKEN
     const token = jwt.sign(
       {
         id: user.id,
         role: user.role,
-        agency: user.agency
+        agency: user.agency,
+        email: user.email
       },
       JWT_SECRET,
-      { expiresIn: '2h' }
+      { expiresIn: '1d' }
     );
 
-    return res.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        agency: user.agency,
-        role: user.role
-      }
-    });
+    // RESPOND
+    res.json({ token, user });
   } catch (err) {
-    console.error('Login error:', err);
-    return res.status(500).json({ error: 'Internal server error during login' });
+    console.error('❌ LOGIN ERROR:', err); // <--- This will show the real cause!
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
 
