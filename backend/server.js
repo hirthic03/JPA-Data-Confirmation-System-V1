@@ -12,11 +12,16 @@ const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
-
+require('dotenv').config();
 
 
 // Initialize
 const app = express();
+const saltRounds = 10;
+
+const dbDir = path.join(__dirname, 'data');
+fs.mkdirSync(dbDir, { recursive: true });
+const db = new Database(path.join(dbDir, 'database.db'));
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
@@ -37,9 +42,16 @@ app.use(cors({
   }
 }));
 
-
-
-const db = new Database(path.join(__dirname, 'confirmation_data.db'));
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'agency',
+    agency TEXT
+  )
+`).run();
+console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' }).any();
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -73,6 +85,7 @@ if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+app.use(express.urlencoded({ extended: true }));
 
 // Table Creation
 db.prepare(`
@@ -402,8 +415,6 @@ if (dataGrid) {
   }
 });
 
-
-const saltRounds = 10;
 
 app.post('/register', (req, res) => {
   const { email, password, agency } = req.body;
