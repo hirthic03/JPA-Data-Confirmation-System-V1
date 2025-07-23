@@ -25,15 +25,16 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
+
 const cors = require('cors');
-const ALLOWED_ORIGINS = [
+const allowedOrigins = [
   'https://jpa-data-confirmation-system-v1.vercel.app',
-  'http://localhost:3000'
+  'http://localhost:3000',
 ];
 
 app.use(cors({
-  origin(origin, callback) {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -41,8 +42,18 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.options('*', cors()); // ✅ This line handles preflight
+
+app.use(express.json());
+
+// Optional health check route
+app.get('/', (req, res) => {
+  res.send('Backend is running.');
+});
+
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
