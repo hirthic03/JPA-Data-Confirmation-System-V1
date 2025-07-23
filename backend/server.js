@@ -19,20 +19,23 @@ const app = express();
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = [
-  'https://jpa-data-confirmation-system-v1.vercel.app', // production UI
-  'http://localhost:3000'                               // local React dev
-];
+const ALLOWED_ORIGINS = new Set([
+  'https://jpa-data-confirmation-system-v1.vercel.app',  // ✅ Vercel frontend
+  'http://localhost:3000',                                // ✅ Local frontend
+  'https://jpa-data-confirmation-system-v1.vercel.app/'   // ✅ Handles trailing slash
+]);
 
 app.use(
   cors({
     origin(origin, cb) {
-      // `origin` will be undefined for tools like curl / Postman – allow them
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      if (!origin) return cb(null, true); // Allow Postman/curl
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      if (ALLOWED_ORIGINS.has(normalizedOrigin)) return cb(null, true);
+      console.error('❌ CORS Blocked:', origin);
       return cb(new Error('CORS - origin not allowed'));
     },
     credentials: true,
-    optionsSuccessStatus: 200   // some legacy browsers choke on 204
+    optionsSuccessStatus: 200
   })
 );
 
