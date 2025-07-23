@@ -460,39 +460,41 @@ app.post('/register', async (req, res) => {
 
 
 
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal error' });
+    // VALIDATE INPUT
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+    // QUERY USER
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+    // VERIFY PASSWORD
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
 
+    // GENERATE TOKEN
     const token = jwt.sign(
-      { email: user.email, role: user.role, agency: user.agency },
-      'secret',
-      { expiresIn: '1h' }
+      {
+        id: user.id,
+        role: user.role,
+        agency: user.agency,
+        email: user.email
+      },
+      JWT_SECRET,
+      { expiresIn: '1d' }
     );
 
-    res.json({
-      token,
-      user: {
-        email: user.email,
-        role: user.role,
-        agency: user.agency
-      }
-    });
-  });
+    // RESPOND
+    res.json({ token, user });
+  } catch (err) {
+    console.error('❌ LOGIN ERROR:', err); // <--- This will show the real cause!
+    res.status(500).json({ error: 'Server error during login' });
+  }
 });
 
 
