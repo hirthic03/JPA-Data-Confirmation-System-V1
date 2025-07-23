@@ -19,9 +19,7 @@ require('dotenv').config();
 const app = express();
 const saltRounds = 10;
 
-const dbDir = path.join(__dirname, 'data');
-fs.mkdirSync(dbDir, { recursive: true });
-const db = new Database(path.join(__dirname, 'confirmation_data.db'));
+
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
@@ -32,28 +30,30 @@ const cors = require('cors');
 const allowedOrigins = [
   'https://jpa-data-confirmation-system-v1.vercel.app',
   'https://jpa-data-confirmation-system-v1-git-main-hirthics-projects.vercel.app',
-  'http://localhost:3000',
+  'http://localhost:3000'
 ];
 
-// 🟢 CORS middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      console.error('CORS BLOCKED:', origin);
-      return callback(new Error('Not allowed by CORS'));
+      console.log('❌ Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,
+  credentials: true
 }));
+
+app.options('*', cors()); 
 
 // 🟢 Middleware for parsing JSON and urlencoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.options('*', cors()); 
+
+const dbDir = path.join(__dirname, 'data');
+fs.mkdirSync(dbDir, { recursive: true });
+const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
 // Optional health check route
 app.get('/', (req, res) => {
