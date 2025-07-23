@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const express = require('express');
-const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -21,30 +20,23 @@ const app = express();
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
-
+const cors = require('cors');
 // Allow only your frontend domains
 const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
   'https://jpa-data-confirmation-system-v1.vercel.app',
+  'http://localhost:3000'
 ];
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (
-        !origin || 
-        ALLOWED_ORIGINS.includes(origin) ||
-        /^https:\/\/.*\.vercel\.app$/.test(origin)
-      ) {
-        callback(null, true);
-      } else {
-        console.error(`❌ Blocked by CORS: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+
 
 
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
@@ -413,28 +405,30 @@ if (dataGrid) {
 
 const saltRounds = 10;
 
-app.post('/register', async (req, res) => {
-  const { email, password, role, agency } = req.body;
-
-  if (!email || !password || !role) {
-    return res.status(400).json({ error: 'Missing fields' });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
+app.post('/register', (req, res) => {
+  const { email, password, agency } = req.body;
 
   try {
-    const stmt = db.prepare(`
-      INSERT INTO users (email, password, role, agency)
-      VALUES (?, ?, ?, ?)
-    `);
-    stmt.run(email, hashedPassword, role, agency || null);
+    const existingUser = db.prepare(`SELECT * FROM users WHERE email = ?`).get(email);
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
 
-    res.status(200).json({ success: true });
+    const id = randomUUID();
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    db.prepare(`
+      INSERT INTO users (id, email, password, agency)
+      VALUES (?, ?, ?, ?)
+    `).run(id, email, hashedPassword, agency);
+
+    console.log('✅ Created user:', email);
+    res.status(201).json({ success: true });
   } catch (err) {
-    console.error('❌ Registration Error:', err.message); // ADD THIS LINE
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('❌ Registration Error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 
