@@ -99,12 +99,12 @@ db.prepare(`
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE,
-    password TEXT,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL,
     agency TEXT
   )
 `).run();
-
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS inbound_requirements (
@@ -414,31 +414,28 @@ if (dataGrid) {
 const saltRounds = 10;
 
 app.post('/register', async (req, res) => {
-  const { email, password, role = 'agency', agency = '' } = req.body;
+  const { email, password, role, agency } = req.body;
 
-  // ✅ Basic field validation
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  if (!email || !password || !role) {
+    return res.status(400).json({ error: 'Missing fields' });
   }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
-    // ✅ Secure password hashing
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // ✅ Insert into SQLite
-    db.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO users (email, password, role, agency)
       VALUES (?, ?, ?, ?)
-    `).run(email, hashedPassword, role, agency);
+    `);
+    stmt.run(email, hashedPassword, role, agency || null);
 
-    // ✅ Success response
-    res.status(201).json({ message: 'User registered successfully' });
-  } catch (error) {
-    // ✅ Error logging for debugging
-    console.error('Error in /register:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('❌ Registration Error:', err.message); // ADD THIS LINE
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 app.post('/login', (req, res) => {
