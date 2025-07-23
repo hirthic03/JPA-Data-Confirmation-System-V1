@@ -21,25 +21,27 @@ const app = express();
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = new Set([
-   process.env.FRONTEND_ORIGIN,  // ✅ Vercel frontend
-  'http://localhost:3000',                                // ✅ Local frontend
-  'https://jpa-data-confirmation-system-v1.vercel.app/'   // ✅ Handles trailing slash
-]);
+const cors = require('cors');
 
-app.use(
-  cors({
-    origin(origin, cb) {
-      if (!origin) return cb(null, true); // Allow Postman/curl
-      const normalizedOrigin = origin.replace(/\/$/, '');
-      if (ALLOWED_ORIGINS.has(normalizedOrigin)) return cb(null, true);
-      console.error('❌ CORS Blocked:', origin);
-      return cb(new Error('CORS - origin not allowed'));
-    },
-    credentials: true,
-    optionsSuccessStatus: 200
-  })
-);
+// Allow only your frontend domains
+const ALLOWED_ORIGINS = [
+  'https://jpa-data-confirmation-system-v1.vercel.app', // ✅ Production frontend
+  'http://localhost:3000'                                // ✅ Local development
+];
+
+app.use(cors({
+  origin(origin, callback) {
+    // Allow requests from Postman or curl (no origin)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.error(`❌ Blocked by CORS: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 const upload = multer({ dest: 'uploads/' }).any();
