@@ -25,22 +25,27 @@ const cors = require('cors');
 
 // Allow only your frontend domains
 const ALLOWED_ORIGINS = [
-  'https://jpa-data-confirmation-system-v1.vercel.app', // ✅ Production frontend
-  'http://localhost:3000'                                // ✅ Local development
+  'http://localhost:3000',
+  'https://jpa-data-confirmation-system-v1.vercel.app',
 ];
 
-app.use(cors({
-  origin(origin, callback) {
-    // Allow requests from Postman or curl (no origin)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error(`❌ Blocked by CORS: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (
+        !origin || 
+        ALLOWED_ORIGINS.includes(origin) ||
+        /^https:\/\/.*\.vercel\.app$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        console.error(`❌ Blocked by CORS: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
 
 
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
