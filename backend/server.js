@@ -21,7 +21,6 @@ const app = express();
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
-const cors = require('cors');
 
 // Allow only your frontend domains
 const ALLOWED_ORIGINS = [
