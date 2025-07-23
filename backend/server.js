@@ -21,7 +21,7 @@ const saltRounds = 10;
 
 const dbDir = path.join(__dirname, 'data');
 fs.mkdirSync(dbDir, { recursive: true });
-const db = new Database(path.resolve(__dirname, 'database.db'));
+const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
@@ -417,7 +417,7 @@ if (dataGrid) {
 
 
 app.post('/register', (req, res) => {
-  const { email, password, agency } = req.body;
+  const { email, password, agency, role } = req.body;
 
   try {
     const existingUser = db.prepare(`SELECT * FROM users WHERE email = ?`).get(email);
@@ -428,9 +428,8 @@ app.post('/register', (req, res) => {
     const id = randomUUID();
     const hashedPassword = bcrypt.hashSync(password, 10);
     db.prepare(`
-      INSERT INTO users (id, email, password, agency)
-      VALUES (?, ?, ?, ?)
-    `).run(id, email, hashedPassword, agency);
+  INSERT INTO users (id, email, password, role, agency)
+`).run(id, email, hashedPassword, role || 'agency', agency);
 
     console.log('✅ Created user:', email);
     res.status(201).json({ success: true });
