@@ -21,7 +21,7 @@ const saltRounds = 10;
 
 const dbDir = path.join(__dirname, 'data');
 fs.mkdirSync(dbDir, { recursive: true });
-const db = new Database(path.join(dbDir, 'database.db'));
+const db = new Database(path.resolve(__dirname, 'database.db'));
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
