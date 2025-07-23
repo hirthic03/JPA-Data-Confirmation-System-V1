@@ -28,28 +28,32 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
 const cors = require('cors');
 // ✅ CORS - must come first
-const ALLOWED_ORIGINS = [
-  'http://localhost:3000',                                // dev
-  'https://jpa-data-confirmation-system-v1.vercel.app'    // production
+// 🟢 Set allowed origins
+const allowedOrigins = [
+  'https://jpa-data-confirmation-system-v1.vercel.app',
+  'https://jpa-data-confirmation-system-v1-git-main-hirthics-projects.vercel.app',
+  'http://localhost:3000',
 ];
 
-
+// 🟢 CORS middleware
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     } else {
-      console.error("❌ CORS BLOCKED for origin:", origin);
-      callback(new Error('Not allowed by CORS'));
+      console.error('CORS BLOCKED:', origin);
+      return callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.options('*', cors()); 
+
+// 🟢 Middleware for parsing JSON and urlencoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.options('*', cors()); 
 
 // Optional health check route
 app.get('/', (req, res) => {
