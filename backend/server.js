@@ -416,28 +416,34 @@ if (dataGrid) {
 });
 
 
-app.post('/register', (req, res) => {
-  const { email, password, agency, role } = req.body;
-
+app.post('/register', async (req, res) => {
   try {
-    const existingUser = db.prepare(`SELECT * FROM users WHERE email = ?`).get(email);
-    if (existingUser) {
-      return res.status(409).json({ error: 'Email already registered' });
+    const { email, password, agency, role } = req.body;
+
+    // ✅ Validate input types
+    if (typeof email !== 'string' || typeof password !== 'string' || typeof agency !== 'string' || typeof role !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid input type' });
     }
 
-    const id = randomUUID();
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    db.prepare(`
-  INSERT INTO users (id, email, password, role, agency)
-`).run(id, email, hashedPassword, role || 'agency', agency);
+    // ✅ Check if user already exists
+    const userExists = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
+    if (userExists) {
+      return res.status(400).json({ success: false, message: 'Email already registered' });
+    }
 
-    console.log('✅ Created user:', email);
-    res.status(201).json({ success: true });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const stmt = db.prepare('INSERT INTO users (email, password, agency, role) VALUES (?, ?, ?, ?)');
+    stmt.run(email, hashedPassword, agency, role);
+
+    console.log(`✅ Created user: ${email}`);
+    res.json({ success: true });
   } catch (err) {
     console.error('❌ Registration Error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
+
 
 
 
