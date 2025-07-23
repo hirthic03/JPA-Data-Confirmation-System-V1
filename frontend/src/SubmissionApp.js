@@ -25,10 +25,27 @@ const [pendingElementLabel, setPendingElementLabel] = useState('');
 const [availableGroups, setAvailableGroups] = useState([]);
   const showNotConfirmButton = false; // 🔒 Client-requested: hidden for now, re-enable if needed
   const allowOutboundFlow = false; // 🔒 Hide outbound for now; re-enable if client requests
-  const allowedSystems = {
-  Outbound: ['Sistem Pengurusan Meja Bantuan (SPMB)'],
-  Inbound: ['Sistem Pengurusan Meja Bantuan (SPMB)']
+ const agency = localStorage.getItem('agency') || '';
+const dynamicSystems = {
+  Outbound: [],
+  Inbound: []
 };
+
+// Dynamically include all systems that contain this agency’s name in any way
+// You may improve this logic to check against real mapping if needed
+const storedSystems = JSON.parse(localStorage.getItem('systemsData') || '{}');
+
+Object.entries(storedSystems?.Inbound || {}).forEach(([systemName]) => {
+  if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
+    dynamicSystems.Inbound.push(systemName);
+  }
+});
+Object.entries(storedSystems?.Outbound || {}).forEach(([systemName]) => {
+  if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
+    dynamicSystems.Outbound.push(systemName);
+  }
+});
+
 
  
   const navigate = useNavigate();
@@ -48,6 +65,7 @@ const [availableGroups, setAvailableGroups] = useState([]);
       .get('/systems')
       .then(res => {
         setSystemsData(res.data);
+        localStorage.setItem('systemsData', JSON.stringify(res.data));
         const flows = Object.keys(res.data).filter(
           f => allowOutboundFlow || f === 'Inbound'
         );
@@ -81,7 +99,7 @@ const [availableGroups, setAvailableGroups] = useState([]);
 useEffect(() => {
   if (!systemsData[flowType]) return;
   const sysList = Object.keys(systemsData[flowType])
-    .filter(sys => allowedSystems[flowType]?.includes(sys));
+    .filter(sys => dynamicSystems[flowType]?.includes(sys))
   if (!sysList.includes(system)) {
     setSystem(sysList[0] || '');
   }
@@ -355,7 +373,7 @@ const submit = (confirmed) => {
         <label>Nama Sistem:</label>
 <select value={system} onChange={e => setSystem(e.target.value)}>
   {Object.keys(systemsData[flowType] || {})
-    .filter(sys => allowedSystems[flowType]?.includes(sys))
+    .filter(sys => dynamicSystems[flowType]?.includes(sys))
     .map(sys => (
       <option key={sys}>{sys}</option>
     ))}

@@ -30,7 +30,18 @@ function RegisterPage() {
       <form onSubmit={handleRegister}>
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
         <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-        <input type="text" placeholder="Agency" value={agency} onChange={e => setAgency(e.target.value)} />
+       <select value={agency} onChange={e => setAgency(e.target.value)} required>
+  <option value="">-- Pilih Agensi --</option>
+  <option value="JPA">JPA</option>
+  <option value="Other">Lain-lain</option>
+</select>
+{agency === 'Other' && (
+  <input
+    type="text"
+    placeholder="Taip nama agensi lain"
+    onChange={e => setAgency(e.target.value)}
+  />
+)}
         <select value={role} onChange={e => setRole(e.target.value)}>
           <option value="agency">Agency</option>
           <option value="admin">Admin</option>

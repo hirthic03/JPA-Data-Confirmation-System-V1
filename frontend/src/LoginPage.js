@@ -4,8 +4,10 @@ import './App.css'; // optional styling
 import { jwtDecode } from 'jwt-decode';
 import api from './utils/api';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage({ onLogin }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +28,14 @@ const decoded = jwtDecode(token);
     localStorage.setItem('role', decoded.role);
     localStorage.setItem('agency', decoded.agency || '');
 
-      if (onLogin) onLogin(user); // callback to app
+      if (onLogin) onLogin(user);
+
+// 🔒 Check agency and redirect
+if (decoded.agency === 'JPA') {
+  navigate('/submission'); // 👈 this must match your route for SubmissionApp
+} else {
+  alert("Akses hanya dibenarkan kepada pengguna agensi JPA.");
+}
     } catch (err) {
       setError(err?.response?.data?.error || 'Login failed');
     }
