@@ -30,31 +30,13 @@ const storedSystems = JSON.parse(localStorage.getItem('systemsData') || '{}');
 const allowedSystems = { Inbound: [], Outbound: [] };
 const agency = localStorage.getItem('agency') || '';
 
-const getDynamicSystems = (data) => {
-  const result = { Inbound: [], Outbound: [] };
 
-  if (!data || typeof data !== 'object') return result;
-
-  Object.entries(data?.Inbound || {}).forEach(([systemName]) => {
-    if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
-      result.Inbound.push(systemName);
-    }
-  });
-
-  Object.entries(data?.Outbound || {}).forEach(([systemName]) => {
-    if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
-      result.Outbound.push(systemName);
-    }
-  });
-
-  return result;
-};
-
-Object.entries(storedSystems?.Inbound || {}).forEach(([systemName]) => {
-  if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
+Object.entries(storedSystems?.Inbound || {}).forEach(([systemName, systemData]) => {
+  if (systemData?.agency?.toLowerCase() === agency.toLowerCase()) {
     allowedSystems.Inbound.push(systemName);
   }
 });
+
 Object.entries(storedSystems?.Outbound || {}).forEach(([systemName]) => {
   if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
     allowedSystems.Outbound.push(systemName);
@@ -126,7 +108,7 @@ useEffect(() => {
    "→",
    Object.keys(systemsData[flowType][system] || {})
  );
-  const moduleEntries = Object.entries(systemsData[flowType][system]);
+  const moduleEntries = Object.entries(systemsData[flowType]?.[system]?.modules || {});
 
 // Remove invisible whitespace from module names
 const filteredModules = moduleEntries.map(([modName]) => modName.trim());
@@ -141,7 +123,7 @@ if (!filteredModules.includes(module.trim())) {
 
 useEffect(() => {
   if (!module) return;
-  const normalizedModules = Object.entries(systemsData?.[flowType]?.[system] || {});
+  const normalizedModules = Object.entries(systemsData?.[flowType]?.[system]?.modules || {});
   const selectedModule = normalizedModules.find(([name]) => name.trim() === module.trim());
   const modData = selectedModule?.[1]?.elements || [];
  dbg("🧪 module:", module);

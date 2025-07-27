@@ -307,6 +307,8 @@
     }
   },
   "Sistem Pengurusan Meja Bantuan (SPMB)": {
+  "agency": "Jabatan Perkhidmatan Awam (JPA)",
+  "modules": {
     "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
       "title": "Maklumat Aduan Pemilik Kompetensi",
       "elements": [
@@ -358,7 +360,8 @@
         }
       ]
     }
-  },
+  }
+},
   "MyPsyD": {
     "Psikologi": {
       "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
