@@ -58,11 +58,20 @@ const [userAgency, setUserAgency] = useState('');
           f => allowOutboundFlow || f === 'Inbound'
         );
         if (flows.length > 0) {
-  const flow = flows[0];
-  setFlowType(flow);
-  const agencyKey = findMatchingAgencyKey(res.data, flow);
-  setUserAgency(agencyKey);
-}
+          const flow = flows[0];
+          setFlowType(flow);
+          const agencyKey = findMatchingAgencyKey(res.data, flow);
+          setUserAgency(agencyKey);
+
+          const systems = Object.keys(res.data[flow]?.[agencyKey] || {});
+          if (systems.length > 0) {
+            setSystem(systems[0]);
+            const modules = Object.keys(res.data[flow][agencyKey][systems[0]]?.modules || {});
+            if (modules.length > 0) {
+              setModule(modules[0]);
+            }
+          }
+        }
       })
       .catch(err => {
         if (attempt < 3) {
@@ -74,15 +83,23 @@ const [userAgency, setUserAgency] = useState('');
             .then(data => {
               setSystemsData(data);
               const flows = Object.keys(data).filter(
-  f => allowOutboundFlow || f === 'Inbound'
-);
-if (flows.length > 0) {
-  const flow = flows[0];
-  setFlowType(flow);
-  const agencyKey = findMatchingAgencyKey(data, flow);
-  setUserAgency(agencyKey);
-}
+                f => allowOutboundFlow || f === 'Inbound'
+              );
+              if (flows.length > 0) {
+                const flow = flows[0];
+                setFlowType(flow);
+                const agencyKey = findMatchingAgencyKey(data, flow);
+                setUserAgency(agencyKey);
 
+                const systems = Object.keys(data[flow]?.[agencyKey] || {});
+                if (systems.length > 0) {
+                  setSystem(systems[0]);
+                  const modules = Object.keys(data[flow][agencyKey][systems[0]]?.modules || {});
+                  if (modules.length > 0) {
+                    setModule(modules[0]);
+                  }
+                }
+              }
             })
             .catch(e =>
               console.error('❌ Failed to load local systems.json:', e)
@@ -90,6 +107,7 @@ if (flows.length > 0) {
         }
       });
   }
+
 
   loadSystems();
 }, []);
