@@ -362,9 +362,8 @@
             ]
           }
         }
-      }
-    },
-  "MyPsyD": {
+      },
+      "MyPsyD": {
     "Psikologi": {
       "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
       "elements": [
@@ -410,6 +409,8 @@
       ]
     }
   }
+}
+  
 }
 
 }
