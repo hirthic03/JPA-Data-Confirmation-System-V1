@@ -69,17 +69,19 @@ const [userAgency, setUserAgency] = useState('');
         setUserAgency(agencyKey);
 
         const systems = Object.keys(res.data[flow]?.[agencyKey] || {});
-        const firstSystem = systems[0];
+if (systems.length > 0) {
+  setSystem(prevSystem => systems.includes(prevSystem) ? prevSystem : systems[0]);
 
-        if (firstSystem && res.data[flow][agencyKey][firstSystem]?.modules) {
-          setSystem(firstSystem);
-          const modules = Object.keys(
-            res.data[flow][agencyKey][firstSystem].modules || {}
-          );
-          if (modules.length > 0) {
-            setModule(modules[0]);
-          }
-        }
+  const selectedSystem = systems.includes(system) ? system : systems[0];
+  const modules = Object.keys(
+    res.data[flow][agencyKey][selectedSystem]?.modules || {}
+  );
+  if (modules.length > 0) {
+    setModule(prevModule => modules.includes(prevModule) ? prevModule : modules[0]);
+  }
+}
+
+
       }
     })
     .catch(err => {
@@ -159,8 +161,8 @@ useEffect(() => {
   setAvailableModules(filteredModules);
 
   if (!filteredModules.includes(module.trim())) {
-    setModule('');
-  }
+  setModule(filteredModules[0] || '');
+}
 }, [system, flowType, systemsData]);
 
 
