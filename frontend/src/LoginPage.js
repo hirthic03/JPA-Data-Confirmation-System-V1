@@ -26,7 +26,7 @@ function LoginPage({ onLogin }) {
 
 const decoded = jwtDecode(token);
     localStorage.setItem('role', decoded.role);
-    localStorage.setItem('agency', decoded.agency || '');
+    localStorage.setItem('agency', decoded.agency);
 
       if (onLogin) onLogin(user);
 

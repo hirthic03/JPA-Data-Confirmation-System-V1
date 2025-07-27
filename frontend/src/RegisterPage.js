@@ -18,6 +18,11 @@ function RegisterPage() {
         role,
         agency
       });
+
+      const { token } = res.data;
+      localStorage.setItem('token', token);
+      localStorage.setItem('agency', agency); // ✅ NEW
+      navigate('/login');
       setMessage(res.data.message);
     } catch (err) {
       setMessage(err?.response?.data?.error || 'Registration failed');

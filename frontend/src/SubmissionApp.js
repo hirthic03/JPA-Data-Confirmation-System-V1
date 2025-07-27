@@ -9,6 +9,9 @@ const dbg = (...args) => {
   if (process.env.NODE_ENV !== 'production') console.log(...args);
 };
 
+const userAgency = localStorage.getItem('agency'); // ✅ NEW
+
+
 export default function SubmissionApp() {
   const [systemsData, setSystemsData] = useState({});
   
@@ -26,22 +29,6 @@ const [pendingElementLabel, setPendingElementLabel] = useState('');
 const [availableGroups, setAvailableGroups] = useState([]);
   const showNotConfirmButton = false; // 🔒 Client-requested: hidden for now, re-enable if needed
   const allowOutboundFlow = false; // 🔒 Hide outbound for now; re-enable if client requests
-const storedSystems = JSON.parse(localStorage.getItem('systemsData') || '{}');
-const allowedSystems = { Inbound: [], Outbound: [] };
-const agency = localStorage.getItem('agency') || '';
-
-
-Object.entries(storedSystems?.Inbound || {}).forEach(([systemName, systemData]) => {
-  if (systemData?.agency?.toLowerCase() === agency.toLowerCase()) {
-    allowedSystems.Inbound.push(systemName);
-  }
-});
-
-Object.entries(storedSystems?.Outbound || {}).forEach(([systemName]) => {
-  if (agency && systemName.toLowerCase().includes(agency.toLowerCase())) {
-    allowedSystems.Outbound.push(systemName);
-  }
-});
  
   const navigate = useNavigate();
   const handleLogout = () => {
@@ -91,63 +78,61 @@ Object.entries(storedSystems?.Outbound || {}).forEach(([systemName]) => {
 
 
 useEffect(() => {
-  if (!systemsData[flowType]) return;
-  const sysList = Object.keys(systemsData[flowType])
-    .filter(sys => allowedSystems[flowType]?.includes(sys));
-  if (!sysList.includes(system)) {
-    setSystem(sysList[0] || '');
+  if (!systemsData[flowType]?.[userAgency]) return;
+  const systemList = Object.keys(systemsData[flowType][userAgency]);
+  if (!systemList.includes(system)) {
+    setSystem(systemList[0] || '');
   }
 }, [flowType, systemsData, system]);
 
 
 useEffect(() => {
-  if (!system || !systemsData[flowType]?.[system]) return;
-   dbg(
-   "🔍 Available modules for",
-   system,
-   "→",
-   Object.keys(systemsData[flowType][system] || {})
- );
-  const moduleEntries = Object.entries(systemsData[flowType]?.[system]?.modules || {});
+  if (!system || !systemsData[flowType]?.[userAgency]?.[system]) return;
 
-// Remove invisible whitespace from module names
-const filteredModules = moduleEntries.map(([modName]) => modName.trim());
+  const moduleEntries = Object.entries(
+    systemsData[flowType][userAgency][system]?.modules || {}
+  );
 
-setAvailableModules(filteredModules);
+  const filteredModules = moduleEntries.map(([modName]) => modName.trim());
 
-// Ensure selected module is valid
-if (!filteredModules.includes(module.trim())) {
-  setModule('');
-}
+  setAvailableModules(filteredModules);
+
+  if (!filteredModules.includes(module.trim())) {
+    setModule('');
+  }
 }, [system, flowType, systemsData]);
 
+
 useEffect(() => {
-  if (!module) return;
-  const normalizedModules = Object.entries(systemsData?.[flowType]?.[system]?.modules || {});
-  const selectedModule = normalizedModules.find(([name]) => name.trim() === module.trim());
+  if (!module || !systemsData[flowType]?.[userAgency]?.[system]?.modules) return;
+
+  const normalizedModules = Object.entries(
+    systemsData[flowType][userAgency][system].modules || {}
+  );
+
+  const selectedModule = normalizedModules.find(
+    ([name]) => name.trim() === module.trim()
+  );
+
   const modData = selectedModule?.[1]?.elements || [];
- dbg("🧪 module:", module);
- dbg("🧪 elements:", modData);
+
+  dbg("🧪 module:", module);
+  dbg("🧪 elements:", modData);
+
   setAvailableElements(modData);
+
   setElements(prev =>
-  prev.filter(e => {
-    // support both “flat” and “grouped” modules
-    if (typeof e === 'string') {
-      return modData.includes(e);
-    }
-
-    // grouped element => keep only if the SAME group still exists
-    return modData.some(
-      it =>
-        typeof it === 'object' &&
-        it.group === e.group &&
-        it.fields?.includes(e.name)
-    );
-  })
-);
-
+    prev.filter(e => {
+      if (typeof e === 'string') return modData.includes(e);
+      return modData.some(
+        it =>
+          typeof it === 'object' &&
+          it.group === e.group &&
+          it.fields?.includes(e.name)
+      );
+    })
+  );
 }, [module, system, flowType, systemsData]);
-
 
 const flattenOutboundElements = (confirmed) => {
   if (!availableElements || availableElements.length === 0) return [];
@@ -366,12 +351,16 @@ const submit = (confirmed) => {
       <div className="form-group">
         <label>Nama Sistem:</label>
 <select value={system} onChange={e => setSystem(e.target.value)}>
-  {Object.keys(systemsData[flowType] || {})
-    .filter(sys => allowedSystems[flowType]?.includes(sys))
-    .map(sys => (
-      <option key={sys}>{sys}</option>
-    ))}
+  {(systemsData[flowType]?.[userAgency]
+    ? Object.keys(systemsData[flowType][userAgency])
+    : []
+  ).map((systemName) => (
+    <option key={systemName} value={systemName}>
+      {systemName}
+    </option>
+  ))}
 </select>
+
       </div>
 
       <div className="form-group">
