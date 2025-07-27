@@ -31,10 +31,10 @@ const decoded = jwtDecode(token);
       if (onLogin) onLogin(user);
 
 // 🔒 Check agency and redirect
-if (decoded.agency === 'JPA') {
-  navigate('/submission'); // 👈 this must match your route for SubmissionApp
+if (decoded.agency) {
+  navigate('/submission');
 } else {
-  alert("Akses hanya dibenarkan kepada pengguna agensi JPA.");
+  alert("Akses hanya dibenarkan kepada pengguna agensi yang sah.");
 }
     } catch (err) {
       setError(err?.response?.data?.error || 'Login failed');

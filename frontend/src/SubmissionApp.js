@@ -50,63 +50,88 @@ const [userAgency, setUserAgency] = useState('');
 
   /* 2️⃣  Now load systems, retry up to 3× if container still cold */
   function loadSystems(attempt = 1) {
-    api
-      .get('/systems')
-      .then(res => {
-        setSystemsData(res.data);
-        const flows = Object.keys(res.data).filter(
-          f => allowOutboundFlow || f === 'Inbound'
-        );
-        if (flows.length > 0) {
-          const flow = flows[0];
-          setFlowType(flow);
-          const agencyKey = findMatchingAgencyKey(res.data, flow);
-          setUserAgency(agencyKey);
+  api
+    .get('/systems')
+    .then(res => {
+      setSystemsData(res.data);
+      const flows = Object.keys(res.data).filter(
+        f => allowOutboundFlow || f === 'Inbound'
+      );
+      if (flows.length > 0) {
+        const flow = flows[0];
+        setFlowType(flow);
 
-          const systems = Object.keys(res.data[flow]?.[agencyKey] || {});
-          if (systems.length > 0) {
-            setSystem(systems[0]);
-            const modules = Object.keys(res.data[flow][agencyKey][systems[0]]?.modules || {});
-            if (modules.length > 0) {
-              setModule(modules[0]);
-            }
+        const agencyKey = findMatchingAgencyKey(res.data, flow);
+        if (!agencyKey) {
+          console.warn('❌ No matching agency found for user');
+          return;
+        }
+        setUserAgency(agencyKey);
+
+        const systems = Object.keys(res.data[flow]?.[agencyKey] || {});
+        const firstSystem = systems[0];
+
+        if (firstSystem && res.data[flow][agencyKey][firstSystem]?.modules) {
+          setSystem(firstSystem);
+          const modules = Object.keys(
+            res.data[flow][agencyKey][firstSystem].modules || {}
+          );
+          if (modules.length > 0) {
+            setModule(modules[0]);
           }
         }
-      })
-      .catch(err => {
-        if (attempt < 3) {
-          setTimeout(() => loadSystems(attempt + 1), 2000);
-        } else {
-          console.warn('Backend unreachable, using local systems.json', err);
-          fetch('/systems.json')
-            .then(r => r.json())
-            .then(data => {
-              setSystemsData(data);
-              const flows = Object.keys(data).filter(
-                f => allowOutboundFlow || f === 'Inbound'
-              );
-              if (flows.length > 0) {
-                const flow = flows[0];
-                setFlowType(flow);
-                const agencyKey = findMatchingAgencyKey(data, flow);
-                setUserAgency(agencyKey);
+      }
+    })
+    .catch(err => {
+      if (attempt < 3) {
+        setTimeout(() => loadSystems(attempt + 1), 2000);
+      } else {
+        console.warn('⚠️ Backend unreachable, using local systems.json', err);
+        fetch('/systems.json')
+          .then(r => r.json())
+          .then(data => {
+            setSystemsData(data);
+            const flows = Object.keys(data).filter(
+              f => allowOutboundFlow || f === 'Inbound'
+            );
+            if (flows.length > 0) {
+              const flow = flows[0];
+              setFlowType(flow);
 
-                const systems = Object.keys(data[flow]?.[agencyKey] || {});
-                if (systems.length > 0) {
-                  setSystem(systems[0]);
-                  const modules = Object.keys(data[flow][agencyKey][systems[0]]?.modules || {});
-                  if (modules.length > 0) {
-                    setModule(modules[0]);
-                  }
+              const agencyKey = findMatchingAgencyKey(data, flow);
+              if (!agencyKey) {
+                console.warn('❌ No matching agency found in local data');
+                return;
+              }
+              setUserAgency(agencyKey);
+
+              const systems = Object.keys(data[flow]?.[agencyKey] || {});
+              const firstSystem = systems[0];
+
+              if (
+                firstSystem &&
+                data[flow][agencyKey][firstSystem]?.modules
+              ) {
+                setSystem(firstSystem);
+                const modules = Object.keys(
+                  data[flow][agencyKey][firstSystem].modules || {}
+                );
+                if (modules.length > 0) {
+                  setModule(modules[0]);
                 }
               }
-            })
-            .catch(e =>
-              console.error('❌ Failed to load local systems.json:', e)
+            }
+          })
+          .catch(e => {
+            console.error('❌ Failed to load local systems.json:', e);
+            alert(
+              'Gagal memuatkan data sistem. Sila semak sambungan anda dan cuba semula.'
             );
-        }
-      });
-  }
+          });
+      }
+    });
+}
+
 
 
   loadSystems();
