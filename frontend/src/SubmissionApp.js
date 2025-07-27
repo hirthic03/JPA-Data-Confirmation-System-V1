@@ -57,7 +57,12 @@ const [userAgency, setUserAgency] = useState('');
         const flows = Object.keys(res.data).filter(
           f => allowOutboundFlow || f === 'Inbound'
         );
-        if (flows.length) setFlowType(flows[0]);
+        if (flows.length > 0) {
+  const flow = flows[0];
+  setFlowType(flow);
+  const agencyKey = findMatchingAgencyKey(res.data, flow);
+  setUserAgency(agencyKey);
+}
       })
       .catch(err => {
         if (attempt < 3) {
