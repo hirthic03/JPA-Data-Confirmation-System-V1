@@ -9,7 +9,12 @@ const dbg = (...args) => {
   if (process.env.NODE_ENV !== 'production') console.log(...args);
 };
 
-const userAgency = localStorage.getItem('agency'); // ✅ NEW
+const rawAgency = localStorage.getItem('agency')?.toLowerCase();
+
+const findMatchingAgencyKey = (systemsData, flowType) => {
+  const agencies = Object.keys(systemsData?.[flowType] || {});
+  return agencies.find(key => key.toLowerCase().includes(rawAgency)) || '';
+};
 
 
 export default function SubmissionApp() {
@@ -27,6 +32,8 @@ export default function SubmissionApp() {
   const [showGroupModal, setShowGroupModal] = useState(false);
 const [pendingElementLabel, setPendingElementLabel] = useState('');
 const [availableGroups, setAvailableGroups] = useState([]);
+const [userAgency, setUserAgency] = useState('');
+
   const showNotConfirmButton = false; // 🔒 Client-requested: hidden for now, re-enable if needed
   const allowOutboundFlow = false; // 🔒 Hide outbound for now; re-enable if client requests
  
@@ -62,9 +69,15 @@ const [availableGroups, setAvailableGroups] = useState([]);
             .then(data => {
               setSystemsData(data);
               const flows = Object.keys(data).filter(
-                f => allowOutboundFlow || f === 'Inbound'
-              );
-              if (flows.length) setFlowType(flows[0]);
+  f => allowOutboundFlow || f === 'Inbound'
+);
+if (flows.length > 0) {
+  const flow = flows[0];
+  setFlowType(flow);
+  const agencyKey = findMatchingAgencyKey(data, flow);
+  setUserAgency(agencyKey);
+}
+
             })
             .catch(e =>
               console.error('❌ Failed to load local systems.json:', e)
