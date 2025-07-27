@@ -144,21 +144,21 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />  // ✅ New line for registration
-        <Route
-          path="/submission"
-          element={isLoggedIn() ? <SubmissionApp /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/"
-          element={<Navigate to={isLoggedIn() ? '/submission' : '/login'} />}
-        />
-        {/* ✅ Phase 4 Route - now correctly placed */}
-       <Route
-  path="/requirement"
-  element={isLoggedIn() ? <RequirementPage /> : <Navigate to="/login" />}
+       <Route path="/login" element={<LoginPage />} />
+<Route path="/register" element={<RegisterPage />} /> {/* ✅ New line for registration */}
+<Route
+  path="/submission"
+  element={isLoggedIn() ? <SubmissionApp /> : <Navigate to="/login" />}
 />
+<Route
+  path="/"
+  element={<Navigate to={isLoggedIn() ? '/submission' : '/login'} />}
+/>
+<Route
+  path="/requirement"
+  element={isLoggedIn() ? <InboundRequirementForm /> : <Navigate to="/login" />}
+/>
+
 
       </Routes>
       

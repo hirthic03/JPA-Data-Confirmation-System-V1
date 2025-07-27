@@ -365,28 +365,29 @@ const submit = (confirmed) => {
   }
 
   function onSuccess() {
-    dbg('✅ Submitted payload');
-    if (flowType === 'Inbound') {
-      const confirmedFull = elements.map(({ name, group }) => ({
-        name,
-        group
-      }));
-      saveConfirmed(system, module, confirmedFull);
-      navigate('/requirement');
-    }
+  dbg('✅ Submitted payload');
+  alert('Telah dihantar!'); // ✅ Show alert first
 
-    alert('Telah dihantar!');
-    setElements([]);
-    if (flowType === 'Outbound') {
-      setRemarks([]);
-      setRemarkInput('');
-    }
+  if (flowType === 'Inbound') {
+    const confirmedFull = elements.map(({ name, group }) => ({
+      name,
+      group
+    }));
+    saveConfirmed(system, module, confirmedFull);
+    navigate('/requirement'); // ✅ Navigate after alert
   }
+
+  setElements([]);
+  if (flowType === 'Outbound') {
+    setRemarks([]);
+    setRemarkInput('');
+  }
+}
 
   function onError(err) {
-    console.error('Submission failed:', err);
-    alert('Something went wrong while submitting.');
-  }
+  console.error('❌ Submission failed:', err);
+  alert(`Something went wrong while submitting.\n\n${err.message}`);
+}
 };
 
 
