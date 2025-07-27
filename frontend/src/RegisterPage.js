@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css'; // Optional for styling
+import { useNavigate } from 'react-router-dom'; // ✅ ADD THIS
 
 function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ function RegisterPage() {
   const [role, setRole] = useState('agency');
   const [agency, setAgency] = useState('');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
