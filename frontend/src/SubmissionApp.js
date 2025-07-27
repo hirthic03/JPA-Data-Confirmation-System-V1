@@ -411,19 +411,19 @@ const submit = (confirmed) => {
       </div>
 
       <div className="form-group">
-        <label>Nama Sistem:</label>
-<select value={system} onChange={e => setSystem(e.target.value)}>
-  {(systemsData[flowType]?.[userAgency]
-    ? Object.keys(systemsData[flowType][userAgency])
-    : []
-  ).map((systemName) => (
-    <option key={systemName} value={systemName}>
-      {systemName}
-    </option>
-  ))}
-</select>
+  <label>Nama Sistem:</label>
+  <select value={system} onChange={e => setSystem(e.target.value)}>
+    {(systemsData[flowType]?.[userAgency]
+      ? Object.keys(systemsData[flowType][userAgency])
+      : []
+    ).map((systemName) => (
+      <option key={systemName} value={systemName}>
+        {systemName}
+      </option>
+    ))}
+  </select>
+</div>
 
-      </div>
 
       <div className="form-group">
         <label>Nama Modul:</label>
