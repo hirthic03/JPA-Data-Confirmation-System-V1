@@ -406,17 +406,15 @@ if (dataGrid) {
 
   await browser.close();
 
-  await transporter.sendMail({
-    from: `"JPA Data Confirmation" <${process.env.NOTIF_EMAIL}>`,
-    to: 'hirthic1517@gmail.com',
-    cc: CC_LIST,
-    subject: `✅ Inbound Submission – ${system} / ${apiName}`,
-    html: htmlBody,
-    attachments: [{
-      filename: `Inbound_${system}_${apiName}.pdf`,
-      content: buffer
-    }]
-  });
+  console.log('📨 Attempting to send email to:', process.env.EMAIL_TO);
+
+transporter.sendMail(mailOptions, function (error, info) {
+  if (error) {
+    console.error('❌ Email send error:', error);
+  } else {
+    console.log('✅ Email sent:', info.response);
+  }
+});
 
   console.log('📧 Email with PDF attachment sent');
 } catch (err) {
