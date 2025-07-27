@@ -492,9 +492,13 @@ app.post('/login', async (req, res) => {
     );
 
     // RESPOND
-    res.json({ token, user });
+    res.json({
+      token,
+      user,
+      agency: user.agency || 'JPA' // <-- ✅ Needed for your frontend
+    });
   } catch (err) {
-    console.error('❌ LOGIN ERROR:', err); // <--- This will show the real cause!
+    console.error('❌ LOGIN ERROR:', err);
     res.status(500).json({ error: 'Server error during login' });
   }
 });
