@@ -306,62 +306,64 @@
       ]
     }
   },
-  "Sistem Pengurusan Meja Bantuan (SPMB)": {
-  "agency": "JPA",
-  "modules": {
-    "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
-      "title": "Maklumat Aduan Pemilik Kompetensi",
-      "elements": [
-        {
-          "group": "Menghantar Aduan",
-          "fields": [
-            "Nama",
-            "No. Kad Pengenalan",
-            "Kategori Aduan",
-            "Keterangan Aduan",
-            "Status Aduan",
-            "ID Rujukan"
-          ]
-        },
-        {
-          "group": "Semak Status Aduan",
-          "fields": [
-            "Keterangan Aduan",
-            "Status Aduan",
-            "ID Rujukan"
-          ]
+  "JPA": {
+      "Sistem Pengurusan Meja Bantuan (SPMB)": {
+        "agency": "JPA",
+        "modules": {
+          "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
+            "title": "Maklumat Aduan Pemilik Kompetensi",
+            "elements": [
+              {
+                "group": "Menghantar Aduan",
+                "fields": [
+                  "Nama",
+                  "No. Kad Pengenalan",
+                  "Kategori Aduan",
+                  "Keterangan Aduan",
+                  "Status Aduan",
+                  "ID Rujukan"
+                ]
+              },
+              {
+                "group": "Semak Status Aduan",
+                "fields": [
+                  "Keterangan Aduan",
+                  "Status Aduan",
+                  "ID Rujukan"
+                ]
+              }
+            ]
+          },
+          "Aplikasi Mudah Alih": {
+            "title": "Maklumat Aduan / Cadangan (AMA)",
+            "elements": [
+              {
+                "group": "Menghantar Aduan / Cadangan",
+                "fields": [
+                  "Tarikh",
+                  "Aduan/ Cadangan",
+                  "Jenis Aduan",
+                  "Nama Pengadu",
+                  "E-mel Pengadu",
+                  "Gambar",
+                  "ID Rujukan"
+                ]
+              },
+              {
+                "group": "Menyemak Status Aduan / Cadangan",
+                "fields": [
+                  "Tarikh",
+                  "Aduan/ Cadangan",
+                  "Jenis Aduan",
+                  "Status Aduan/ Cadangan",
+                  "ID Rujukan"
+                ]
+              }
+            ]
+          }
         }
-      ]
+      }
     },
-    "Aplikasi Mudah Alih": {
-      "title": "Maklumat Aduan / Cadangan (AMA)",
-      "elements": [
-        {
-          "group": "Menghantar Aduan / Cadangan",
-          "fields": [
-            "Tarikh",
-            "Aduan/ Cadangan",
-            "Jenis Aduan",
-            "Nama Pengadu",
-            "E-mel Pengadu",
-            "Gambar",
-            "ID Rujukan"
-          ]
-        },
-        {
-          "group": "Menyemak Status Aduan / Cadangan",
-          "fields": [
-            "Tarikh",
-            "Aduan/ Cadangan",
-            "Jenis Aduan",
-            "Status Aduan/ Cadangan",
-            "ID Rujukan"
-          ]
-        }
-      ]
-    }
-  }
-},
   "MyPsyD": {
     "Psikologi": {
       "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
