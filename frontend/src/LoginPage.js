@@ -6,11 +6,13 @@ import api from './utils/api';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
+
 function LoginPage({ onLogin }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +46,7 @@ if (decoded.agency) {
   return (
     <div className="form-container">
       <h2>Login</h2>
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit}>
         <input
           type="email"
           placeholder="Email (e.g. agency1@jpa.gov.my)"

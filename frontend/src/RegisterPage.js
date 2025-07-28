@@ -10,6 +10,7 @@ function RegisterPage() {
   const [agency, setAgency] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const [customAgency, setCustomAgency] = useState('');
 
   const handleRegister = async (e) => {
     e.preventDefault();
