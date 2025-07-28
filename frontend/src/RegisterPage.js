@@ -35,27 +35,45 @@ function RegisterPage() {
     <div className="form-container">
       <h2>Register</h2>
       <form onSubmit={handleRegister}>
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-       <select value={agency} onChange={e => setAgency(e.target.value)} required>
-  <option value="">-- Pilih Agensi --</option>
-  <option value="JPA">JPA</option>
-  <option value="Other">Lain-lain</option>
-</select>
-{agency === 'Other' && (
-  <input
-    type="text"
-    placeholder="Taip nama agensi lain"
-    onChange={e => setAgency(e.target.value)}
-  />
-)}
+        <input
+          type="email"
+          placeholder="Email (e.g. agency1@jpa.gov.my)"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+        />
+        <select value={agency} onChange={e => setAgency(e.target.value)} required>
+          <option value="">-- Pilih Agensi --</option>
+          <option value="JPA">JPA</option>
+          <option value="Other">Lain-lain</option>
+        </select>
+        {agency === 'Other' && (
+          <input
+            type="text"
+            placeholder="Taip nama agensi lain"
+            value={customAgency}
+            onChange={e => setCustomAgency(e.target.value)}
+            required
+          />
+        )}
         <select value={role} onChange={e => setRole(e.target.value)}>
           <option value="agency">Agency</option>
           <option value="admin">Admin</option>
         </select>
         <button type="submit">Register</button>
       </form>
-      {message && <p>{message}</p>}
+      {message && (
+        <p className={message.toLowerCase().includes('success') ? '' : 'error'}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }

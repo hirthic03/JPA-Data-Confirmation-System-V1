@@ -44,28 +44,27 @@ if (decoded.agency) {
   return (
     <div className="form-container">
       <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleLogin}>
         <input
           type="email"
           placeholder="Email (e.g. agency1@jpa.gov.my)"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={e => setEmail(e.target.value)}
           required
         />
         <input
           type="password"
-          placeholder="Password (e.g. agency123)"
+          placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={e => setPassword(e.target.value)}
           required
         />
-        {error && <p className="error">{error}</p>}
         <button type="submit">Log In</button>
       </form>
-       {/* ✅ Register link added below */}
-    <p style={{ marginTop: '12px' }}>
-      Don't have an account? <Link to="/register">Register here</Link>
-    </p>
+      {message && <p className="error">{message}</p>}
+      <p className="link">
+        Don't have an account? <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 }
