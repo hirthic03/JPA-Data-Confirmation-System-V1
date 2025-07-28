@@ -414,7 +414,168 @@
           ]
         }
       }
+    },
+    "SPPA": {
+  "agency": "JPA",
+  "modules": {
+    "BLJ": {
+      "title": "Terima Maklumat Peperiksaan",
+      "elements": [
+        {
+          "group": "PFD-BLJ-RP-INT-01",
+          "fields": [
+            "Nama Peperiksaan",
+            "Kategori Peperiksaan",
+            "No. Rujukan",
+            "Nama Pemilik Kompetensi",
+            "No. Kad Pengenalan Kompetensi",
+            "Angka Giliran",
+            "Kod Peperiksaan",
+            "Siri",
+            "Tarikh Keputusan Peperiksaan",
+            "Bahagian Peperiksaan",
+            "Tarikh Bahagian Peperiksaan",
+            "Perkara",
+            "Keputusan Bahagian"
+          ]
+        }
+      ]
     }
+  }
+},
+"GCR": {
+  "agency": "JPA",
+  "modules": {
+    "CUT": {
+      "title": "Merekodkan Maklumat Pemberian Awal Award Wang Tunai GCR",
+      "elements": [
+        {
+          "group": "PFD-CUT-GCR-AWL-01",
+          "fields": [
+            "Nama Pemilik Kompetensi",
+            "No. Kad Pengenalan (bagi warganegara)",
+            "No. Pasport Yang Aktif (bagi bukan warganegara)",
+            "Tarikh Permohonan Pemberian Awal GCR"
+          ]
+        }
+      ]
+    }
+  }
+},
+"Ujian Psikologi Online": {
+  "agency": "JPA",
+  "modules": {
+    "PSI": {
+      "title": "Keputusan Ujian Psikometrik",
+      "elements": [
+        {
+          "group": "Keputusan Ujian Psikometrik",
+          "fields": [
+            "No. Kad Pengenalan Pemilik Kompetensi",
+            "Nama Pemilik Kompetensi",
+            "Jantina",
+            "Jawatan Sebenar",
+            "Unit Organisasi",
+            "Jenis Ujian",
+            "Tarikh Ujian",
+            "Hasil Ujian Psikologi dalam bentuk PDF"
+          ]
+        }
+      ]
+    }
+  }
+},
+"My Psikometrik": {
+  "agency": "JPA",
+  "modules": {
+    "PSI": {
+      "title": "Maklumat Permohonan dan Keputusan Ujian Psikometrik",
+      "elements": [
+        {
+          "group": "Permohonan Pendaftaran Ujian",
+          "fields": [
+            "Nama",
+            "No. Kad Pengenalan",
+            "No. Telefon Pejabat",
+            "E-mel Rasmi",
+            "Tarikh Dan Masa Permohonan",
+            "Jenis Pendekatan",
+            "Jenis Ujian",
+            "Tujuan Ujian"
+          ]
+        },
+        {
+          "group": "Terima Hasil Ujian",
+          "fields": [
+            "No. Kad Pengenalan Pemilik Kompetensi",
+            "Nama Pemilik Kompetensi",
+            "Jantina",
+            "Jawatan Sebenar",
+            "Unit Organisasi",
+            "Jenis Ujian",
+            "Tarikh Ujian",
+            "Hasil Ujian Psikologi dalam bentuk PDF"
+          ]
+        }
+      ]
+    }
+  }
+},
+"PPA Online": {
+  "agency": "JPA",
+  "modules": {
+    "BLJ": {
+      "title": "Maklumat Peperiksaan (ePromise)",
+      "elements": [
+        {
+          "group": "Terima Maklumat Peperiksaan",
+          "fields": [
+            "Nama Peperiksaan",
+            "Kategori Peperiksaan",
+            "No. Rujukan",
+            "Nama Pemilik Kompetensi",
+            "No. Kad Pengenalan Kompetensi",
+            "Angka Giliran",
+            "Kod Peperiksaan",
+            "Siri",
+            "Tarikh Keputusan Peperiksaan",
+            "Bahagian Peperiksaan",
+            "Tarikh Bahagian Peperiksaan",
+            "Perkara",
+            "Keputusan Bahagian"
+          ]
+        }
+      ]
+    }
+  }
+},
+"Sistem Penilaian 360": {
+  "agency": "JPA",
+  "modules": {
+    "SME": {
+      "title": "Maklumat Penilaian Kompetensi",
+      "elements": [
+        {
+          "group": "Penilaian SME",
+          "fields": [
+            "Agensi",
+            "ID Pemilik Kompetensi"
+          ]
+        },
+        {
+          "group": "Senarai Pencalonan",
+          "fields": [
+            "Agensi",
+            "ID Pemilik Kompetensi",
+            "Keputusan Penilaian"
+          ]
+        }
+      ]
+    }
+  }
+}
+
+
   }
   
 }
