@@ -307,109 +307,115 @@
     }
   },
   "JPA": {
-      "Sistem Pengurusan Meja Bantuan (SPMB)": {
-        "agency": "JPA",
-        "modules": {
-          "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
-            "title": "Maklumat Aduan Pemilik Kompetensi",
-            "elements": [
-              {
-                "group": "Menghantar Aduan",
-                "fields": [
-                  "Nama",
-                  "No. Kad Pengenalan",
-                  "Kategori Aduan",
-                  "Keterangan Aduan",
-                  "Status Aduan",
-                  "ID Rujukan"
-                ]
-              },
-              {
-                "group": "Semak Status Aduan",
-                "fields": [
-                  "Keterangan Aduan",
-                  "Status Aduan",
-                  "ID Rujukan"
-                ]
-              }
-            ]
-          },
-          "Aplikasi Mudah Alih": {
-            "title": "Maklumat Aduan / Cadangan (AMA)",
-            "elements": [
-              {
-                "group": "Menghantar Aduan / Cadangan",
-                "fields": [
-                  "Tarikh",
-                  "Aduan/ Cadangan",
-                  "Jenis Aduan",
-                  "Nama Pengadu",
-                  "E-mel Pengadu",
-                  "Gambar",
-                  "ID Rujukan"
-                ]
-              },
-              {
-                "group": "Menyemak Status Aduan / Cadangan",
-                "fields": [
-                  "Tarikh",
-                  "Aduan/ Cadangan",
-                  "Jenis Aduan",
-                  "Status Aduan/ Cadangan",
-                  "ID Rujukan"
-                ]
-              }
-            ]
-          }
-        }
-      },
-      "MyPsyD": {
-    "Psikologi": {
-      "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
-      "elements": [
-        {
-          "group": "Maklumat Profil",
-          "fields": [
-            "No KP Pemilik Kompetensi",
-            "Nama Pemilik Kompetensi",
-            "Jantina",
-            "Jawatan Sebenar",
-            "Unit Organisasi"
+    "Sistem Pengurusan Meja Bantuan (SPMB)": {
+      "agency": "JPA",
+      "modules": {
+        "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
+          "title": "Maklumat Aduan Pemilik Kompetensi",
+          "elements": [
+            {
+              "group": "Menghantar Aduan",
+              "fields": [
+                "Nama",
+                "No. Kad Pengenalan",
+                "Kategori Aduan",
+                "Keterangan Aduan",
+                "Status Aduan",
+                "ID Rujukan"
+              ]
+            },
+            {
+              "group": "Semak Status Aduan",
+              "fields": [
+                "Keterangan Aduan",
+                "Status Aduan",
+                "ID Rujukan"
+              ]
+            }
           ]
         },
-        {
-          "group": "Maklumat Ujian",
-          "fields": [
-            "Jenis Ujian",
-            "Tarikh Ujian",
-            "Hasil Ujian Psikologi dalam bentuk PDF"
+        "Aplikasi Mudah Alih": {
+          "title": "Maklumat Aduan / Cadangan (AMA)",
+          "elements": [
+            {
+              "group": "Menghantar Aduan / Cadangan",
+              "fields": [
+                "Tarikh",
+                "Aduan/ Cadangan",
+                "Jenis Aduan",
+                "Nama Pengadu",
+                "E-mel Pengadu",
+                "Gambar",
+                "ID Rujukan"
+              ]
+            },
+            {
+              "group": "Menyemak Status Aduan / Cadangan",
+              "fields": [
+                "Tarikh",
+                "Aduan/ Cadangan",
+                "Jenis Aduan",
+                "Status Aduan/ Cadangan",
+                "ID Rujukan"
+              ]
+            }
           ]
         }
-      ]
-    }
-  },
-  "MyKehadiran": {
-    "Pengurusan Kehadiran": {
-      "title": "Maklumat Kehadiran",
-      "elements": [
-        {
-          "group": "Rekod Kehadiran",
-          "fields": [
-            "Agensi",
-            "Tarikh Integrasi",
-            "Status Integrasi",
-            "Tarikh Data Sistem Kehadiran",
-            "ID Pemilik Kompetensi",
-            "Tarikh dan Masa Masuk Bekerja",
-            "Tarikh dan Masa Keluar Pejabat",
-            "Tarikh dan Masa Masuk Semula Pejabat",
-            "Tarikh dan Masa Balik Bekerja"
+      }
+    },
+    "MyPsyD": {
+      "agency": "JPA",
+      "modules": {
+        "Psikologi": {
+          "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
+          "elements": [
+            {
+              "group": "Maklumat Profil",
+              "fields": [
+                "No KP Pemilik Kompetensi",
+                "Nama Pemilik Kompetensi",
+                "Jantina",
+                "Jawatan Sebenar",
+                "Unit Organisasi"
+              ]
+            },
+            {
+              "group": "Maklumat Ujian",
+              "fields": [
+                "Jenis Ujian",
+                "Tarikh Ujian",
+                "Hasil Ujian Psikologi dalam bentuk PDF"
+              ]
+            }
           ]
         }
-      ]
+      }
+    },
+    "MyKehadiran": {
+      "agency": "JPA",
+      "modules": {
+        "Pengurusan Kehadiran": {
+          "title": "Maklumat Kehadiran",
+          "elements": [
+            {
+              "group": "Rekod Kehadiran",
+              "fields": [
+                "Agensi",
+                "Tarikh Integrasi",
+                "Status Integrasi",
+                "Tarikh Data Sistem Kehadiran",
+                "ID Pemilik Kompetensi",
+                "Tarikh dan Masa Masuk Bekerja",
+                "Tarikh dan Masa Keluar Pejabat",
+                "Tarikh dan Masa Masuk Semula Pejabat",
+                "Tarikh dan Masa Balik Bekerja"
+              ]
+            }
+          ]
+        }
+      }
     }
   }
-}
   
 }
 
