@@ -308,20 +308,19 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 app.post('/submit-inbound', upload, async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
   try {
-   const {
-  system,
-  api:    apiNameRaw,   // preferred new field
-  module: apiNameOld,   // legacy field
-  module_group,
-  dataGrid
-} = req.body;
-const apiName = apiNameRaw || apiNameOld;   // ← restore this
-const moduleName = module_group || apiName; // ← fallback if frontend omits module_group
+    const {
+      system,
+      api: apiNameRaw,
+      module: apiNameOld,
+      module_group,
+      dataGrid
+    } = req.body;
 
+    const apiName = apiNameRaw || apiNameOld;
+    const moduleName = module_group || apiName;
     const submission_uuid = randomUUID();
     const created_at = new Date().toISOString();
-
-    let q9RowId = null;          // 🔑 per-request, safe from race conditions
+    let q9RowId = null;
 
     if (!system || !apiName) {
       return res.status(400).json({ error: 'System and API are required' });
@@ -330,7 +329,7 @@ const moduleName = module_group || apiName; // ← fallback if frontend omits mo
     const questionInsert = db.prepare(`
       INSERT INTO inbound_requirements
       (submission_uuid, system_name, module_name, api_name,
-      question_id,  question_text, answer, file_path, created_at)
+      question_id, question_text, answer, file_path, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -349,56 +348,55 @@ const moduleName = module_group || apiName; // ← fallback if frontend omits mo
       const filePath = uploadedFiles[questionId] || null;
 
       result = questionInsert.run(
-  submission_uuid,
-  system,
-   moduleName,     // goes into module_name column
-  apiName || '',        // goes into api_name column
-  questionId,
-  questionText,
-  value,
-  filePath,
-  created_at
-);
+        submission_uuid,
+        system,
+        moduleName,
+        apiName || '',
+        questionId,
+        questionText,
+        value,
+        filePath,
+        created_at
+      );
 
-        if (questionId === 'dataInvolved') {
-    q9RowId = result.lastInsertRowid;
-  }
+      if (questionId === 'dataInvolved') {
+        q9RowId = result.lastInsertRowid;
+      }
     });
 
     const submission_id = result?.lastInsertRowid;
-// ✅ Declare this ONCE at the top – always available
     let parsedGrid = [];
-    // ✅ Save Grid Data if present
-if (dataGrid) {
-  try {
-    parsedGrid = JSON.parse(dataGrid);
-  } catch (err) {
-    console.error('Invalid dataGrid JSON:', err);
-    return res.status(400).json({ error: 'Invalid dataGrid format' });
-  }
 
-  const stmt = db.prepare(`
-    INSERT INTO inbound_data_grid
-    (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+    if (dataGrid) {
+      try {
+        parsedGrid = JSON.parse(dataGrid);
+      } catch (err) {
+        console.error('Invalid dataGrid JSON:', err);
+        return res.status(400).json({ error: 'Invalid dataGrid format' });
+      }
 
-  parsedGrid.forEach(row => {
-    stmt.run([
-      submission_uuid,
-      q9RowId || null,
-      row.nama,
-      row.jenis,
-      row.saiz,
-      row.nullable,
-      row.rules,
-      row.dataElement || '',
-      row.groupName || ''
-    ]);
-  });
+      const stmt = db.prepare(`
+        INSERT INTO inbound_data_grid
+        (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
-}
- // ✅ SEND EMAIL + PDF — only if main fields exist
+      parsedGrid.forEach(row => {
+        stmt.run([
+          submission_uuid,
+          q9RowId || null,
+          row.nama,
+          row.jenis,
+          row.saiz,
+          row.nullable,
+          row.rules,
+          row.dataElement || '',
+          row.groupName || ''
+        ]);
+      });
+    }
+
+    // ✅ EMAIL + PDF only if all core fields exist
     if (system && apiName && req.body.integrationMethod) {
       const htmlBody = buildInboundEmail(req.body, parsedGrid, {
         system,
@@ -407,49 +405,61 @@ if (dataGrid) {
         created_at
       });
 
-      // 🧾 Generate a PDF version of the HTML
-      const pdfOptions = { format: 'A4', border: '10mm' };
+      try {
+        console.log('🧾 Launching Puppeteer for PDF...');
+        const browser = await puppeteer.launch({
+          headless: 'new',
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        });
 
-     try {
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-  });
-  const page = await browser.newPage();
-  await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
+        const page = await browser.newPage();
+        await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
 
-  const buffer = await page.pdf({
-    format: 'A4',
-    printBackground: true,
-    margin: {
-      top: '10mm',
-      bottom: '10mm',
-      left: '10mm',
-      right: '10mm',
+        const buffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '10mm',
+            bottom: '10mm',
+            left: '10mm',
+            right: '10mm',
+          },
+        });
+
+        await browser.close();
+        console.log('✅ PDF generated successfully');
+
+        console.log('📨 Sending email to:', process.env.EMAIL_TO);
+        await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
+        console.log('📧 Email with PDF sent');
+
+        return res.status(200).json({
+          message: '✅ Submission saved. Email with PDF sent.',
+          emailStatus: 'sent'
+        });
+
+      } catch (err) {
+        console.error('❌ PDF or Email Error:', err);
+
+        return res.status(500).json({
+          message: '⚠️ Submission saved, but email or PDF failed.',
+          emailStatus: 'failed'
+        });
+      }
     }
-  });
 
-  await browser.close();
+    // ✅ No integrationMethod, just save silently
+    return res.status(200).json({
+      message: '✅ Submission saved (no email sent).',
+      emailStatus: 'skipped'
+    });
 
-  console.log('📨 Attempting to send email to:', process.env.EMAIL_TO);
-
-await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
-
-  console.log('📧 Email with PDF attachment sent');
-} catch (err) {
-  console.error('❌ PDF/email error:', err);
-}
-
-    }
-
-
-    return res.status(200).json({ message: 'Inbound requirement saved.' });
   } catch (error) {
-    console.error('Error saving inbound:', error);
+    console.error('❌ Internal Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 app.post('/register', async (req, res) => {
   try {
