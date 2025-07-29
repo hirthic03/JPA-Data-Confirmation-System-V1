@@ -358,6 +358,7 @@ if (isGridEmpty) {
   try {
     form.append('dataGrid', JSON.stringify(gridRows));
     form.append('submission_id', `${formData.system}-${apiValue}`);
+    form.append('integrationMethod', 'API / File Upload'); // ✅ Required to trigger email + PDF
 await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
         /* ------- success prompt + redirect -------- */
 window.alert("Borang pengumpulan keperluan berjaya dihantar.");
