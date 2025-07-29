@@ -433,13 +433,7 @@ if (dataGrid) {
 
   console.log('📨 Attempting to send email to:', process.env.EMAIL_TO);
 
-transporter.sendMail(mailOptions, function (error, info) {
-  if (error) {
-    console.error('❌ Email send error:', error);
-  } else {
-    console.log('✅ Email sent:', info.response);
-  }
-});
+await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
 
   console.log('📧 Email with PDF attachment sent');
 } catch (err) {
