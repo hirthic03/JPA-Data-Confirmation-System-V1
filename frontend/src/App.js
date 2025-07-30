@@ -7,7 +7,7 @@ import { loadConfirmed } from './utils/confirmedStore';
 import './App.css';
 import AdminPage from './AdminPage';
 import RegisterPage from './RegisterPage';
-import { jwtDecode } from 'jwt-decode';
+import jwtDecode from 'jwt-decode';
 
 
 function ReportingPage() {
