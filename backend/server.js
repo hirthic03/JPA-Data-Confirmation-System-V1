@@ -381,19 +381,19 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      parsedGrid.forEach(row => {
-        stmt.run([
-          submission_uuid,
-          q9RowId || null,
-          row.nama,
-          row.jenis,
-          row.saiz,
-          row.nullable,
-          row.rules,
-          row.dataElement || '',
-          row.groupName || ''
-        ]);
-      });
+   parsedGrid.forEach(row => {
+  stmt.run([
+    submission_uuid,
+    q9RowId || null,
+    row.nama || '',
+    row.jenis || '',
+    row.saiz || '',
+    row.nullable || '',
+    row.rules || '',
+    row.dataElement || '',
+    row.groupName || ''
+  ]);
+});
     }
 
     // ✅ EMAIL + PDF only if all core fields exist
