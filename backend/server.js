@@ -382,17 +382,17 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
       `);
 
    parsedGrid.forEach(row => {
-  stmt.run([
-    submission_uuid,
-    q9RowId || null,
-    row.nama || '',
-    row.jenis || '',
-    row.saiz || '',
-    row.nullable || '',
-    row.rules || '',
-    row.dataElement || '',
-    row.groupName || ''
-  ]);
+  stmt.run(
+  submission_uuid,
+  q9RowId || null,
+  row.nama,
+  row.jenis,
+  row.saiz,
+  row.nullable,
+  row.rules,
+  row.dataElement || '',
+  row.groupName || ''
+);
 });
     }
 
