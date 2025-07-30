@@ -305,7 +305,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 }
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
-app.post('/submit-inbound', upload, async (req, res) => {
+app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
   try {
     const {
@@ -344,7 +344,7 @@ app.post('/submit-inbound', upload, async (req, res) => {
     Object.entries(req.body).forEach(([key, value]) => {
       if (['system', 'api', 'module', 'module_group', 'dataGrid'].includes(key)) return;
       const questionId = key;
-      const questionText = getQuestionTextById(questionId);
+      const questionText = getQuestionTextById(questionId) || 'Unknown';
       const filePath = uploadedFiles[questionId] || null;
 
       result = questionInsert.run(
