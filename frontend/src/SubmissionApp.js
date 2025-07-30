@@ -38,11 +38,15 @@ const [userAgency, setUserAgency] = useState('');
   const allowOutboundFlow = false; // 🔒 Hide outbound for now; re-enable if client requests
  
   const navigate = useNavigate();
-  const handleLogout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  navigate('/');
+ const handleLogout = () => {
+  // Clear localStorage and sessionStorage
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // Reload the app to its original state
+  window.location.href = '/';
 };
+
 
   useEffect(() => {
   /* 1️⃣  Wake Render so the first real call never 502s */
