@@ -7,6 +7,7 @@ import { loadConfirmed } from './utils/confirmedStore';
 import './App.css';
 import AdminPage from './AdminPage';
 import RegisterPage from './RegisterPage';
+import jwtDecode from 'jwt-decode';
 
 
 function ReportingPage() {
@@ -138,7 +139,26 @@ function RequirementPage() {
 }
 
 
-const isLoggedIn = () => !!localStorage.getItem('token');
+const isLoggedIn = () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    const decoded = jwtDecode(token);
+    const now = Date.now() / 1000;
+
+    if (decoded.exp && decoded.exp > now) {
+      return true;
+    } else {
+      localStorage.clear(); // 🧹 Clean up expired or invalid tokens
+      return false;
+    }
+  } catch (err) {
+    localStorage.clear(); // 🧹 Clean up corrupted tokens
+    return false;
+  }
+};
+
 
 function App() {
   return (
