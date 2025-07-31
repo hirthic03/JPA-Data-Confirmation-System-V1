@@ -423,7 +423,10 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     nullable    : row.nullable    || '-',
     rules       : row.rules       || '-'
   }));
-
+if (!q9RowId) {
+  console.error("❌ q9RowId is undefined — grid insertion aborted.");
+  return res.status(500).json({ error: 'q9RowId is missing — cannot insert grid rows.' });
+}
   // 🟢 Insert cleaned rows
   try {
     const stmt = db.prepare(`
