@@ -399,85 +399,118 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 
     // ✅ EMAIL + PDF only if all core fields exist
     if (system && apiName && req.body.integrationMethod) {
-      const cleanedGrid = parsedGrid.map(row => ({
-  data_element: row.dataElement || row.data_element || '-',
-  group_name  : row.groupName   || row.group_name   || '',
-  nama        : row.nama        || '-',
-  jenis       : row.jenis       || '-',
-  saiz        : row.saiz        || '-',
-  nullable    : row.nullable    || '-',
-  rules       : row.rules       || '-'
-}));
-// Now insert each cleaned row into the database
-cleanedGrid.forEach(row => {
-  stmt.run(
-    submission_uuid,
-    q9RowId || null,
-    row.nama,
-    row.jenis,
-    row.saiz,
-    row.nullable,
-    row.rules,
-    row.data_element,
-    row.group_name
-  );
-});
-      const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
-        system,
-        apiName,
-        moduleName,
-        created_at
-      });
+  console.log("✅ Starting grid insertion...");
+  console.log("➡️ submission_uuid:", submission_uuid);
+  console.log("➡️ q9RowId:", q9RowId);
+  console.log("➡️ Raw dataGrid:", req.body.dataGrid);
 
-      try {
-        console.log('🧾 Launching Puppeteer for PDF...');
-        const browser = await puppeteer.launch({
-          headless: 'new',
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-        });
+  let parsedGrid = [];
 
-        const page = await browser.newPage();
-        await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
+  try {
+    parsedGrid = JSON.parse(req.body.dataGrid || '[]');
+    console.log("✅ parsedGrid parsed successfully:", parsedGrid);
+  } catch (err) {
+    console.error("❌ Failed to parse dataGrid:", err.message);
+    return res.status(400).json({ error: 'Invalid dataGrid format' });
+  }
 
-        const buffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '10mm',
-            bottom: '10mm',
-            left: '10mm',
-            right: '10mm',
-          },
-        });
+  const cleanedGrid = parsedGrid.map(row => ({
+    data_element: row.dataElement || row.data_element || '-',
+    group_name  : row.groupName   || row.group_name   || '',
+    nama        : row.nama        || '-',
+    jenis       : row.jenis       || '-',
+    saiz        : row.saiz        || '-',
+    nullable    : row.nullable    || '-',
+    rules       : row.rules       || '-'
+  }));
 
-        await browser.close();
-        console.log('✅ PDF generated successfully');
+  // 🟢 Insert cleaned rows
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO inbound_data_grid
+      (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-        console.log('📨 Sending email to:', process.env.EMAIL_TO);
-        await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
-        console.log('📧 Email with PDF sent');
-
-        return res.status(200).json({
-          message: '✅ Submission saved. Email with PDF sent.',
-          emailStatus: 'sent'
-        });
-
-      } catch (err) {
-        console.error('❌ PDF or Email Error:', err);
-
-        return res.status(500).json({
-          message: '⚠️ Submission saved, but email or PDF failed.',
-          emailStatus: 'failed'
-        });
-      }
-    }
-
-    // ✅ No integrationMethod, just save silently
-    return res.status(200).json({
-      message: '✅ Submission saved (no email sent).',
-      emailStatus: 'skipped'
+    cleanedGrid.forEach((row, index) => {
+      console.log(`📥 Inserting row #${index + 1}:`, row);
+      stmt.run(
+        submission_uuid,
+        q9RowId || null,
+        row.nama,
+        row.jenis,
+        row.saiz,
+        row.nullable,
+        row.rules,
+        row.data_element,
+        row.group_name
+      );
     });
+
+    console.log("✅ All rows inserted successfully.");
+  } catch (err) {
+    console.error("❌ Error inserting into inbound_data_grid:", err.message);
+    return res.status(500).json({ error: 'Failed to insert data grid', details: err.message });
+  }
+
+  // 🟢 Generate PDF and send email — safely inside same block
+  const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
+    system,
+    apiName,
+    moduleName,
+    created_at
+  });
+
+  try {
+    console.log('🧾 Launching Puppeteer for PDF...');
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
+
+    const buffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '10mm',
+        bottom: '10mm',
+        left: '10mm',
+        right: '10mm',
+      },
+    });
+
+    await browser.close();
+    console.log('✅ PDF generated successfully');
+
+    console.log('📨 Sending email to:', process.env.EMAIL_TO);
+    await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
+    console.log('📧 Email with PDF sent');
+
+    return res.status(200).json({
+      message: '✅ Submission saved. Email with PDF sent.',
+      emailStatus: 'sent'
+    });
+
+  } catch (err) {
+    console.error('❌ PDF or Email Error:', err);
+
+    return res.status(500).json({
+      message: '⚠️ Submission saved, but email or PDF failed.',
+      emailStatus: 'failed'
+    });
+  }
+}
+
+// ✅ Fallback if integrationMethod is not provided
+return res.status(200).json({
+  message: '✅ Submission saved (no email sent).',
+  emailStatus: 'skipped'
+});
+
 
   } catch (error) {
     console.error('❌ Internal Error:', error);
