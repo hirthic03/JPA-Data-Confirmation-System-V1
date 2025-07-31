@@ -303,8 +303,6 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 
   return transporter.sendMail(mailOptions);
 }
-// ✅ Inbound Submission Handler (Correct Placement)
-// ✅ Inbound Submission Handler (Fixed)
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
@@ -364,77 +362,55 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
         q9RowId = result.lastInsertRowid;
       }
     });
-
-    const submission_id = result?.lastInsertRowid;
-    let parsedGrid = [];
+    
+    // ✅ THIS IS THE CORRECTED AND CONSOLIDATED LOGIC
+    let cleanedGrid = []; // This will hold our corrected data for both DB and email
 
     if (dataGrid) {
       try {
-        parsedGrid = JSON.parse(dataGrid);
+        const parsedGrid = JSON.parse(dataGrid);
+
+        // Map frontend's camelCase to backend's snake_case
+        cleanedGrid = parsedGrid.map(row => ({
+          data_element: row.dataElement || '-', // Correctly reads 'dataElement'
+          group_name:   row.groupName   || '',   // Correctly reads 'groupName'
+          nama:         row.nama        || '-',
+          jenis:        row.jenis       || '-',
+          saiz:         row.saiz        || '-',
+          nullable:     row.nullable    || '-',
+          rules:        row.rules       || '-'
+        }));
+
+        // Insert the cleaned data into the database ONCE
+        const stmt = db.prepare(`
+          INSERT INTO inbound_data_grid
+          (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        
+        cleanedGrid.forEach(row => {
+          stmt.run(
+            submission_uuid,
+            q9RowId || null,
+            row.nama,
+            row.jenis,
+            row.saiz,
+            row.nullable,
+            row.rules,
+            row.data_element, // Now uses the correct key
+            row.group_name    // Now uses the correct key
+          );
+        });
+        console.log(`✅ Successfully inserted ${cleanedGrid.length} grid rows into the database.`);
+
       } catch (err) {
-        console.error('Invalid dataGrid JSON:', err);
-        return res.status(400).json({ error: 'Invalid dataGrid format' });
+        console.error('❌ Failed to parse or insert dataGrid:', err);
+        return res.status(400).json({ error: 'Invalid dataGrid format or database error.' });
       }
-
-      const stmt = db.prepare(`
-        INSERT INTO inbound_data_grid
-        (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-  parsedGrid.forEach(row => {
-  stmt.run(
-    submission_uuid,
-    q9RowId || null,
-    row.nama || '',
-    row.jenis || '',
-    row.saiz || '',
-    row.nullable || '',
-    row.rules || '',
-    row.data_element || '',   // ✅ use standardized field
-    row.group_name || ''      // ✅ use standardized field
-  );
-});
     }
 
-    // ✅ EMAIL + PDF only if all core fields exist
+    // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
     if (system && apiName && req.body.integrationMethod) {
-       console.log("✅ Starting grid insertion...");
-  console.log("➡️ submission_uuid:", submission_uuid);
-  console.log("➡️ q9RowId:", q9RowId);
-  console.log("➡️ Raw dataGrid:", req.body.dataGrid);
-  let parsedGrid = [];
-
-  try {
-    parsedGrid = JSON.parse(req.body.dataGrid || '[]');
-    console.log("✅ parsedGrid parsed successfully:", parsedGrid);
-  } catch (err) {
-    console.error("❌ Failed to parse dataGrid:", err.message);
-    return res.status(400).json({ error: 'Invalid dataGrid format' });
-  }
-      const cleanedGrid = parsedGrid.map(row => ({
-  data_element: row.dataElement || row.data_element || '-',
-  group_name  : row.groupName   || row.group_name   || '',
-  nama        : row.nama        || '-',
-  jenis       : row.jenis       || '-',
-  saiz        : row.saiz        || '-',
-  nullable    : row.nullable    || '-',
-  rules       : row.rules       || '-'
-}));
-// Now insert each cleaned row into the database
-cleanedGrid.forEach(row => {
-  stmt.run(
-    submission_uuid,
-    q9RowId || null,
-    row.nama,
-    row.jenis,
-    row.saiz,
-    row.nullable,
-    row.rules,
-    row.data_element,
-    row.group_name
-  );
-});
       const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
         system,
         apiName,
