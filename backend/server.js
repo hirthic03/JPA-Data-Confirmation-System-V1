@@ -306,7 +306,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
 
-app.post('/submit-inbound', async (req, res) => {
+app.post('/submit-inbound', upload.none(), async (req, res) => {
   try {
     console.log('📩 Received new /submit-inbound request');
 
