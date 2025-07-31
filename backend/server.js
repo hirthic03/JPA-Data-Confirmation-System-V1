@@ -382,18 +382,18 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-   parsedGrid.forEach(row => {
+  parsedGrid.forEach(row => {
   stmt.run(
-  submission_uuid,
-  q9RowId || null,
-  row.nama,
-  row.jenis,
-  row.saiz,
-  row.nullable,
-  row.rules,
-  row.dataElement || '',
-  row.groupName || ''
-);
+    submission_uuid,
+    q9RowId || null,
+    row.nama || '',
+    row.jenis || '',
+    row.saiz || '',
+    row.nullable || '',
+    row.rules || '',
+    row.data_element || '',   // ✅ use standardized field
+    row.group_name || ''      // ✅ use standardized field
+  );
 });
     }
 
@@ -408,6 +408,20 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
   nullable    : row.nullable    || '-',
   rules       : row.rules       || '-'
 }));
+// Now insert each cleaned row into the database
+cleanedGrid.forEach(row => {
+  stmt.run(
+    submission_uuid,
+    q9RowId || null,
+    row.nama,
+    row.jenis,
+    row.saiz,
+    row.nullable,
+    row.rules,
+    row.data_element,
+    row.group_name
+  );
+});
       const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
         system,
         apiName,
