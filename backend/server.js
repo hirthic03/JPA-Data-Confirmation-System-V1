@@ -306,129 +306,74 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
 
-app.post('/submit-inbound', upload.any(), async (req, res) => {
-  console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
+app.post('/submit-inbound', async (req, res) => {
   try {
-    const {
-      system,
-      api: apiNameRaw,
-      module: apiNameOld,
-      module_group,
-      dataGrid
-    } = req.body;
+    console.log('📩 Received new /submit-inbound request');
 
-    const apiName = apiNameRaw || apiNameOld;
-    const moduleName = module_group || apiName;
     const submission_uuid = randomUUID();
     const created_at = new Date().toISOString();
-    let q9RowId = null;
 
-    if (!system || !apiName) {
-      return res.status(400).json({ error: 'System and API are required' });
-    }
+    const {
+      system,
+      apiName,
+      moduleName,
+      integrationMethod,
+      remarks,
+      dataGrid = '[]'
+    } = req.body;
 
-    const questionInsert = db.prepare(`
-      INSERT INTO inbound_requirements
-      (submission_uuid, system_name, module_name, api_name,
-      question_id, question_text, answer, file_path, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    console.log("📌 system:", system);
+    console.log("📌 apiName:", apiName);
+    console.log("📌 moduleName:", moduleName);
+    console.log("📌 integrationMethod:", integrationMethod);
+    console.log("📌 remarks:", remarks);
+    console.log("📌 raw dataGrid:", dataGrid);
+
+    // Step 1: Insert Q1–Q8 response row
+    const insertStmt = db.prepare(`
+      INSERT INTO inbound_requirements 
+      (submission_uuid, system, module, api_name, integration_method, remarks, created_at, flow_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'Inbound')
     `);
 
-    const uploadedFiles = {};
-    if (req.files) {
-      for (const file of req.files) {
-        uploadedFiles[file.fieldname] = file.path;
-      }
-    }
+    const q1 = insertStmt.run(
+      submission_uuid,
+      system || '',
+      moduleName || '',
+      apiName || '',
+      integrationMethod || '',
+      remarks || '',
+      created_at
+    );
 
-    let result;
-    Object.entries(req.body).forEach(([key, value]) => {
-      if (['system', 'api', 'module', 'module_group', 'dataGrid'].includes(key)) return;
-      const questionId = key;
-      const questionText = getQuestionTextById(questionId) || 'Unknown';
-      const filePath = uploadedFiles[questionId] || null;
+    const q9RowId = q1.lastInsertRowid;
+    console.log('✅ Inserted base row with q9RowId:', q9RowId);
 
-      result = questionInsert.run(
-        submission_uuid,
-        system,
-        moduleName,
-        apiName || '',
-        questionId,
-        questionText,
-        value,
-        filePath,
-        created_at
-      );
-
-      if (questionId === 'dataInvolved') {
-        q9RowId = result.lastInsertRowid;
-      }
-    });
-
-    const submission_id = result?.lastInsertRowid;
+    // Step 2: Parse and clean grid
     let parsedGrid = [];
-
-    if (dataGrid) {
-      try {
-        parsedGrid = JSON.parse(dataGrid);
-      } catch (err) {
-        console.error('Invalid dataGrid JSON:', err);
-        return res.status(400).json({ error: 'Invalid dataGrid format' });
-      }
-
-      const stmt = db.prepare(`
-        INSERT INTO inbound_data_grid
-        (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-  parsedGrid.forEach(row => {
-  stmt.run(
-    submission_uuid,
-    q9RowId || null,
-    row.nama || '',
-    row.jenis || '',
-    row.saiz || '',
-    row.nullable || '',
-    row.rules || '',
-    row.data_element || '',   // ✅ use standardized field
-    row.group_name || ''      // ✅ use standardized field
-  );
-});
+    try {
+      parsedGrid = JSON.parse(dataGrid || '[]');
+      console.log("✅ parsedGrid:", parsedGrid);
+    } catch (err) {
+      console.error("❌ Invalid dataGrid format:", err.message);
+      return res.status(400).json({ error: 'Invalid dataGrid JSON' });
     }
 
-    // ✅ EMAIL + PDF only if all core fields exist
-    if (system && apiName && req.body.integrationMethod) {
-  console.log("✅ Starting grid insertion...");
-  console.log("➡️ submission_uuid:", submission_uuid);
-  console.log("➡️ q9RowId:", q9RowId);
-  console.log("➡️ Raw dataGrid:", req.body.dataGrid);
+    if (!q9RowId) {
+      console.error("❌ q9RowId is missing. Grid insert aborted.");
+      return res.status(500).json({ error: 'Missing submission ID for grid insert' });
+    }
 
-  let parsedGrid = [];
+    const cleanedGrid = parsedGrid.map(row => ({
+      data_element: row.dataElement || row.data_element || '-',
+      group_name  : row.groupName   || row.group_name   || '',
+      nama        : row.nama        || '-',
+      jenis       : row.jenis       || '-',
+      saiz        : row.saiz        || '-',
+      nullable    : row.nullable    || '-',
+      rules       : row.rules       || '-'
+    }));
 
-  try {
-    parsedGrid = JSON.parse(req.body.dataGrid || '[]');
-    console.log("✅ parsedGrid parsed successfully:", parsedGrid);
-  } catch (err) {
-    console.error("❌ Failed to parse dataGrid:", err.message);
-    return res.status(400).json({ error: 'Invalid dataGrid format' });
-  }
-
-  const cleanedGrid = parsedGrid.map(row => ({
-    data_element: row.dataElement || row.data_element || '-',
-    group_name  : row.groupName   || row.group_name   || '',
-    nama        : row.nama        || '-',
-    jenis       : row.jenis       || '-',
-    saiz        : row.saiz        || '-',
-    nullable    : row.nullable    || '-',
-    rules       : row.rules       || '-'
-  }));
-if (!q9RowId) {
-  console.error("❌ q9RowId is undefined — grid insertion aborted.");
-  return res.status(500).json({ error: 'q9RowId is missing — cannot insert grid rows.' });
-}
-  // 🟢 Insert cleaned rows
-  try {
     const stmt = db.prepare(`
       INSERT INTO inbound_data_grid
       (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
@@ -436,10 +381,10 @@ if (!q9RowId) {
     `);
 
     cleanedGrid.forEach((row, index) => {
-      console.log(`📥 Inserting row #${index + 1}:`, row);
+      console.log(`📥 Inserting grid row #${index + 1}:`, row);
       stmt.run(
         submission_uuid,
-        q9RowId || null,
+        q9RowId,
         row.nama,
         row.jenis,
         row.saiz,
@@ -450,76 +395,53 @@ if (!q9RowId) {
       );
     });
 
-    console.log("✅ All rows inserted successfully.");
-  } catch (err) {
-    console.error("❌ Error inserting into inbound_data_grid:", err.message);
-    return res.status(500).json({ error: 'Failed to insert data grid', details: err.message });
-  }
+    console.log('✅ Grid inserted successfully');
 
-  // 🟢 Generate PDF and send email — safely inside same block
-  const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
-    system,
-    apiName,
-    moduleName,
-    created_at
-  });
+    // Step 3: Generate PDF + Email
+    if (integrationMethod) {
+      const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
+        system,
+        apiName,
+        moduleName,
+        created_at
+      });
 
-  try {
-    console.log('🧾 Launching Puppeteer for PDF...');
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    });
+      const browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      });
 
-    const page = await browser.newPage();
-    await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
+      const page = await browser.newPage();
+      await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
 
-    const buffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '10mm',
-        bottom: '10mm',
-        left: '10mm',
-        right: '10mm',
-      },
-    });
+      const buffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+      });
 
-    await browser.close();
-    console.log('✅ PDF generated successfully');
+      await browser.close();
+      console.log('✅ PDF generated');
 
-    console.log('📨 Sending email to:', process.env.EMAIL_TO);
-    await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
-    console.log('📧 Email with PDF sent');
+      await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
+      console.log('📧 Email sent successfully');
+    }
 
     return res.status(200).json({
-      message: '✅ Submission saved. Email with PDF sent.',
-      emailStatus: 'sent'
+      message: '✅ Submission saved.',
+      emailStatus: integrationMethod ? 'sent' : 'skipped'
     });
 
   } catch (err) {
-    console.error('❌ PDF or Email Error:', err);
-
+    console.error('🔥 Top-level Server Error:', err.stack || err.message);
     return res.status(500).json({
-      message: '⚠️ Submission saved, but email or PDF failed.',
-      emailStatus: 'failed'
+      error: 'Internal Server Error',
+      details: err.message
     });
   }
-}
-
-// ✅ Fallback if integrationMethod is not provided
-return res.status(200).json({
-  message: '✅ Submission saved (no email sent).',
-  emailStatus: 'skipped'
 });
 
-
-  } catch (error) {
-    console.error('❌ Internal Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 app.post('/register', async (req, res) => {
   try {
