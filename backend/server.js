@@ -70,7 +70,7 @@ db.prepare(`
   )
 `).run();
 console.log('✅ Users table checked/created');
-const upload = multer({ dest: 'uploads/' }).any();
+const upload = multer({ dest: 'uploads/' });
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -305,6 +305,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 }
 // ✅ Inbound Submission Handler (Correct Placement)
 // ✅ Inbound Submission Handler (Fixed)
+
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
   try {
