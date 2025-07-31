@@ -400,14 +400,14 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     // ✅ EMAIL + PDF only if all core fields exist
     if (system && apiName && req.body.integrationMethod) {
       const cleanedGrid = parsedGrid.map(row => ({
-      dataElement: row.dataElement || row.data_element || '-',
-      group_name: row.groupName || row.group_name || '',
-      nama: row.nama || '-',
-      jenis: row.jenis || '-',
-      saiz: row.saiz || '-',
-      nullable: row.nullable || '-',
-      rules: row.rules || '-'
-    }));
+  data_element: row.dataElement || row.data_element || '-',
+  group_name  : row.groupName   || row.group_name   || '',
+  nama        : row.nama        || '-',
+  jenis       : row.jenis       || '-',
+  saiz        : row.saiz        || '-',
+  nullable    : row.nullable    || '-',
+  rules       : row.rules       || '-'
+}));
       const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
         system,
         apiName,
