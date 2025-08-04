@@ -1,6 +1,11 @@
 require('dotenv').config();
 
 const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -34,7 +39,7 @@ const saltRounds = 10;
 // CORS - allow only your Vercel frontend + localhost (dev)
 // ────────────────────────────────────────────────────────────────
 
-const cors = require('cors');
+
 // ✅ CORS - must come first
 // 🟢 Set allowed origins
 const allowedOrigins = [
@@ -57,10 +62,6 @@ app.use(cors({
 
 app.options('*', cors()); 
 
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const compression = require('compression');
-const { body, validationResult } = require('express-validator');
 
 // 🟢 Security middleware
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -864,8 +865,6 @@ app.listen(PORT, () => {
 app.use('/login', authLimiter);
 app.use('/register', authLimiter);
 
-// 2. Add helmet for security headers
-const helmet = require('helmet');
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
