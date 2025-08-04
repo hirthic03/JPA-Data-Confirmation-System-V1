@@ -294,8 +294,8 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
     to: process.env.EMAIL_TO,
     cc: CC_LIST,
     subject: '📎 Inbound Requirement Submission PDF',
-    text: 'Attached is the generated PDF for the inbound requirement submission.', // Fallback
-    html: htmlBody, // ✅ This makes the full content show up!
+    text: 'Attached is the generated PDF for the inbound requirement submission.',
+    html: htmlBody, // ✅ This line makes the email body show up
     attachments: [
       {
         filename,
@@ -307,6 +307,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
 
   return transporter.sendMail(mailOptions);
 }
+
 
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
@@ -444,7 +445,7 @@ if (system && apiName && req.body.integrationMethod) {
     console.log('  - To:', process.env.EMAIL_TO);
     console.log('  - CC:', CC_LIST.join(', ') || 'None');
 
-    await sendEmailWithPDF(dummyBuffer, `TEST-Inbound-${submission_uuid}.pdf`);
+    await sendEmailWithPDF(dummyBuffer, `TEST-Inbound-${submission_uuid}.pdf`, htmlBody);
     console.log('📧 Email with dummy PDF sent successfully');
 
     return res.status(200).json({
