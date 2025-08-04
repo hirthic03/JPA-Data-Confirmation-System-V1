@@ -336,27 +336,35 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 
     let result;
     Object.entries(req.body).forEach(([key, value]) => {
-      if (['system', 'api', 'module', 'module_group', 'dataGrid'].includes(key)) return;
-      const questionId = key;
-      const questionText = getQuestionTextById(questionId) || 'Unknown';
-      const filePath = uploadedFiles[questionId] || null;
+  // Skip these fields AND any field starting with 'showTooltip_'
+  if (['system', 'api', 'module', 'module_group', 'dataGrid', 'submission_id'].includes(key) || 
+      key.startsWith('showTooltip_')) {
+    return;
+  }
+  
+  const questionId = key;
+  const questionText = getQuestionTextById(questionId) || 'Unknown';
+  const filePath = uploadedFiles[questionId] || null;
 
-      result = questionInsert.run(
-        submission_uuid,
-        system,
-        moduleName,
-        apiName || '',
-        questionId,
-        questionText,
-        value,
-        filePath,
-        created_at
-      );
+  // Only insert if it's a valid question ID
+  if (questionText !== 'Unknown') {
+    result = questionInsert.run(
+      submission_uuid,
+      system,
+      moduleName,
+      apiName || '',
+      questionId,
+      questionText,
+      value || '',  // Ensure value is never undefined
+      filePath,
+      created_at
+    );
 
       if (questionId === 'dataInvolved') {
-        q9RowId = result.lastInsertRowid;
-      }
-    });
+      q9RowId = result.lastInsertRowid;
+    }
+  }
+});
     
     // ✅ THIS IS THE CORRECTED AND CONSOLIDATED LOGIC
     let cleanedGrid = []; // This will hold our corrected data for both DB and email

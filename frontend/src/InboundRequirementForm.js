@@ -340,23 +340,26 @@ if (isGridEmpty) {
 
 
   // Prepare structured data
-  questions.forEach((q) => {
-    if (q.type === 'dropdown') {
-      const selected = formData[q.id];
-      if (selected === 'Others') {
-        form.append(q.id, formData[`${q.id}_other`] || '');
-      } else {
-        form.append(q.id, selected || '');
-      }
-    } else if (q.type === 'text') {
-      form.append(q.id, formData[q.id] || '');
-    } else if (q.type === 'file') {
-      if (files[q.id]) {
-        form.append(q.id, files[q.id]);
-      }
+ // Prepare structured data
+questions.forEach((q) => {
+  // Skip the grid question as it's handled separately
+  if (q.id === 'dataInvolved') return;
+  
+  if (q.type === 'dropdown') {
+    const selected = formData[q.id];
+    if (selected === 'Others') {
+      form.append(q.id, formData[`${q.id}_other`] || '');
+    } else {
+      form.append(q.id, selected || '');
     }
-  });
-
+  } else if (q.type === 'text') {
+    form.append(q.id, formData[q.id] || '');
+  } else if (q.type === 'file') {
+    if (files[q.id]) {
+      form.append(q.id, files[q.id]);
+    }
+  }
+});
   // Add system and module selections
   form.append('system', formData.system || '');
   form.append('api', apiValue); 
@@ -382,6 +385,16 @@ navigate('/submission');
   } finally {
     setIsSubmitting(false);
   }
+
+  // Clean up formData - remove any tooltip states
+const cleanedFormData = Object.keys(formData)
+  .filter(key => !key.startsWith('showTooltip_'))
+  .reduce((obj, key) => {
+    obj[key] = formData[key];
+    return obj;
+  }, {});
+
+console.log('📤 Cleaned form data:', cleanedFormData);
 };
 const calculateProgress = () => {
   let filledCount = 0;
