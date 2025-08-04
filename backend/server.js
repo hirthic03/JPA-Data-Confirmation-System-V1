@@ -860,9 +860,6 @@ app.listen(PORT, () => {
 
 // Add these security improvements to your existing server.js
 
-// 1. Add rate limiting
-const rateLimit = require('express-rate-limit');
-
 // Apply rate limiting to auth routes
 app.use('/login', authLimiter);
 app.use('/register', authLimiter);
