@@ -174,14 +174,23 @@ const handleElementSelection = (elementObj) => {
 
 useEffect(() => {
   const inboundModules = systemsData?.Inbound?.[activeSystem] || {};
-  const moduleNames    = Object.keys(inboundModules);
-  setFormData(prev => ({ 
-    ...prev, 
+  const moduleNames = Object.keys(inboundModules);
+  
+  // Set initial form data with defaults
+  setFormData({
     system: activeSystem,
-    integrationMethod: 'REST API'  // ✅ Set default integration method
-  }));
+    integrationMethod: 'REST API',  // Default value
+    messageFormat: '',
+    transactionType: '',
+    frequency: '',
+    url: '',
+    request: '',
+    response: '',
+    remarks: ''
+  });
+  
   setModules(moduleNames);
-}, []);
+}, [activeSystem]); // Add activeSystem as dependency
 
 useEffect(() => {
   const handleClickOutside = () => {
@@ -275,7 +284,7 @@ const getApiValue = () =>
     ? (formData.module_other || '').trim()
     : formData.module;
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
   const form = new FormData();
   
   // ✅ FIX: Ensure integrationMethod has a default value if not selected
@@ -285,52 +294,51 @@ const getApiValue = () =>
   
   // Validate all fields before submission
   const missingFields = questions.filter((q) => {
-  const value = formData[q.id];
+    const value = formData[q.id];
 
-  if (q.id === 'response') return false;
+    if (q.id === 'response') return false;
 
-  if (q.id === 'dataInvolved') {
-    // Check if all grid rows are empty
-    const allRowsEmpty = gridRows.every(
-      row =>
-        !row.nama.trim() &&
-        !row.jenis.trim() &&
-        !row.saiz.trim() &&
-        !row.nullable.trim() &&
-        !row.rules.trim()
-    );
-    return allRowsEmpty;
+    if (q.id === 'dataInvolved') {
+      // Check if all grid rows are empty
+      const allRowsEmpty = gridRows.every(
+        row =>
+          !row.nama.trim() &&
+          !row.jenis.trim() &&
+          !row.saiz.trim() &&
+          !row.nullable.trim() &&
+          !row.rules.trim()
+      );
+      return allRowsEmpty;
+    }
+
+    if (q.type === 'dropdown') {
+      return !value || (value === 'Others' && !formData[`${q.id}_other`]);
+    }
+    if (q.type === 'text') {
+      return !value || value.trim() === '';
+    }
+    if (q.type === 'file') {
+      return !files[q.id];
+    }
+
+    return false;
+  });
+
+  const apiValue = getApiValue();
+  if (!apiValue) {
+    window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
+    return;
   }
-
-  if (q.type === 'dropdown') {
-    return !value || (value === 'Others' && !formData[`${q.id}_other`]);
-  }
-  if (q.type === 'text') {
-    return !value || value.trim() === '';
-  }
-  if (q.type === 'file') {
-    return !files[q.id];
-  }
-
-  return false;
-});
-
-
- const apiValue = getApiValue();
-if (!apiValue) {
-  window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
-  return;
-}
 
   // 🆕 Grid row check for Q9
-const isGridEmpty = gridRows.every(row =>
-  !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && !row.nullable.trim() && !row.rules.trim()
-);
+  const isGridEmpty = gridRows.every(row =>
+    !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && !row.nullable.trim() && !row.rules.trim()
+  );
 
-if (isGridEmpty) {
-  alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
-  return;
-}
+  if (isGridEmpty) {
+    alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
+    return;
+  }
 
   if (missingFields.length > 0) {
     const firstMissing = missingFields[0].label || "Maklumat wajib";
@@ -338,63 +346,71 @@ if (isGridEmpty) {
     return;
   }
 
+  // ✅ Clean formData BEFORE processing - remove any tooltip states
+  const cleanedFormData = Object.keys(formData)
+    .filter(key => !key.startsWith('showTooltip_'))
+    .reduce((obj, key) => {
+      obj[key] = formData[key];
+      return obj;
+    }, {});
+
+  console.log('📤 Cleaned form data:', cleanedFormData);
 
   // Prepare structured data
- // Prepare structured data
-questions.forEach((q) => {
-  // Skip the grid question as it's handled separately
-  if (q.id === 'dataInvolved') return;
-  
-  if (q.type === 'dropdown') {
-    const selected = formData[q.id];
-    if (selected === 'Others') {
-      form.append(q.id, formData[`${q.id}_other`] || '');
-    } else {
-      form.append(q.id, selected || '');
+  questions.forEach((q) => {
+    // Skip the grid question as it's handled separately
+    if (q.id === 'dataInvolved') return;
+    
+    if (q.type === 'dropdown') {
+      const selected = cleanedFormData[q.id];
+      if (selected === 'Others') {
+        form.append(q.id, cleanedFormData[`${q.id}_other`] || '');
+      } else {
+        form.append(q.id, selected || '');
+      }
+    } else if (q.type === 'text') {
+      form.append(q.id, cleanedFormData[q.id] || '');
+    } else if (q.type === 'file') {
+      if (files[q.id]) {
+        form.append(q.id, files[q.id]);
+      }
     }
-  } else if (q.type === 'text') {
-    form.append(q.id, formData[q.id] || '');
-  } else if (q.type === 'file') {
-    if (files[q.id]) {
-      form.append(q.id, files[q.id]);
-    }
-  }
-});
+  });
+
   // Add system and module selections
-  form.append('system', formData.system || '');
-  form.append('api', apiValue); 
- form.append('module_group', confirmedModule || '');
- form.append('module',       apiValue); 
+  form.append('system', cleanedFormData.system || '');
+  form.append('api', apiValue);
+  form.append('module_group', confirmedModule || '');
+  form.append('module', apiValue);
+
+  // Add grid data
+  form.append('dataGrid', JSON.stringify(gridRows));
+  form.append('submission_id', `${cleanedFormData.system}-${apiValue}`);
+  
+  // ✅ Don't append integrationMethod again - it's already in the questions loop!
 
   setIsSubmitting(true);
   console.log('📤 Submitting Form with Grid Rows:', gridRows);
+  
   try {
-    form.append('dataGrid', JSON.stringify(gridRows));
-    form.append('submission_id', `${formData.system}-${apiValue}`);
-    form.append('integrationMethod', formData.integrationMethod || 'REST API'); // ✅ Required to trigger email + PDF
-await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
-        /* ------- success prompt + redirect -------- */
-window.alert("Borang pengumpulan keperluan berjaya dihantar.");
-navigate('/submission');
+    await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
+    
+    /* ------- success prompt + redirect -------- */
+    window.alert("Borang pengumpulan keperluan berjaya dihantar.");
+    navigate('/submission');
 
     setFormData({});
     setFiles({});
   } catch (err) {
-    console.error(err);
-    alert("Penghantaran gagal. Sila semak konsol.");
+    console.error('Submission error:', err);
+    if (err.response) {
+      console.error('Response data:', err.response.data);
+      console.error('Response status:', err.response.status);
+    }
+    alert(`Penghantaran gagal: ${err.response?.data?.error || err.message}`);
   } finally {
     setIsSubmitting(false);
   }
-
-  // Clean up formData - remove any tooltip states
-const cleanedFormData = Object.keys(formData)
-  .filter(key => !key.startsWith('showTooltip_'))
-  .reduce((obj, key) => {
-    obj[key] = formData[key];
-    return obj;
-  }, {});
-
-console.log('📤 Cleaned form data:', cleanedFormData);
 };
 const calculateProgress = () => {
   let filledCount = 0;

@@ -210,18 +210,17 @@ seedUsers();
 // Utility
 function getQuestionTextById(id) {
   const questionMap = {
-    q1: '1. Apakah data yang akan dihantar atau diterima?',
-    q2: '2. Seberapa kerap data dikemas kini atau diperlukan?',
-    q3: '3. Apakah kaedah integrasi yang disokong?',
-    q4: '4. Adakah anda mempunyai dokumentasi API atau WSDL?',
-    q5: '5. Apakah logik semakan atau perniagaan sistem anda?',
-    q6: '6. Siapakah pegawai teknikal (PIC) untuk ujian integrasi?',
-    q7: '7. Adakah terdapat sekatan firewall/IP?',
-    q8: '8. Adakah persekitaran UAT tersedia untuk ujian?',
-    q9: '9. Apakah masa respons yang dijangka (SLA)?',
-    q10: '10. Adakah anda memerlukan log audit, mesej ralat, atau callback?'
+    'integrationMethod': '1. Kaedah Integrasi',
+    'messageFormat': '2. Format Mesej',
+    'transactionType': '3. Jenis Transaksi',
+    'frequency': '4. Frekuensi',
+    'url': '5. URL Web Services',
+    'request': '6. Request',
+    'response': '7. Respond (Optional)',
+    'remarks': '8. Remarks',
+    'dataInvolved': '9. Data yang Terlibat'
   };
-  return questionMap[id] || id;
+  return questionMap[id] || null; // Return null instead of id for unknown questions
 }
 
 /** ------------------------------------------------------------------
@@ -337,30 +336,33 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     let result;
     Object.entries(req.body).forEach(([key, value]) => {
   // Skip these fields AND any field starting with 'showTooltip_'
-  if (['system', 'api', 'module', 'module_group', 'dataGrid', 'submission_id'].includes(key) || 
-      key.startsWith('showTooltip_')) {
+   if (['system', 'api', 'module', 'module_group', 'dataGrid', 'submission_id'].includes(key) || 
+      key.startsWith('showTooltip_') ||
+      key.endsWith('_other')) {
     return;
   }
-  
-  const questionId = key;
-  const questionText = getQuestionTextById(questionId) || 'Unknown';
-  const filePath = uploadedFiles[questionId] || null;
+  const questionText = getQuestionTextById(key);
+  //const questionId = key;
+  //const questionText = getQuestionTextById(questionId) || 'Unknown';
+  //const filePath = uploadedFiles[questionId] || null;
 
-  // Only insert if it's a valid question ID
-  if (questionText !== 'Unknown') {
+// Only insert if it's a valid question ID (not null)
+  if (questionText !== null) {
+    const filePath = uploadedFiles[key] || null;
+    
     result = questionInsert.run(
       submission_uuid,
       system,
       moduleName,
       apiName || '',
-      questionId,
-      questionText,
-      value || '',  // Ensure value is never undefined
+      key,           // question_id
+      questionText,  // question_text
+      value || '',   // answer
       filePath,
       created_at
     );
 
-      if (questionId === 'dataInvolved') {
+    if (key === 'dataInvolved') {
       q9RowId = result.lastInsertRowid;
     }
   }
