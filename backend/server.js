@@ -230,53 +230,63 @@ function getQuestionTextById(id) {
 function buildInboundEmail(reqBody, gridRows, meta) {
   const q = (id) => reqBody[id] || '-';
 
-  return /* html */ `
-    <h2>📥 Inbound Requirement Submission</h2>
-    <p><b>System:</b> ${meta.system}</p>
-    <p><b>API Name:</b> ${meta.apiName}</p>
-    <p><b>Module (Group):</b> ${meta.moduleName}</p>
-    <p><b>Submitted At:</b> ${meta.created_at}</p>
+  const qnaSection = `
+    <h3>📝 Q&A Summary</h3>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width: 100%;">
+      <tbody>
+        <tr><td><b>1. Kaedah Integrasi</b></td><td>${q('integrationMethod')}</td></tr>
+        <tr><td><b>2. Format Mesej</b></td><td>${q('messageFormat')}</td></tr>
+        <tr><td><b>3. Jenis Transaksi</b></td><td>${q('transactionType')}</td></tr>
+        <tr><td><b>4. Frekuensi</b></td><td>${q('frequency')}</td></tr>
+        <tr><td><b>5. URL</b></td><td><code>${q('url')}</code></td></tr>
+        <tr><td><b>6. Request</b></td><td><pre>${q('request')}</pre></td></tr>
+        <tr><td><b>7. Response</b></td><td><pre>${q('response')}</pre></td></tr>
+        <tr><td><b>8. Remarks</b></td><td>${q('remarks')}</td></tr>
+        <tr><td><b>9. Submission ID</b></td><td>${q('submission_id')}</td></tr>
+      </tbody>
+    </table>`;
 
-    <h3>📝 Q&A</h3>
-    <ul>
-      <li><b>Q1 (Kaedah Integrasi)</b> – ${q('integrationMethod')}</li>
-      <li><b>Q2 (Format Mesej)</b> – ${q('messageFormat')}</li>
-      <li><b>Q3 (Jenis Transaksi)</b> – ${q('transactionType')}</li>
-      <li><b>Q4 (Frekuensi)</b> – ${q('frequency')}</li>
-      <li><b>Q5 (URL)</b> – ${q('url')}</li>
-      <li><b>Q6 (Request)</b><br><pre>${q('request')}</pre></li>
-      <li><b>Q7 (Response)</b><br><pre>${q('response')}</pre></li>
-      <li><b>Q8 (Remarks)</b> – ${q('remarks')}</li>
-      <li><b>Q9 (Submission ID)</b> – ${q('submission_id')}</li>
-    </ul>
-
+  const gridSection = `
     <h3>📊 Data Elements (${gridRows.length})</h3>
-    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width: 100%; font-family: sans-serif;">
       <thead>
-        <tr>
-          <th>#</th><th>Data Element</th><th>Nama</th><th>Jenis</th>
-          <th>Saiz</th><th>Nullable</th><th>Rules</th>
+        <tr style="background:#f0f0f0">
+          <th>#</th>
+          <th>Data Element</th>
+          <th>Nama Field</th>
+          <th>Jenis</th>
+          <th>Saiz</th>
+          <th>Nullable</th>
+          <th>Rules</th>
         </tr>
       </thead>
       <tbody>
-        ${gridRows
-          .map(
-            (r, i) => `
-              <tr>
-                <td>${i + 1}</td>
-                <td>${(r.dataElement || r.data_element) + (r.group_name ? ` (${r.group_name})` : '')}</td>
-                <td>${r.nama}</td>
-                <td>${r.jenis}</td>
-                <td>${r.saiz}</td>
-                <td>${r.nullable}</td>
-                <td>${r.rules}</td>
-              </tr>`
-          )
-          .join('')}
+        ${gridRows.map((r, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${(r.dataElement || r.data_element) + (r.groupName || r.group_name ? ` (${r.groupName || r.group_name})` : '')}</td>
+            <td>${r.nama}</td>
+            <td>${r.jenis}</td>
+            <td>${r.saiz}</td>
+            <td>${r.nullable}</td>
+            <td>${r.rules}</td>
+          </tr>`).join('')}
       </tbody>
-    </table>
+    </table>`;
+
+  return `
+    <div style="font-family: Arial, sans-serif; font-size: 14px;">
+      <h2>📥 Inbound Requirement Submission</h2>
+      <p><b>System:</b> ${meta.system}</p>
+      <p><b>API Name:</b> ${meta.apiName}</p>
+      <p><b>Module (Group):</b> ${meta.moduleName}</p>
+      <p><b>Submitted At:</b> ${meta.created_at}</p>
+      ${qnaSection}
+      ${gridSection}
+    </div>
   `;
 }
+
 
 async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
   // Use the global transporter - don't create a new one
