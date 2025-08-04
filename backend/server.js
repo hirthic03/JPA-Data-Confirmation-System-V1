@@ -76,11 +76,12 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: process.env.NOTIF_EMAIL,
-    pass: process.env.NOTIF_PASS
+    // Support both sets of credentials for backward compatibility
+    user: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
+    pass: process.env.NOTIF_PASS || process.env.EMAIL_PASS
   },
-  logger: true,   // <-- adds winston-style logs
-  debug : true    // <-- prints SMTP conversation
+  logger: true,
+  debug : true
 });
 
 const CC_LIST = (process.env.NOTIF_CC || '')
@@ -279,17 +280,11 @@ function buildInboundEmail(reqBody, gridRows, meta) {
 }
 
 async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    }
-  });
-
+  // Use the global transporter - don't create a new one
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
     to: process.env.EMAIL_TO,
+    cc: CC_LIST,  // Include CC list for consistency
     subject: '📎 Inbound Requirement Submission PDF',
     text: 'Attached is the generated PDF for the inbound requirement submission.',
     attachments: [
@@ -443,9 +438,12 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
         await browser.close();
         console.log('✅ PDF generated successfully');
 
-        console.log('📨 Sending email to:', process.env.EMAIL_TO);
-        await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
-        console.log('📧 Email with PDF sent');
+        console.log('📨 Sending email configuration:');
+console.log('  - From:', process.env.NOTIF_EMAIL || process.env.EMAIL_USER);
+console.log('  - To:', process.env.EMAIL_TO);
+console.log('  - CC:', CC_LIST.join(', ') || 'None');
+await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
+console.log('📧 Email with PDF sent successfully');
 
         return res.status(200).json({
           message: '✅ Submission saved. Email with PDF sent.',
@@ -688,8 +686,6 @@ app.get('/inbound-submissions-grouped', (req, res) => {
     res.status(500).json({ error: 'Failed to fetch grouped submissions' });
   }
 });
-
-
 
 
 // 📄 Admin Reporting
