@@ -62,35 +62,33 @@ const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const { body, validationResult } = require('express-validator');
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false // Disable for API
-}));
+// 🟢 Security middleware
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 
-// Rate limiting
+// 🟢 Rate limiting only for auth routes
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: 'Terlalu banyak cubaan. Sila cuba lagi dalam 15 minit.'
 });
-
-// Apply to auth routes
 app.use('/login', authLimiter);
 app.use('/register', authLimiter);
 
-// 🟢 Middleware for parsing JSON and urlencoded data
+// 🟢 Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 🟢 DB initialization
 const dbDir = path.join(__dirname, 'data');
 fs.mkdirSync(dbDir, { recursive: true });
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
-// Optional health check route
+// ✅ Health check route
 app.get('/', (req, res) => {
   res.send('Backend is running.');
 });
+
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
