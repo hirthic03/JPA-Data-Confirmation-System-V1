@@ -175,7 +175,11 @@ const handleElementSelection = (elementObj) => {
 useEffect(() => {
   const inboundModules = systemsData?.Inbound?.[activeSystem] || {};
   const moduleNames    = Object.keys(inboundModules);
-  setFormData(prev => ({ ...prev, system: activeSystem }));
+  setFormData(prev => ({ 
+    ...prev, 
+    system: activeSystem,
+    integrationMethod: 'REST API'  // ✅ Set default integration method
+  }));
   setModules(moduleNames);
 }, []);
 
@@ -273,8 +277,14 @@ const getApiValue = () =>
 
   const handleSubmit = async () => {
   const form = new FormData();
-    // Validate all fields before submission
-const missingFields = questions.filter((q) => {
+  
+  // ✅ FIX: Ensure integrationMethod has a default value if not selected
+  if (!formData.integrationMethod) {
+    setFormData(prev => ({ ...prev, integrationMethod: 'REST API' }));
+  }
+  
+  // Validate all fields before submission
+  const missingFields = questions.filter((q) => {
   const value = formData[q.id];
 
   if (q.id === 'response') return false;
