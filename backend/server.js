@@ -288,14 +288,14 @@ function buildInboundEmail(reqBody, gridRows, meta) {
 }
 
 
-async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
-  // Use the global transporter - don't create a new one
+async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBody = '') {
   const mailOptions = {
     from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
     to: process.env.EMAIL_TO,
-    cc: CC_LIST,  // Include CC list for consistency
+    cc: CC_LIST,
     subject: '📎 Inbound Requirement Submission PDF',
-    text: 'Attached is the generated PDF for the inbound requirement submission.',
+    text: 'Attached is the generated PDF for the inbound requirement submission.', // Fallback
+    html: htmlBody, // ✅ This makes the full content show up!
     attachments: [
       {
         filename,
@@ -307,6 +307,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf') {
 
   return transporter.sendMail(mailOptions);
 }
+
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
