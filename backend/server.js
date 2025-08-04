@@ -415,60 +415,42 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     }
 
     // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
-    if (system && apiName && req.body.integrationMethod) {
-      const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
-        system,
-        apiName,
-        moduleName,
-        created_at
-      });
+if (system && apiName && req.body.integrationMethod) {
+  const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
+    system,
+    apiName,
+    moduleName,
+    created_at
+  });
 
-      try {
-        console.log('🧾 Launching Puppeteer for PDF...');
-        const browser = await puppeteer.launch({
-          headless: 'new',
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-        });
+  try {
+    // 🔧 TEMPORARY: Skip Puppeteer and use dummy PDF
+    console.log('⚠️ Skipping Puppeteer – Using dummy PDF buffer...');
+    const dummyBuffer = Buffer.from('PDF temporarily disabled. This is a test file.', 'utf-8');
 
-        const page = await browser.newPage();
-        await page.setContent(htmlBody, { waitUntil: 'networkidle0' });
+    console.log('📨 Sending email configuration:');
+    console.log('  - From:', process.env.NOTIF_EMAIL || process.env.EMAIL_USER);
+    console.log('  - To:', process.env.EMAIL_TO);
+    console.log('  - CC:', CC_LIST.join(', ') || 'None');
 
-        const buffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '10mm',
-            bottom: '10mm',
-            left: '10mm',
-            right: '10mm',
-          },
-        });
+    await sendEmailWithPDF(dummyBuffer, `TEST-Inbound-${submission_uuid}.pdf`);
+    console.log('📧 Email with dummy PDF sent successfully');
 
-        await browser.close();
-        console.log('✅ PDF generated successfully');
+    return res.status(200).json({
+      message: '✅ Submission saved. Dummy email sent.',
+      emailStatus: 'sent'
+    });
 
-        console.log('📨 Sending email configuration:');
-console.log('  - From:', process.env.NOTIF_EMAIL || process.env.EMAIL_USER);
-console.log('  - To:', process.env.EMAIL_TO);
-console.log('  - CC:', CC_LIST.join(', ') || 'None');
-await sendEmailWithPDF(buffer, `Inbound-${submission_uuid}.pdf`);
-console.log('📧 Email with PDF sent successfully');
+  } catch (err) {
+    console.error('❌ Email Error (PDF skipped):', err);
 
-        return res.status(200).json({
-          message: '✅ Submission saved. Email with PDF sent.',
-          emailStatus: 'sent'
-        });
+    return res.status(500).json({
+      message: '⚠️ Submission saved, but email sending failed.',
+      emailStatus: 'failed'
+    });
+  }
+}
 
-      } catch (err) {
-        console.error('❌ PDF or Email Error:', err);
-
-        return res.status(500).json({
-          message: '⚠️ Submission saved, but email or PDF failed.',
-          emailStatus: 'failed'
-        });
-      }
-    }
 
     // ✅ No integrationMethod, just save silently
     return res.status(200).json({
