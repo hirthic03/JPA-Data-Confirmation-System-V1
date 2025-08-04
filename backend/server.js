@@ -11,8 +11,18 @@ const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-//const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
+const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
 require('dotenv').config();
+
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      error: errors.array()[0].msg 
+    });
+  }
+  next();
+};
 
 
 // Initialize
@@ -46,6 +56,28 @@ app.use(cors({
 }));
 
 app.options('*', cors()); 
+
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+const { body, validationResult } = require('express-validator');
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false // Disable for API
+}));
+app.use(compression());
+
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: 'Terlalu banyak cubaan. Sila cuba lagi dalam 15 minit.'
+});
+
+// Apply to auth routes
+app.use('/login', authLimiter);
+app.use('/register', authLimiter);
 
 // 🟢 Middleware for parsing JSON and urlencoded data
 app.use(express.json());
@@ -740,13 +772,24 @@ app.get('/generate-submission-folder/:timestamp', async (req, res) => {
 });
 // ✅ Serve systems.json to frontend
 app.get('/systems', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+
   const systemsPath = path.join(__dirname, 'data', 'systems.json');
   fs.readFile(systemsPath, 'utf8', (err, data) => {
     if (err) {
       console.error('Failed to read systems.json:', err);
       return res.status(500).json({ error: 'Unable to load systems data' });
     }
-    res.json(JSON.parse(data));
+    try {
+      res.json(JSON.parse(data));
+    } catch (parseError) {
+      console.error('Invalid JSON:', parseError);
+      res.status(500).json({ error: 'Invalid systems data' });
+    }
   });
 });
 
@@ -822,15 +865,6 @@ app.listen(PORT, () => {
 // 1. Add rate limiting
 const rateLimit = require('express-rate-limit');
 
-// Rate limiter for auth endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
-  message: 'Too many login attempts, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Apply rate limiting to auth routes
 app.use('/login', authLimiter);
 app.use('/register', authLimiter);
@@ -848,12 +882,6 @@ app.use(helmet({
   },
 }));
 
-// 3. Enhanced JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET === 'fallbackSecret123') {
-  console.error('❌ CRITICAL: JWT_SECRET not properly configured!');
-  process.exit(1);
-}
 
 // 4. Enhanced authentication middleware
 function authenticateToken(req, res, next) {
@@ -881,146 +909,6 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
-
-// 5. Enhanced registration endpoint
-app.post('/register', async (req, res) => {
-  try {
-    const { email, password, agency, role } = req.body;
-
-    // Input validation
-    if (!email || !password || !agency || !role) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Semua medan diperlukan' 
-      });
-    }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Format email tidak sah' 
-      });
-    }
-
-    // Password strength validation
-    if (password.length < 8) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Kata laluan mestilah sekurang-kurangnya 8 aksara' 
-      });
-    }
-
-    // Valid roles check
-    const validRoles = ['agency', 'admin'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Peranan tidak sah' 
-      });
-    }
-
-    // Check if user already exists
-    const userExists = db.prepare('SELECT 1 FROM users WHERE LOWER(email) = LOWER(?)').get(email);
-    if (userExists) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email telah didaftarkan' 
-      });
-    }
-
-    // Hash password with bcrypt (increase rounds for production)
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Generate unique user ID
-    const userId = randomUUID();
-
-    // Insert user
-    const stmt = db.prepare(`
-      INSERT INTO users (id, email, password, agency, role) 
-      VALUES (?, LOWER(?), ?, ?, ?)
-    `);
-    stmt.run(userId, email, hashedPassword, agency, role);
-
-    console.log(`✅ Registered user: ${email} (${agency})`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Pendaftaran berjaya!' 
-    });
-    
-  } catch (err) {
-    console.error('❌ Registration Error:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Ralat server. Sila cuba lagi.' 
-    });
-  }
-});
-
-// 6. Enhanced login endpoint
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Input validation
-    if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Email dan kata laluan diperlukan' 
-      });
-    }
-
-    // Query user (case-insensitive email)
-    const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
-    
-    if (!user) {
-      // Don't reveal if email exists or not
-      return res.status(401).json({ 
-        error: 'Email atau kata laluan tidak sah' 
-      });
-    }
-
-    // Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ 
-        error: 'Email atau kata laluan tidak sah' 
-      });
-    }
-
-    // Generate JWT token with proper expiry
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        agency: user.agency
-      },
-      JWT_SECRET,
-      { 
-        expiresIn: '8h', // 8 hours for normal session
-        issuer: 'jpa-system',
-        audience: 'jpa-users'
-      }
-    );
-
-    // Don't send password hash to client
-    const { password: _, ...userWithoutPassword } = user;
-
-    res.json({
-      token,
-      user: userWithoutPassword,
-      agency: user.agency
-    });
-    
-  } catch (err) {
-    console.error('❌ Login Error:', err);
-    res.status(500).json({ 
-      error: 'Ralat server. Sila cuba lagi.' 
-    });
-  }
-});
 
 // 7. Add logout endpoint
 app.post('/logout', authenticateToken, (req, res) => {
