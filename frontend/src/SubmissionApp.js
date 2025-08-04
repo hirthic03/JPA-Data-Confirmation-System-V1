@@ -12,9 +12,31 @@ const dbg = (...args) => {
 const rawAgency = localStorage.getItem('agency')?.toLowerCase();
 
 const findMatchingAgencyKey = (systemsData, flowType) => {
-  const agencies = Object.keys(systemsData?.[flowType] || {});
-  return agencies.find(key => key.toLowerCase().includes(rawAgency)) || '';
-};
+    const userAgency = localStorage.getItem('agency');
+    if (!userAgency || !systemsData?.[flowType]) return '';
+    
+    const agencies = Object.keys(systemsData[flowType]);
+    
+    // 1. Exact match (case-sensitive)
+    if (agencies.includes(userAgency)) {
+      return userAgency;
+    }
+    
+    // 2. Case-insensitive exact match
+    const caseInsensitiveMatch = agencies.find(
+      key => key.toLowerCase() === userAgency.toLowerCase()
+    );
+    if (caseInsensitiveMatch) return caseInsensitiveMatch;
+    
+    // 3. Partial match (contains)
+    const partialMatch = agencies.find(key => {
+      const keyLower = key.toLowerCase();
+      const userLower = userAgency.toLowerCase();
+      return keyLower.includes(userLower) || userLower.includes(keyLower);
+    });
+    
+    return partialMatch || '';
+  };
 
 
 export default function SubmissionApp() {
@@ -46,7 +68,33 @@ const [userAgency, setUserAgency] = useState('');
   // Reload the app to its original state
   window.location.href = '/';
 };
-
+useEffect(() => {
+    // Check authentication before anything else
+    const token = localStorage.getItem('token');
+    const agency = localStorage.getItem('agency');
+    
+    if (!token || !agency) {
+      console.error('No authentication found');
+      navigate('/login');
+      return;
+    }
+    
+    // Validate token is not expired
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        console.error('Token expired');
+        localStorage.clear();
+        navigate('/login');
+        return;
+      }
+    } catch (e) {
+      console.error('Invalid token');
+      localStorage.clear();
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   useEffect(() => {
   /* 1️⃣  Wake Render so the first real call never 502s */
@@ -66,11 +114,13 @@ const [userAgency, setUserAgency] = useState('');
         setFlowType(flow);
 
         const agencyKey = findMatchingAgencyKey(res.data, flow);
-        if (!agencyKey) {
-          console.warn('❌ No matching agency found for user');
-          return;
-        }
-        setUserAgency(agencyKey);
+            if (!agencyKey) {
+              console.warn('❌ No matching agency found for user');
+              alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
+              navigate('/login');
+              return;
+            }
+            setUserAgency(agencyKey);
 
         const systems = Object.keys(res.data[flow]?.[agencyKey] || {});
 if (systems.length > 0) {
@@ -105,11 +155,13 @@ if (systems.length > 0) {
               setFlowType(flow);
 
               const agencyKey = findMatchingAgencyKey(data, flow);
-              if (!agencyKey) {
-                console.warn('❌ No matching agency found in local data');
-                return;
-              }
-              setUserAgency(agencyKey);
+                  if (!agencyKey) {
+                    console.warn('❌ No matching agency found in local data');
+                    alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
+                    navigate('/login');
+                    return;
+                  }
+                  setUserAgency(agencyKey);
 
               const systems = Object.keys(data[flow]?.[agencyKey] || {});
               const firstSystem = systems[0];
@@ -150,7 +202,7 @@ useEffect(() => {
   if (!systemList.includes(system)) {
     setSystem(systemList[0] || '');
   }
-}, [flowType, systemsData, system]);
+}, [flowType, systemsData, system, userAgency]);
 
 
 useEffect(() => {
@@ -167,7 +219,7 @@ useEffect(() => {
   if (!filteredModules.includes(module.trim())) {
   setModule(filteredModules[0] || '');
 }
-}, [system, flowType, systemsData]);
+}, [system, flowType, systemsData, userAgency]);
 
 
 useEffect(() => {
@@ -199,7 +251,7 @@ useEffect(() => {
       );
     })
   );
-}, [module, system, flowType, systemsData]);
+}, [module, system, flowType, systemsData, userAgency]);
 
 const flattenOutboundElements = (confirmed) => {
   if (!availableElements || availableElements.length === 0) return [];
@@ -308,11 +360,16 @@ const confirmAddToGroup = (group) => {
 };
 
 const submit = (confirmed) => {
-  if (!system || !module) {
-    alert('Sila pilih Sistem dan Modul sebelum hantar.');
-    return;
-  }
+    if (!system || !module) {
+      alert('Sila pilih Sistem dan Modul sebelum hantar.');
+      return;
+    }
   const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Sesi anda telah tamat. Sila log masuk semula.');
+      navigate('/login');
+      return;
+    }
   const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
   if (newElementInput.trim()) {
@@ -391,9 +448,20 @@ const submit = (confirmed) => {
 }
 
   function onError(err) {
-  console.error('❌ Submission failed:', err);
-  alert(`Something went wrong while submitting.\n\n${err.message}`);
-}
+      console.error('❌ Submission failed:', err);
+      
+      // Better error handling
+      if (err.response?.status === 401) {
+        alert('Sesi anda telah tamat. Sila log masuk semula.');
+        localStorage.clear();
+        navigate('/login');
+      } else if (err.response?.status === 403) {
+        alert('Anda tidak mempunyai kebenaran untuk tindakan ini.');
+      } else {
+        const errorMsg = err.response?.data?.error || err.message || 'Ralat tidak diketahui';
+        alert(`Ralat semasa menghantar: ${errorMsg}`);
+      }
+    }
 };
 
 

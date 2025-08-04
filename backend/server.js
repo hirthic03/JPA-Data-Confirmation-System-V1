@@ -11,7 +11,7 @@ const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
+//const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
 require('dotenv').config();
 
 
@@ -815,4 +815,228 @@ app.get('/', (req, res) => {
 // 🚀 Launch
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
+});
+
+// Add these security improvements to your existing server.js
+
+// 1. Add rate limiting
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: 'Too many login attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to auth routes
+app.use('/login', authLimiter);
+app.use('/register', authLimiter);
+
+// 2. Add helmet for security headers
+const helmet = require('helmet');
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// 3. Enhanced JWT configuration
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'fallbackSecret123') {
+  console.error('❌ CRITICAL: JWT_SECRET not properly configured!');
+  process.exit(1);
+}
+
+// 4. Enhanced authentication middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      }
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    
+    // Validate user has required fields
+    if (!user.id || !user.agency) {
+      return res.status(403).json({ error: 'Invalid token payload' });
+    }
+    
+    req.user = user;
+    next();
+  });
+}
+
+// 5. Enhanced registration endpoint
+app.post('/register', async (req, res) => {
+  try {
+    const { email, password, agency, role } = req.body;
+
+    // Input validation
+    if (!email || !password || !agency || !role) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Semua medan diperlukan' 
+      });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Format email tidak sah' 
+      });
+    }
+
+    // Password strength validation
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Kata laluan mestilah sekurang-kurangnya 8 aksara' 
+      });
+    }
+
+    // Valid roles check
+    const validRoles = ['agency', 'admin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Peranan tidak sah' 
+      });
+    }
+
+    // Check if user already exists
+    const userExists = db.prepare('SELECT 1 FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+    if (userExists) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email telah didaftarkan' 
+      });
+    }
+
+    // Hash password with bcrypt (increase rounds for production)
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Generate unique user ID
+    const userId = randomUUID();
+
+    // Insert user
+    const stmt = db.prepare(`
+      INSERT INTO users (id, email, password, agency, role) 
+      VALUES (?, LOWER(?), ?, ?, ?)
+    `);
+    stmt.run(userId, email, hashedPassword, agency, role);
+
+    console.log(`✅ Registered user: ${email} (${agency})`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Pendaftaran berjaya!' 
+    });
+    
+  } catch (err) {
+    console.error('❌ Registration Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ralat server. Sila cuba lagi.' 
+    });
+  }
+});
+
+// 6. Enhanced login endpoint
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Input validation
+    if (!email || !password) {
+      return res.status(400).json({ 
+        error: 'Email dan kata laluan diperlukan' 
+      });
+    }
+
+    // Query user (case-insensitive email)
+    const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+    
+    if (!user) {
+      // Don't reveal if email exists or not
+      return res.status(401).json({ 
+        error: 'Email atau kata laluan tidak sah' 
+      });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ 
+        error: 'Email atau kata laluan tidak sah' 
+      });
+    }
+
+    // Generate JWT token with proper expiry
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        agency: user.agency
+      },
+      JWT_SECRET,
+      { 
+        expiresIn: '8h', // 8 hours for normal session
+        issuer: 'jpa-system',
+        audience: 'jpa-users'
+      }
+    );
+
+    // Don't send password hash to client
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      token,
+      user: userWithoutPassword,
+      agency: user.agency
+    });
+    
+  } catch (err) {
+    console.error('❌ Login Error:', err);
+    res.status(500).json({ 
+      error: 'Ralat server. Sila cuba lagi.' 
+    });
+  }
+});
+
+// 7. Add logout endpoint
+app.post('/logout', authenticateToken, (req, res) => {
+  // In a production system, you might want to blacklist the token
+  // For now, just acknowledge the logout
+  console.log(`User ${req.user.email} logged out`);
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// 8. Protected route example with agency filtering
+app.get('/api/agency-data', authenticateToken, (req, res) => {
+  const userAgency = req.user.agency;
+  
+  // Filter data based on user's agency
+  // Example: only return data relevant to user's agency
+  const data = getDataForAgency(userAgency);
+  
+  res.json(data);
 });
