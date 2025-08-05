@@ -28,6 +28,31 @@ const validate = (req, res, next) => {
   next();
 };
 
+// 4. Enhanced authentication middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      }
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+
+    if (!user.id || !user.agency) {
+      return res.status(403).json({ error: 'Invalid token payload' });
+    }
+
+    req.user = user;
+    next();
+  });
+}
 
 // Initialize
 const app = express();
@@ -828,6 +853,17 @@ app.delete('/cleanup-test-data', (req, res) => {
   }
 });
 
+app.post('/logout', authenticateToken, (req, res) => {
+  console.log(`User ${req.user.email} logged out`);
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+app.get('/api/agency-data', authenticateToken, (req, res) => {
+  const userAgency = req.user.agency;
+  const data = getDataForAgency(userAgency);
+  res.json(data);
+});
+
 const server = app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
   console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -856,33 +892,6 @@ app.use(helmet({
 }));
 
 
-// 4. Enhanced authentication middleware
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({ error: 'Token expired' });
-      }
-      return res.status(403).json({ error: 'Invalid token' });
-    }
-
-    if (!user.id || !user.agency) {
-      return res.status(403).json({ error: 'Invalid token payload' });
-    }
-
-    req.user = user;
-    next();
-  });
-}
-
-
 // 7. Add logout endpoint
 app.post('/logout', authenticateToken, (req, res) => {
   // In a production system, you might want to blacklist the token
@@ -890,6 +899,15 @@ app.post('/logout', authenticateToken, (req, res) => {
   console.log(`User ${req.user.email} logged out`);
   res.json({ success: true, message: 'Logged out successfully' });
 });
+
+function getDataForAgency(agency) {
+  // Replace this with real filtered results if needed
+  return {
+    agency,
+    message: 'Agency-specific data would be returned here',
+    data: []
+  };
+}
 
 // 8. Protected route example with agency filtering
 app.get('/api/agency-data', authenticateToken, (req, res) => {
