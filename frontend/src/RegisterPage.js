@@ -25,61 +25,131 @@ function RegisterPage() {
     setAgency('');
     setCustomAgency('');
     
-    // Prevent autofill
-    const preventAutofill = () => {
-      const inputs = document.querySelectorAll('input');
-      inputs.forEach(input => {
-        input.setAttribute('autocomplete', 'off');
-        input.setAttribute('data-lpignore', 'true'); // Disable LastPass
-        input.setAttribute('data-form-type', 'other'); // Disable other managers
-      });
-    };
-    
-    preventAutofill();
-    // Re-run after a delay to catch dynamically rendered inputs
-    setTimeout(preventAutofill, 100);
-  }, []);
-
-  // Load agencies from systems.json
-  useEffect(() => {
-    const loadAgencies = async () => {
-      try {
-        const response = await api.get('/systems');
-        const systemsData = response.data;
+    // Comprehensive autofill prevention
+  const preventAutofill = () => {
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      // Set all possible autocomplete attributes
+      input.setAttribute('autocomplete', 'off');
+      input.setAttribute('autocorrect', 'off');
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('spellcheck', 'false');
+      
+      // Password manager specific
+      input.setAttribute('data-lpignore', 'true');
+      input.setAttribute('data-form-type', 'other');
+      input.setAttribute('data-1p-ignore', 'true');
+      
+      // Make inputs readonly initially
+      if (input.type === 'password' || input.type === 'email') {
+        input.setAttribute('readonly', 'readonly');
         
-        // Extract all unique agencies from both Inbound and Outbound
-        const agencies = new Set();
-        
-        Object.values(systemsData).forEach(flowType => {
-          Object.keys(flowType).forEach(agency => {
-            agencies.add(agency);
-          });
+        // Remove readonly on focus
+        input.addEventListener('focus', function() {
+          this.removeAttribute('readonly');
         });
         
-        setAvailableAgencies([...agencies].sort());
-      } catch (error) {
-        console.error('Failed to load agencies:', error);
-        // Fallback to local systems.json
-        try {
-          const response = await fetch('/systems.json');
-          const systemsData = await response.json();
-          
-          const agencies = new Set();
-          Object.values(systemsData).forEach(flowType => {
-            Object.keys(flowType).forEach(agency => {
-              agencies.add(agency);
-            });
-          });
-          
-          setAvailableAgencies([...agencies].sort());
-        } catch (fallbackError) {
-          console.error('Failed to load fallback agencies:', fallbackError);
-        }
+        // Clear value on mount
+        input.value = '';
       }
-    };
+    });
+    
+    // Disable form autofill
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+      form.setAttribute('autocomplete', 'off');
+    });
+  };
+  
+  // Run immediately
+  preventAutofill();
+  
+  // Run after delay to catch dynamic elements
+  const timer1 = setTimeout(preventAutofill, 100);
+  const timer2 = setTimeout(preventAutofill, 500);
+  
+  // Clean up function
+  return () => {
+    clearTimeout(timer1);
+    clearTimeout(timer2);
+  };
+}, []);
 
-    loadAgencies();
-  }, []);
+  // Load agencies from systems.json
+// Replace the existing useEffect for loading agencies in RegisterPage.js
+// This correctly extracts only top-level agency names
+
+useEffect(() => {
+  const loadAgencies = async () => {
+    try {
+      const response = await api.get('/systems');
+      const systemsData = response.data;
+      
+      // Extract unique agencies properly
+      const agencies = new Set();
+      
+      // For Inbound flow, get the top-level keys
+      if (systemsData.Inbound) {
+        Object.keys(systemsData.Inbound).forEach(agency => {
+          // Skip any internal properties that aren't agencies
+          if (typeof systemsData.Inbound[agency] === 'object') {
+            agencies.add(agency);
+          }
+        });
+      }
+      
+      // For Outbound flow (if needed in future)
+      if (systemsData.Outbound) {
+        Object.keys(systemsData.Outbound).forEach(agency => {
+          if (typeof systemsData.Outbound[agency] === 'object') {
+            agencies.add(agency);
+          }
+        });
+      }
+      
+      // Sort and set agencies
+      const sortedAgencies = [...agencies].sort();
+      console.log('Loaded agencies:', sortedAgencies); // Debug log
+      setAvailableAgencies(sortedAgencies);
+      
+    } catch (error) {
+      console.error('Failed to load agencies:', error);
+      
+      // Fallback to local systems.json
+      try {
+        const response = await fetch('/systems.json');
+        const systemsData = await response.json();
+        
+        const agencies = new Set();
+        
+        // Same logic for fallback
+        if (systemsData.Inbound) {
+          Object.keys(systemsData.Inbound).forEach(agency => {
+            if (typeof systemsData.Inbound[agency] === 'object') {
+              agencies.add(agency);
+            }
+          });
+        }
+        
+        if (systemsData.Outbound) {
+          Object.keys(systemsData.Outbound).forEach(agency => {
+            if (typeof systemsData.Outbound[agency] === 'object') {
+              agencies.add(agency);
+            }
+          });
+        }
+        
+        setAvailableAgencies([...agencies].sort());
+      } catch (fallbackError) {
+        console.error('Failed to load fallback agencies:', fallbackError);
+        // Set some default agencies if all else fails
+        setAvailableAgencies(['JPA', 'eSILA']);
+      }
+    }
+  };
+
+  loadAgencies();
+}, []);
 
   // Clear message after 5 seconds
   useEffect(() => {
@@ -171,29 +241,51 @@ function RegisterPage() {
       <form onSubmit={handleRegister} autoComplete="off" noValidate>
         {/* Email input with enhanced autocomplete prevention */}
         <input
-          type="email"
-          placeholder="Email (cth: nama@agensi.gov.my)"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          autoComplete="new-password" // Trick browsers
-          data-lpignore="true"
-          disabled={isLoading}
-          className="form-input"
-        />
+  type="email"
+  placeholder="Email"
+  value={email}
+  onChange={e => setEmail(e.target.value)}
+  required
+  autoComplete="off"
+  autoCorrect="off"
+  autoCapitalize="off"
+  spellCheck="false"
+  data-lpignore="true"
+  data-form-type="other"
+  data-1p-ignore="true"
+  name={`email-${Date.now()}`} // Dynamic name to prevent caching
+  disabled={isLoading}
+  className="form-input"
+  onFocus={(e) => {
+    // Clear on focus if needed
+    if (e.target.hasAttribute('readonly')) {
+      e.target.removeAttribute('readonly');
+    }
+  }}
+/>
         
         {/* Password fields with maximum autocomplete prevention */}
         <input
-          type="password"
-          placeholder="Kata Laluan (minimum 8 aksara)"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          autoComplete="new-password"
-          data-lpignore="true"
-          disabled={isLoading}
-          className="form-input"
-        />
+  type="password"
+  placeholder="Kata Laluan (minimum 8 aksara)"
+  value={password}
+  onChange={e => setPassword(e.target.value)}
+  required
+  autoComplete="new-password"
+  autoCorrect="off"
+  autoCapitalize="off"
+  spellCheck="false"
+  data-lpignore="true"
+  data-form-type="other"
+  data-1p-ignore="true"
+  name={`password-${Date.now()}`} // Dynamic name
+  disabled={isLoading}
+  className="form-input"
+  readOnly
+  onFocus={(e) => {
+    e.target.removeAttribute('readonly');
+  }}
+/>
         
         <input
           type="password"

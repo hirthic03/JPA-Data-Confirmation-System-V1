@@ -12,31 +12,43 @@ const dbg = (...args) => {
 const rawAgency = localStorage.getItem('agency')?.toLowerCase();
 
 const findMatchingAgencyKey = (systemsData, flowType) => {
-    const userAgency = localStorage.getItem('agency');
-    if (!userAgency || !systemsData?.[flowType]) return '';
-    
-    const agencies = Object.keys(systemsData[flowType]);
-    
-    // 1. Exact match (case-sensitive)
-    if (agencies.includes(userAgency)) {
-      return userAgency;
-    }
-    
-    // 2. Case-insensitive exact match
-    const caseInsensitiveMatch = agencies.find(
-      key => key.toLowerCase() === userAgency.toLowerCase()
-    );
-    if (caseInsensitiveMatch) return caseInsensitiveMatch;
-    
-    // 3. Partial match (contains)
-    const partialMatch = agencies.find(key => {
-      const keyLower = key.toLowerCase();
-      const userLower = userAgency.toLowerCase();
-      return keyLower.includes(userLower) || userLower.includes(keyLower);
-    });
-    
-    return partialMatch || '';
-  };
+  const userAgency = localStorage.getItem('agency');
+  if (!userAgency || !systemsData?.[flowType]) return '';
+  
+  const agencies = Object.keys(systemsData[flowType]);
+  console.log('Available agencies:', agencies);
+  console.log('User agency:', userAgency);
+  
+  // 1. Exact match (case-sensitive)
+  if (agencies.includes(userAgency)) {
+    console.log('Found exact match:', userAgency);
+    return userAgency;
+  }
+  
+  // 2. Case-insensitive exact match
+  const caseInsensitiveMatch = agencies.find(
+    key => key.toLowerCase() === userAgency.toLowerCase()
+  );
+  if (caseInsensitiveMatch) {
+    console.log('Found case-insensitive match:', caseInsensitiveMatch);
+    return caseInsensitiveMatch;
+  }
+  
+  // 3. Partial match (contains)
+  const partialMatch = agencies.find(key => {
+    const keyLower = key.toLowerCase();
+    const userLower = userAgency.toLowerCase();
+    return keyLower === userLower ||
+           keyLower.includes(userLower) ||
+           userLower.includes(keyLower);
+  });
+  
+  if (partialMatch) {
+    console.log('Found partial match:', partialMatch);
+  }
+
+  return partialMatch || '';
+};
 
 
 export default function SubmissionApp() {
@@ -101,95 +113,77 @@ useEffect(() => {
   api.get('/').catch(() => {});
 
   /* 2️⃣  Now load systems, retry up to 3× if container still cold */
-  function loadSystems(attempt = 1) {
+function loadSystems(attempt = 1) {
   api
     .get('/systems')
     .then(res => {
+      console.log('Systems data loaded:', res.data);
       setSystemsData(res.data);
+
       const flows = Object.keys(res.data).filter(
         f => allowOutboundFlow || f === 'Inbound'
       );
+
       if (flows.length > 0) {
         const flow = flows[0];
         setFlowType(flow);
 
         const agencyKey = findMatchingAgencyKey(res.data, flow);
-            if (!agencyKey) {
-              console.warn('❌ No matching agency found for user');
-              alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
-              navigate('/login');
-              return;
-            }
-            setUserAgency(agencyKey);
+        if (!agencyKey) {
+          console.warn('❌ No matching agency found for user');
+          alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
+          navigate('/login');
+          return;
+        }
 
-        const systems = Object.keys(res.data[flow]?.[agencyKey] || {});
-if (systems.length > 0) {
-  setSystem(prevSystem => systems.includes(prevSystem) ? prevSystem : systems[0]);
+        console.log('Setting user agency:', agencyKey);
+        setUserAgency(agencyKey);
 
-  const selectedSystem = systems.includes(system) ? system : systems[0];
-  const modules = Object.keys(
-    res.data[flow][agencyKey][selectedSystem]?.modules || {}
-  );
-  if (modules.length > 0) {
-    setModule(prevModule => modules.includes(prevModule) ? prevModule : modules[0]);
-  }
-}
+        const agencyData = res.data[flow][agencyKey];
+        let systems = [];
 
+        const hasNestedSystems = Object.values(agencyData).some(
+          val => val && typeof val === 'object' && val.modules
+        );
 
+        if (hasNestedSystems) {
+          systems = Object.keys(agencyData);
+        } else {
+          systems = Object.keys(agencyData);
+        }
+
+        console.log('Available systems for agency:', systems);
+
+        if (systems.length > 0) {
+          setSystem(prevSystem => systems.includes(prevSystem) ? prevSystem : systems[0]);
+
+          const selectedSystem = systems.includes(system) ? system : systems[0];
+          let modules = [];
+
+          if (agencyData[selectedSystem]?.modules) {
+            modules = Object.keys(agencyData[selectedSystem].modules);
+          }
+
+          console.log('Available modules:', modules);
+
+          if (modules.length > 0) {
+            setModule(prevModule => modules.includes(prevModule) ? prevModule : modules[0]);
+          }
+        } else {
+          console.warn('No systems found for agency:', agencyKey);
+        }
       }
     })
     .catch(err => {
+      console.error('Failed to load systems:', err);
       if (attempt < 3) {
+        console.log(`Retrying... attempt ${attempt + 1}`);
         setTimeout(() => loadSystems(attempt + 1), 2000);
       } else {
-        console.warn('⚠️ Backend unreachable, using local systems.json', err);
-        fetch('/systems.json')
-          .then(r => r.json())
-          .then(data => {
-            setSystemsData(data);
-            const flows = Object.keys(data).filter(
-              f => allowOutboundFlow || f === 'Inbound'
-            );
-            if (flows.length > 0) {
-              const flow = flows[0];
-              setFlowType(flow);
-
-              const agencyKey = findMatchingAgencyKey(data, flow);
-                  if (!agencyKey) {
-                    console.warn('❌ No matching agency found in local data');
-                    alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
-                    navigate('/login');
-                    return;
-                  }
-                  setUserAgency(agencyKey);
-
-              const systems = Object.keys(data[flow]?.[agencyKey] || {});
-              const firstSystem = systems[0];
-
-              if (
-                firstSystem &&
-                data[flow][agencyKey][firstSystem]?.modules
-              ) {
-                setSystem(firstSystem);
-                const modules = Object.keys(
-                  data[flow][agencyKey][firstSystem].modules || {}
-                );
-                if (modules.length > 0) {
-                  setModule(modules[0]);
-                }
-              }
-            }
-          })
-          .catch(e => {
-            console.error('❌ Failed to load local systems.json:', e);
-            alert(
-              'Gagal memuatkan data sistem. Sila semak sambungan anda dan cuba semula.'
-            );
-          });
+        // Optional: fallback logic
       }
     });
 }
-
 
 
   loadSystems();
@@ -487,17 +481,21 @@ const submit = (confirmed) => {
       <div className="form-group">
   <label>Nama Sistem:</label>
   <select value={system} onChange={e => setSystem(e.target.value)}>
-    {(systemsData[flowType]?.[userAgency]
-      ? Object.keys(systemsData[flowType][userAgency])
-      : []
-    ).map((systemName) => (
-      <option key={systemName} value={systemName}>
-        {systemName}
-      </option>
-    ))}
-  </select>
-</div>
+  {(systemsData[flowType]?.[userAgency]
+    ? Object.keys(systemsData[flowType][userAgency]).filter(
+        key =>
+          typeof systemsData[flowType][userAgency][key] === 'object' &&
+          systemsData[flowType][userAgency][key].modules
+      )
+    : []
+  ).map((systemName) => (
+    <option key={systemName} value={systemName}>
+      {systemName}
+    </option>
+  ))}
+</select>
 
+</div>
 
       <div className="form-group">
         <label>Nama Modul:</label>

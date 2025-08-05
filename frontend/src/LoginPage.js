@@ -21,17 +21,37 @@ function LoginPage({ onLogin }) {
     localStorage.removeItem('agency');
     sessionStorage.clear();
     
-    // Reset axios default headers
-    if (api.defaults) {
-      delete api.defaults.headers.common['Authorization'];
-    }
-    
-    // Prevent autofill
+// Reset axios default headers
+  if (api.defaults) {
+    delete api.defaults.headers.common['Authorization'];
+  }
+  
+  // Clear form fields
+  setEmail('');
+  setPassword('');
+  
+  // Aggressive autofill prevention
+  const preventAutofill = () => {
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
       input.setAttribute('autocomplete', 'off');
+      input.setAttribute('autocorrect', 'off');
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('spellcheck', 'false');
+      input.setAttribute('data-lpignore', 'true');
+      input.setAttribute('data-form-type', 'other');
+      
+      // Clear values
+      if (input.type === 'password' || input.type === 'email') {
+        input.value = '';
+        input.setAttribute('value', '');
+      }
     });
-  }, []);
+  };
+  
+  preventAutofill();
+  setTimeout(preventAutofill, 100);
+}, []);
 
   // Clear error after 5 seconds
   useEffect(() => {
