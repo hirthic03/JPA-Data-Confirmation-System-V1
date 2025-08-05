@@ -11,44 +11,32 @@ const dbg = (...args) => {
 
 const rawAgency = localStorage.getItem('agency')?.toLowerCase();
 
-const findMatchingAgencyKey = (systemsData, flowType) => {
-  const userAgency = localStorage.getItem('agency');
+const findMatchingAgencyKey = (systemsData, flowType, userAgency) => {
   if (!userAgency || !systemsData?.[flowType]) return '';
   
-  const agencies = Object.keys(systemsData[flowType]);
-  console.log('Available agencies:', agencies);
-  console.log('User agency:', userAgency);
+  const flowData = systemsData[flowType];
   
-  // 1. Exact match (case-sensitive)
-  if (agencies.includes(userAgency)) {
+  console.log('Looking for agency:', userAgency);
+  console.log('Available in flow:', Object.keys(flowData));
+  
+  if (flowData[userAgency]) {
     console.log('Found exact match:', userAgency);
     return userAgency;
   }
   
-  // 2. Case-insensitive exact match
-  const caseInsensitiveMatch = agencies.find(
+  const caseInsensitiveMatch = Object.keys(flowData).find(
     key => key.toLowerCase() === userAgency.toLowerCase()
   );
+  
   if (caseInsensitiveMatch) {
     console.log('Found case-insensitive match:', caseInsensitiveMatch);
     return caseInsensitiveMatch;
   }
   
-  // 3. Partial match (contains)
-  const partialMatch = agencies.find(key => {
-    const keyLower = key.toLowerCase();
-    const userLower = userAgency.toLowerCase();
-    return keyLower === userLower ||
-           keyLower.includes(userLower) ||
-           userLower.includes(keyLower);
-  });
-  
-  if (partialMatch) {
-    console.log('Found partial match:', partialMatch);
-  }
-
-  return partialMatch || '';
+  console.warn('No match found for agency:', userAgency);
+  return '';
 };
+
 
 
 export default function SubmissionApp() {
@@ -68,8 +56,9 @@ const [pendingElementLabel, setPendingElementLabel] = useState('');
 const [availableGroups, setAvailableGroups] = useState([]);
 const [userAgency, setUserAgency] = useState('');
 
-  const showNotConfirmButton = false; // 🔒 Client-requested: hidden for now, re-enable if needed
-  const allowOutboundFlow = false; // 🔒 Hide outbound for now; re-enable if client requests
+const allowOutboundFlow = false;
+const showNotConfirmButton = false;
+
  
   const navigate = useNavigate();
  const handleLogout = () => {
@@ -128,13 +117,16 @@ function loadSystems(attempt = 1) {
         const flow = flows[0];
         setFlowType(flow);
 
-        const agencyKey = findMatchingAgencyKey(res.data, flow);
-        if (!agencyKey) {
-          console.warn('❌ No matching agency found for user');
-          alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
-          navigate('/login');
-          return;
-        }
+        const storedAgency = localStorage.getItem('agency');
+const agencyKey = findMatchingAgencyKey(res.data, flow, storedAgency);
+
+if (!agencyKey) {
+  console.error('No matching agency found for user:', storedAgency);
+  alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
+  navigate('/login');
+  return;
+}
+
 
         console.log('Setting user agency:', agencyKey);
         setUserAgency(agencyKey);
@@ -187,7 +179,7 @@ function loadSystems(attempt = 1) {
 
 
   loadSystems();
-}, []);
+}, [navigate, allowOutboundFlow]);
 
 
 useEffect(() => {
@@ -235,16 +227,17 @@ useEffect(() => {
   setAvailableElements(modData);
 
   setElements(prev =>
-    prev.filter(e => {
-      if (typeof e === 'string') return modData.includes(e);
-      return modData.some(
-        it =>
-          typeof it === 'object' &&
-          it.group === e.group &&
-          it.fields?.includes(e.name)
+  prev.filter(e => {
+    if (typeof e === 'string') {
+      return elements.some(el => 
+        typeof el === 'string' ? el === e : el.fields?.includes(e)
       );
-    })
-  );
+    }
+    return elements.some(
+      el => el.group === e.group && el.fields?.includes(e.name)
+    );
+  })
+);
 }, [module, system, flowType, systemsData, userAgency]);
 
 const flattenOutboundElements = (confirmed) => {
@@ -561,6 +554,7 @@ const submit = (confirmed) => {
     }
 
     // ❌ Case 3: Unrecognized structure — skip rendering
+    console.warn('Unrecognized element structure:', item);
     return null;
   })}
 </div>
