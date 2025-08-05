@@ -334,8 +334,36 @@
             }
           ]
         },
-
-        "eSILA": {
+        "Aplikasi Mudah Alih": {
+          "title": "Maklumat Aduan / Cadangan (AMA)",
+          "elements": [
+            {
+              "group": "Menghantar Aduan / Cadangan",
+              "fields": [
+                "Tarikh",
+                "Aduan/ Cadangan",
+                "Jenis Aduan",
+                "Nama Pengadu",
+                "E-mel Pengadu",
+                "Gambar",
+                "ID Rujukan"
+              ]
+            },
+            {
+              "group": "Menyemak Status Aduan / Cadangan",
+              "fields": [
+                "Tarikh",
+                "Aduan/ Cadangan",
+                "Jenis Aduan",
+                "Status Aduan/ Cadangan",
+                "ID Rujukan"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "eSILA": {
   "agency": "JPA",
   "modules": {
     "Pengurusan Penajaan Dalam Perkhidmatan": {
@@ -411,35 +439,6 @@
   }
 },
 
-        "Aplikasi Mudah Alih": {
-          "title": "Maklumat Aduan / Cadangan (AMA)",
-          "elements": [
-            {
-              "group": "Menghantar Aduan / Cadangan",
-              "fields": [
-                "Tarikh",
-                "Aduan/ Cadangan",
-                "Jenis Aduan",
-                "Nama Pengadu",
-                "E-mel Pengadu",
-                "Gambar",
-                "ID Rujukan"
-              ]
-            },
-            {
-              "group": "Menyemak Status Aduan / Cadangan",
-              "fields": [
-                "Tarikh",
-                "Aduan/ Cadangan",
-                "Jenis Aduan",
-                "Status Aduan/ Cadangan",
-                "ID Rujukan"
-              ]
-            }
-          ]
-        }
-      }
-    },
     "MyPsyD": {
       "agency": "JPA",
       "modules": {

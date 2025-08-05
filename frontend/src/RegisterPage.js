@@ -123,7 +123,7 @@ function RegisterPage() {
       } catch (error) {
         console.error('Failed to load agencies:', error);
         // Set default agencies if loading fails
-        setAvailableAgencies(['JPA', 'eSILA']);
+        setAvailableAgencies(['JPA',]);
       }
     };
 
