@@ -26,130 +26,109 @@ function RegisterPage() {
     setCustomAgency('');
     
     // Comprehensive autofill prevention
-  const preventAutofill = () => {
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => {
-      // Set all possible autocomplete attributes
-      input.setAttribute('autocomplete', 'off');
-      input.setAttribute('autocorrect', 'off');
-      input.setAttribute('autocapitalize', 'off');
-      input.setAttribute('spellcheck', 'false');
-      
-      // Password manager specific
-      input.setAttribute('data-lpignore', 'true');
-      input.setAttribute('data-form-type', 'other');
-      input.setAttribute('data-1p-ignore', 'true');
-      
-      // Make inputs readonly initially
-      if (input.type === 'password' || input.type === 'email') {
-        input.setAttribute('readonly', 'readonly');
+    const preventAutofill = () => {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        // Set all possible autocomplete attributes
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('autocorrect', 'off');
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('spellcheck', 'false');
         
-        // Remove readonly on focus
-        input.addEventListener('focus', function() {
-          this.removeAttribute('readonly');
-        });
+        // Password manager specific
+        input.setAttribute('data-lpignore', 'true');
+        input.setAttribute('data-form-type', 'other');
+        input.setAttribute('data-1p-ignore', 'true');
         
-        // Clear value on mount
-        input.value = '';
-      }
-    });
+        // Make inputs readonly initially
+        if (input.type === 'password' || input.type === 'email') {
+          input.setAttribute('readonly', 'readonly');
+          
+          // Remove readonly on focus
+          input.addEventListener('focus', function() {
+            this.removeAttribute('readonly');
+          });
+          
+          // Clear value on mount
+          input.value = '';
+        }
+      });
+      
+      // Disable form autofill
+      const forms = document.querySelectorAll('form');
+      forms.forEach(form => {
+        form.setAttribute('autocomplete', 'off');
+      });
+    };
     
-    // Disable form autofill
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-      form.setAttribute('autocomplete', 'off');
-    });
-  };
-  
-  // Run immediately
-  preventAutofill();
-  
-  // Run after delay to catch dynamic elements
-  const timer1 = setTimeout(preventAutofill, 100);
-  const timer2 = setTimeout(preventAutofill, 500);
-  
-  // Clean up function
-  return () => {
-    clearTimeout(timer1);
-    clearTimeout(timer2);
-  };
-}, []);
+    // Run immediately
+    preventAutofill();
+    
+    // Run after delay to catch dynamic elements
+    const timer1 = setTimeout(preventAutofill, 100);
+    const timer2 = setTimeout(preventAutofill, 500);
+    
+    // Clean up function
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
-  // Load agencies from systems.json
-// Replace the existing useEffect for loading agencies in RegisterPage.js
-// This correctly extracts only top-level agency names
-
-useEffect(() => {
-  const loadAgencies = async () => {
-    try {
-      const response = await api.get('/systems');
-      const systemsData = response.data;
-      
-      // Extract unique agencies properly
-      const agencies = new Set();
-      
-      // For Inbound flow, get the top-level keys
-      if (systemsData.Inbound) {
-        Object.keys(systemsData.Inbound).forEach(agency => {
-          // Skip any internal properties that aren't agencies
-          if (typeof systemsData.Inbound[agency] === 'object') {
-            agencies.add(agency);
-          }
-        });
-      }
-      
-      // For Outbound flow (if needed in future)
-      if (systemsData.Outbound) {
-        Object.keys(systemsData.Outbound).forEach(agency => {
-          if (typeof systemsData.Outbound[agency] === 'object') {
-            agencies.add(agency);
-          }
-        });
-      }
-      
-      // Sort and set agencies
-      const sortedAgencies = [...agencies].sort();
-      console.log('Loaded agencies:', sortedAgencies); // Debug log
-      setAvailableAgencies(sortedAgencies);
-      
-    } catch (error) {
-      console.error('Failed to load agencies:', error);
-      
-      // Fallback to local systems.json
+  // Load agencies from systems.json - FIXED VERSION
+  useEffect(() => {
+    const loadAgencies = async () => {
       try {
-        const response = await fetch('/systems.json');
-        const systemsData = await response.json();
+        const response = await api.get('/systems');
+        const systemsData = response.data;
         
-        const agencies = new Set();
+        console.log('Full systems data:', systemsData); // Debug log
         
-        // Same logic for fallback
+        // Extract agencies from Inbound section only
+        const agencies = [];
+        
         if (systemsData.Inbound) {
-          Object.keys(systemsData.Inbound).forEach(agency => {
-            if (typeof systemsData.Inbound[agency] === 'object') {
-              agencies.add(agency);
+          // Get only the top-level keys from Inbound (these are the agencies)
+          const inboundKeys = Object.keys(systemsData.Inbound);
+          console.log('Inbound keys found:', inboundKeys); // Debug log
+          
+          // In your systems.json, the agencies are: JPA and eSILA
+          inboundKeys.forEach(key => {
+            // Verify this is actually an agency by checking its structure
+            const agencyData = systemsData.Inbound[key];
+            
+            if (typeof agencyData === 'object' && agencyData !== null) {
+              // An agency should have systems as its children
+              // Don't add keys that look like modules or other data
+              const isValidAgency = Object.keys(agencyData).some(systemKey => {
+                const system = agencyData[systemKey];
+                // A valid system should have modules
+                return system && typeof system === 'object' && 
+                       (system.modules || system.title || system.elements);
+              });
+              
+              if (isValidAgency) {
+                agencies.push(key);
+                console.log(`Added agency: ${key}`); // Debug log
+              }
             }
           });
         }
         
-        if (systemsData.Outbound) {
-          Object.keys(systemsData.Outbound).forEach(agency => {
-            if (typeof systemsData.Outbound[agency] === 'object') {
-              agencies.add(agency);
-            }
-          });
-        }
+        // Remove duplicates and sort
+        const uniqueAgencies = [...new Set(agencies)].sort();
+        console.log('Final loaded agencies:', uniqueAgencies); // Debug log
+        setAvailableAgencies(uniqueAgencies);
         
-        setAvailableAgencies([...agencies].sort());
-      } catch (fallbackError) {
-        console.error('Failed to load fallback agencies:', fallbackError);
-        // Set some default agencies if all else fails
+      } catch (error) {
+        console.error('Failed to load agencies:', error);
+        // Set default agencies if loading fails
         setAvailableAgencies(['JPA', 'eSILA']);
       }
-    }
-  };
+    };
 
-  loadAgencies();
-}, []);
+    loadAgencies();
+  }, []);
 
   // Clear message after 5 seconds
   useEffect(() => {
@@ -203,6 +182,8 @@ useEffect(() => {
     try {
       const finalAgency = agency === 'Other' ? customAgency.trim() : agency;
       
+      console.log('Registering with agency:', finalAgency); // Debug log
+      
       const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/register`, {
         email: email.trim(),
         password,
@@ -241,51 +222,50 @@ useEffect(() => {
       <form onSubmit={handleRegister} autoComplete="off" noValidate>
         {/* Email input with enhanced autocomplete prevention */}
         <input
-  type="email"
-  placeholder="Email"
-  value={email}
-  onChange={e => setEmail(e.target.value)}
-  required
-  autoComplete="off"
-  autoCorrect="off"
-  autoCapitalize="off"
-  spellCheck="false"
-  data-lpignore="true"
-  data-form-type="other"
-  data-1p-ignore="true"
-  name={`email-${Date.now()}`} // Dynamic name to prevent caching
-  disabled={isLoading}
-  className="form-input"
-  onFocus={(e) => {
-    // Clear on focus if needed
-    if (e.target.hasAttribute('readonly')) {
-      e.target.removeAttribute('readonly');
-    }
-  }}
-/>
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          data-lpignore="true"
+          data-form-type="other"
+          data-1p-ignore="true"
+          name={`email-${Date.now()}`}
+          disabled={isLoading}
+          className="form-input"
+          onFocus={(e) => {
+            if (e.target.hasAttribute('readonly')) {
+              e.target.removeAttribute('readonly');
+            }
+          }}
+        />
         
         {/* Password fields with maximum autocomplete prevention */}
         <input
-  type="password"
-  placeholder="Kata Laluan (minimum 8 aksara)"
-  value={password}
-  onChange={e => setPassword(e.target.value)}
-  required
-  autoComplete="new-password"
-  autoCorrect="off"
-  autoCapitalize="off"
-  spellCheck="false"
-  data-lpignore="true"
-  data-form-type="other"
-  data-1p-ignore="true"
-  name={`password-${Date.now()}`} // Dynamic name
-  disabled={isLoading}
-  className="form-input"
-  readOnly
-  onFocus={(e) => {
-    e.target.removeAttribute('readonly');
-  }}
-/>
+          type="password"
+          placeholder="Kata Laluan (minimum 8 aksara)"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          data-lpignore="true"
+          data-form-type="other"
+          data-1p-ignore="true"
+          name={`password-${Date.now()}`}
+          disabled={isLoading}
+          className="form-input"
+          readOnly
+          onFocus={(e) => {
+            e.target.removeAttribute('readonly');
+          }}
+        />
         
         <input
           type="password"
@@ -299,7 +279,7 @@ useEffect(() => {
           className="form-input"
         />
         
-         <select 
+        <select 
           value={agency} 
           onChange={e => {
             setAgency(e.target.value);

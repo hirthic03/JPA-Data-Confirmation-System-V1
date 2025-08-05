@@ -9,8 +9,6 @@ const dbg = (...args) => {
   if (process.env.NODE_ENV !== 'production') console.log(...args);
 };
 
-const rawAgency = localStorage.getItem('agency')?.toLowerCase();
-
 const findMatchingAgencyKey = (systemsData, flowType, userAgency) => {
   if (!userAgency || !systemsData?.[flowType]) return '';
   
@@ -103,8 +101,7 @@ useEffect(() => {
 
   /* 2️⃣  Now load systems, retry up to 3× if container still cold */
 function loadSystems(attempt = 1) {
-  api
-    .get('/systems')
+  api.get('/systems')
     .then(res => {
       console.log('Systems data loaded:', res.data);
       setSystemsData(res.data);
@@ -118,51 +115,27 @@ function loadSystems(attempt = 1) {
         setFlowType(flow);
 
         const storedAgency = localStorage.getItem('agency');
-const agencyKey = findMatchingAgencyKey(res.data, flow, storedAgency);
+        const agencyKey = findMatchingAgencyKey(res.data, flow, storedAgency);
 
-if (!agencyKey) {
-  console.error('No matching agency found for user:', storedAgency);
-  alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
-  navigate('/login');
-  return;
-}
-
-
-        console.log('Setting user agency:', agencyKey);
-        setUserAgency(agencyKey);
-
-        const agencyData = res.data[flow][agencyKey];
-        let systems = [];
-
-        const hasNestedSystems = Object.values(agencyData).some(
-          val => val && typeof val === 'object' && val.modules
-        );
-
-        if (hasNestedSystems) {
-          systems = Object.keys(agencyData);
-        } else {
-          systems = Object.keys(agencyData);
+        if (!agencyKey) {
+          console.error('No matching agency found for user:', storedAgency);
+          alert('Agensi anda tidak dijumpai dalam sistem. Sila hubungi pentadbir.');
+          navigate('/login');
+          return;
         }
 
-        console.log('Available systems for agency:', systems);
+        setUserAgency(agencyKey);
+        const agencyData = res.data[flow][agencyKey];
+        const systems = Object.keys(agencyData || {});
 
         if (systems.length > 0) {
-          setSystem(prevSystem => systems.includes(prevSystem) ? prevSystem : systems[0]);
+          const firstSystem = systems[0];
+          setSystem(firstSystem);
 
-          const selectedSystem = systems.includes(system) ? system : systems[0];
-          let modules = [];
-
-          if (agencyData[selectedSystem]?.modules) {
-            modules = Object.keys(agencyData[selectedSystem].modules);
-          }
-
-          console.log('Available modules:', modules);
-
+          const modules = Object.keys(agencyData[firstSystem]?.modules || {});
           if (modules.length > 0) {
-            setModule(prevModule => modules.includes(prevModule) ? prevModule : modules[0]);
+            setModule(modules[0]);
           }
-        } else {
-          console.warn('No systems found for agency:', agencyKey);
         }
       }
     })
@@ -172,10 +145,11 @@ if (!agencyKey) {
         console.log(`Retrying... attempt ${attempt + 1}`);
         setTimeout(() => loadSystems(attempt + 1), 2000);
       } else {
-        // Optional: fallback logic
+        alert('Gagal memuatkan data sistem. Sila cuba lagi.');
       }
     });
 }
+
 
 
   loadSystems();
@@ -183,12 +157,16 @@ if (!agencyKey) {
 
 
 useEffect(() => {
-  if (!systemsData[flowType]?.[userAgency]) return;
-  const systemList = Object.keys(systemsData[flowType][userAgency]);
-  if (!systemList.includes(system)) {
-    setSystem(systemList[0] || '');
+  if (!systemsData[flowType] || !userAgency) return;
+  const agencyData = systemsData[flowType][userAgency];
+  if (!agencyData) return;
+
+  const systemList = Object.keys(agencyData);
+  if (!systemList.includes(system) && systemList.length > 0) {
+    setSystem(systemList[0]);
   }
 }, [flowType, systemsData, system, userAgency]);
+
 
 
 useEffect(() => {
