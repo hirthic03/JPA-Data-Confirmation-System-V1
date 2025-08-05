@@ -161,30 +161,43 @@ const isLoggedIn = () => {
 
 
 function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoggedIn(false);
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      const now = Date.now() / 1000;
+      if (decoded.exp && decoded.exp > now) {
+        setLoggedIn(true);
+      } else {
+        localStorage.clear();
+        setLoggedIn(false);
+      }
+    } catch (err) {
+      localStorage.clear();
+      setLoggedIn(false);
+    }
+  }, []); // Only once on mount
+
   return (
     <Router>
       <Routes>
-       <Route path="/login" element={<LoginPage />} />
-<Route path="/register" element={<RegisterPage />} /> {/* ✅ New line for registration */}
-<Route
-  path="/submission"
-  element={isLoggedIn() ? <SubmissionApp /> : <Navigate to="/login" />}
-/>
-<Route
-  path="/"
-  element={<Navigate to={isLoggedIn() ? '/submission' : '/login'} />}
-/>
-<Route
-  path="/requirement"
-  element={isLoggedIn() ? <InboundRequirementForm /> : <Navigate to="/login" />}
-/>
-
-
+        <Route path="/login" element={<LoginPage onLogin={() => setLoggedIn(true)} />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/submission" element={loggedIn ? <SubmissionApp /> : <Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to={loggedIn ? "/submission" : "/login"} />} />
+        <Route path="/requirement" element={loggedIn ? <InboundRequirementForm /> : <Navigate to="/login" />} />
       </Routes>
-      
     </Router>
   );
 }
+
 
 export default App;
 
