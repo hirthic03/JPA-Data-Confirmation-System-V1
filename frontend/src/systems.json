@@ -651,8 +651,61 @@
   }
 }
 
+  },
 
+  "DTIMS": {
+  "Pendaftaran Kursus Dalam Talian (DTIMS)": {
+    "agency": "DTIMS",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan",
+              "Objektif",
+              "Agensi Pengajur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "Dokumen Sokongan",
+            "fields": []
+          },
+          {
+            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "fields": [
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran"
+            ]
+          }
+        ]
+      }
+    }
   }
+}
+
   
 }
 
