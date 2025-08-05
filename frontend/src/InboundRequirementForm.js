@@ -120,11 +120,10 @@ const handleGridChange = (index, key, value) => {
   setGridRows(updatedRows);
 };
 
-useEffect(() => {
-  if (confirmedModule && !formData.module) {
-    setFormData(prev => ({ ...prev, module: confirmedModule }));
-  }
-}, [confirmedModule]);
+const getCurrentModule = () => {
+  if (confirmedModule) return confirmedModule;
+  return (formData.module || '').trim();
+};
 
 
 const addGridRow = () => {
