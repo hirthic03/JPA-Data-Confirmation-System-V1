@@ -234,78 +234,6 @@
   },
 
   "Inbound": {
-  "eSILA": {
-    "Pengurusan Penajaan Dalam Perkhidmatan": {
-      "title": "Pengesahan Tawaran Tetap",
-      "elements": [
-        {
-          "group": "Maklumat Tajaan",
-          "fields": [
-            "Kategori Kursus",
-            "Jenis Program Tajaan",
-            "Jenis Kursus Jangka Pendek",
-            "Nama Kursus Tajaan",
-            "Agensi Penaja",
-            "Tahun Penawaran"
-          ]
-        },
-        {
-          "group": "Maklumat Permohonan",
-          "fields": [
-            "No. Permohonan Kursus Tajaan/ Cuti Belajar",
-            "Nama Pemilik Kompetensi",
-            "No. Kad Pengenalan Pemilik Kompetensi",
-            "Jenis Kemudahan Cuti Belajar",
-            "Peringkat Pengajian",
-            "Kursus Pengajian",
-            "Institusi/ Pusat Pengajian",
-            "Tempoh Masa Graduate on Time"
-          ]
-        },
-        {
-          "group": "Maklumat Kewangan",
-          "fields": [
-            "Gaji dan Emolumen",
-            "Pergerakan Gaji Tahunan (PGT)",
-            "Imbuhan Tetap Perumahan (ITP)",
-            "Bantuan Sara Hidup (BSH)",
-            "Bayaran Imbuhan Wilayah (BIW)",
-            "Elaun Pemangkuan",
-            "Elaun Perumahan Wilayah",
-            "Bayaran Insentif Perkhidmatan Kritikal",
-            "Kemudahan Tambang Mengunjungi Wilayah Asal",
-            "Tempoh Ikatan Kontrak Berkhidmat Dengan Kerajaan"
-          ]
-        },
-        {
-          "group": "Maklumat Pengajian",
-          "fields": [
-            "Tarikh Mula Penajaan",
-            "Tarikh Akhir Penajaan",
-            "Tarikh Mula Perjalanan Ke Tempat Pengajian",
-            "Tarikh Akhir Perjalanan Ke Tempat Pengajian",
-            "Tarikh Mula Perjalanan Pulang",
-            "Tarikh Akhir Perjalanan Pulang"
-          ]
-        },
-        {
-          "group": "Maklumat Tuntutan",
-          "fields": [
-            "Tuntutan Ganti Rugi (RM)",
-            "Jenis Elaun Yang Layak Diperolehi oleh Pemilik Kompetensi",
-            "Jenis Kemudahan Tambang Yang Layak Diperolehi oleh Pemilik Kompetensi"
-          ]
-        },
-        {
-          "group": "Dokumen & Status",
-          "fields": [
-            "Dokumen Sokongan",
-            "Status Penyingkiran Kontrak Berkhidmat"
-          ]
-        }
-      ]
-    }
-  },
   "JPA": {
     "Sistem Pengurusan Meja Bantuan (SPMB)": {
       "agency": "JPA",
@@ -334,6 +262,78 @@
             }
           ]
         },
+        "eSILA": {
+  "Pengurusan Penajaan Dalam Perkhidmatan": {
+    "title": "Pengesahan Tawaran Tetap",
+    "elements": [
+      {
+        "group": "Maklumat Tajaan",
+        "fields": [
+          "Kategori Kursus",
+          "Jenis Program Tajaan",
+          "Jenis Kursus Jangka Pendek",
+          "Nama Kursus Tajaan",
+          "Agensi Penaja",
+          "Tahun Penawaran"
+        ]
+      },
+      {
+        "group": "Maklumat Permohonan",
+        "fields": [
+          "No. Permohonan Kursus Tajaan/ Cuti Belajar",
+          "Nama Pemilik Kompetensi",
+          "No. Kad Pengenalan Pemilik Kompetensi",
+          "Jenis Kemudahan Cuti Belajar",
+          "Peringkat Pengajian",
+          "Kursus Pengajian",
+          "Institusi/ Pusat Pengajian",
+          "Tempoh Masa Graduate on Time"
+        ]
+      },
+      {
+        "group": "Maklumat Kewangan",
+        "fields": [
+          "Gaji dan Emolumen",
+          "Pergerakan Gaji Tahunan (PGT)",
+          "Imbuhan Tetap Perumahan (ITP)",
+          "Bantuan Sara Hidup (BSH)",
+          "Bayaran Imbuhan Wilayah (BIW)",
+          "Elaun Pemangkuan",
+          "Elaun Perumahan Wilayah",
+          "Bayaran Insentif Perkhidmatan Kritikal",
+          "Kemudahan Tambang Mengunjungi Wilayah Asal",
+          "Tempoh Ikatan Kontrak Berkhidmat Dengan Kerajaan"
+        ]
+      },
+      {
+        "group": "Maklumat Pengajian",
+        "fields": [
+          "Tarikh Mula Penajaan",
+          "Tarikh Akhir Penajaan",
+          "Tarikh Mula Perjalanan Ke Tempat Pengajian",
+          "Tarikh Akhir Perjalanan Ke Tempat Pengajian",
+          "Tarikh Mula Perjalanan Pulang",
+          "Tarikh Akhir Perjalanan Pulang"
+        ]
+      },
+      {
+        "group": "Maklumat Tuntutan",
+        "fields": [
+          "Tuntutan Ganti Rugi (RM)",
+          "Jenis Elaun Yang Layak Diperolehi oleh Pemilik Kompetensi",
+          "Jenis Kemudahan Tambang Yang Layak Diperolehi oleh Pemilik Kompetensi"
+        ]
+      },
+      {
+        "group": "Dokumen & Status",
+        "fields": [
+          "Dokumen Sokongan",
+          "Status Penyingkiran Kontrak Berkhidmat"
+        ]
+      }
+    ]
+  }
+},
         "Aplikasi Mudah Alih": {
           "title": "Maklumat Aduan / Cadangan (AMA)",
           "elements": [
@@ -577,6 +577,7 @@
 
 
   }
+  
 }
 
 }
