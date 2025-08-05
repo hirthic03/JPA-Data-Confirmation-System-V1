@@ -17,7 +17,6 @@ const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
-require('dotenv').config();
 
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -85,11 +84,6 @@ const dbDir = path.join(__dirname, 'data');
 fs.mkdirSync(dbDir, { recursive: true });
 const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
-// ✅ Health check route
-app.get('/', (req, res) => {
-  res.send('Backend is running.');
-});
-
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
@@ -132,10 +126,7 @@ const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
 
-
-app.use(express.json());
 app.use('/uploads', express.static('uploads'));
-app.use(express.urlencoded({ extended: true }));
 
 // Table Creation
 db.prepare(`
@@ -792,19 +783,6 @@ app.get('/systems', (req, res) => {
   });
 });
 
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader?.split(' ')[1];
-
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user; // Attach to request for downstream use
-    next();
-  });
-}
-
 
 // ✅ Root status route
 app.get('/', (req, res) => {
@@ -850,20 +828,21 @@ app.delete('/cleanup-test-data', (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('🟢 Backend is running properly!');
+const server = app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
-// 🚀 Launch
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Closing server...');
+  server.close(() => {
+    db.close();
+    console.log('Server shutdown complete.');
+    process.exit(0);
+  });
 });
 
 // Add these security improvements to your existing server.js
-
-// Apply rate limiting to auth routes
-app.use('/login', authLimiter);
-app.use('/register', authLimiter);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -893,16 +872,16 @@ function authenticateToken(req, res, next) {
       }
       return res.status(403).json({ error: 'Invalid token' });
     }
-    
-    // Validate user has required fields
+
     if (!user.id || !user.agency) {
       return res.status(403).json({ error: 'Invalid token payload' });
     }
-    
+
     req.user = user;
     next();
   });
 }
+
 
 // 7. Add logout endpoint
 app.post('/logout', authenticateToken, (req, res) => {
