@@ -121,8 +121,7 @@ const handleGridChange = (index, key, value) => {
 };
 
 const getCurrentModule = () => {
-  if (confirmedModule) return confirmedModule;
-  return (formData.module || '').trim();
+  return confirmedModule || '';
 };
 
 
@@ -130,13 +129,17 @@ const addGridRow = () => {
   const currentMod = getCurrentModule();
 
   if (!currentMod) {
-    alert('Sila pilih “Nama Modul” dahulu.');
-    return;
-  }
-
-  setPopupModule(currentMod);                    // 🔒 lock in
-  setAvailableElements(getSelectable(currentMod));
-  setPopupVisible(true);
+  alert('Modul tidak dijumpai. Sila kembali ke halaman sebelumnya dan pilih modul.');
+  return;
+}
+const selectableElements = getSelectable(currentMod);
+setAvailableElements(selectableElements);
+if (selectableElements.length === 0) {
+  alert('Tiada elemen tambahan yang tersedia untuk modul ini.');
+  return;
+}
+setPopupVisible(true);
+setPopupModule(currentMod);                    // 🔒 lock in
 };
 
 
@@ -393,7 +396,10 @@ const handleSubmit = async () => {
   console.log('📤 Submitting Form with Grid Rows:', gridRows);
   
   try {
-    await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
+    const token = localStorage.getItem('token');
+const headers = token ? { Authorization: `Bearer ${token}` } : {};
+await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form, { headers });
+
     
     /* ------- success prompt + redirect -------- */
     window.alert("Borang pengumpulan keperluan berjaya dihantar.");
@@ -407,7 +413,14 @@ const handleSubmit = async () => {
       console.error('Response data:', err.response.data);
       console.error('Response status:', err.response.status);
     }
-    alert(`Penghantaran gagal: ${err.response?.data?.error || err.message}`);
+    if (err.response?.status === 401) {
+  alert('Sesi anda telah tamat. Sila log masuk semula.');
+  localStorage.clear();
+  navigate('/login');
+} else {
+  alert(`Penghantaran gagal: ${err.response?.data?.error || err.message}`);
+}
+
   } finally {
     setIsSubmitting(false);
   }
@@ -475,7 +488,7 @@ const handleUseExample = (id) => {
 {isPopupVisible && (
   <div className="popup-overlay">
     <div className="popup-box">
-      <h4 className="popup-header">Tambah Baris – Pilih Modul &amp; Data Element</h4>
+      <h4 className="popup-header">Tambah Baris – Pilih Data Element</h4>
 
  {/* --- Locked module (read-only) -------------------------- */}
  <p style={{ fontWeight: 600, marginBottom: 6 }}>
