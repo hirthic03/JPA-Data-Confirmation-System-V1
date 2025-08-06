@@ -233,425 +233,353 @@
     }
   },
 
-  "Inbound": {
-  "eSILA": {
-    "Pengurusan Penajaan Dalam Perkhidmatan": {
-      "title": "Pengesahan Tawaran Tetap",
-      "elements": [
-        {
-          "group": "Maklumat Tajaan",
-          "fields": [
-            "Kategori Kursus",
-            "Jenis Program Tajaan",
-            "Jenis Kursus Jangka Pendek",
-            "Nama Kursus Tajaan",
-            "Agensi Penaja",
-            "Tahun Penawaran"
-          ]
-        },
-        {
-          "group": "Maklumat Permohonan",
-          "fields": [
-            "No. Permohonan Kursus Tajaan/ Cuti Belajar",
-            "Nama Pemilik Kompetensi",
-            "No. Kad Pengenalan Pemilik Kompetensi",
-            "Jenis Kemudahan Cuti Belajar",
-            "Peringkat Pengajian",
-            "Kursus Pengajian",
-            "Institusi/ Pusat Pengajian",
-            "Tempoh Masa Graduate on Time"
-          ]
-        },
-        {
-          "group": "Maklumat Kewangan",
-          "fields": [
-            "Gaji dan Emolumen",
-            "Pergerakan Gaji Tahunan (PGT)",
-            "Imbuhan Tetap Perumahan (ITP)",
-            "Bantuan Sara Hidup (BSH)",
-            "Bayaran Imbuhan Wilayah (BIW)",
-            "Elaun Pemangkuan",
-            "Elaun Perumahan Wilayah",
-            "Bayaran Insentif Perkhidmatan Kritikal",
-            "Kemudahan Tambang Mengunjungi Wilayah Asal",
-            "Tempoh Ikatan Kontrak Berkhidmat Dengan Kerajaan"
-          ]
-        },
-        {
-          "group": "Maklumat Pengajian",
-          "fields": [
-            "Tarikh Mula Penajaan",
-            "Tarikh Akhir Penajaan",
-            "Tarikh Mula Perjalanan Ke Tempat Pengajian",
-            "Tarikh Akhir Perjalanan Ke Tempat Pengajian",
-            "Tarikh Mula Perjalanan Pulang",
-            "Tarikh Akhir Perjalanan Pulang"
-          ]
-        },
-        {
-          "group": "Maklumat Tuntutan",
-          "fields": [
-            "Tuntutan Ganti Rugi (RM)",
-            "Jenis Elaun Yang Layak Diperolehi oleh Pemilik Kompetensi",
-            "Jenis Kemudahan Tambang Yang Layak Diperolehi oleh Pemilik Kompetensi"
-          ]
-        },
-        {
-          "group": "Dokumen & Status",
-          "fields": [
-            "Dokumen Sokongan",
-            "Status Penyingkiran Kontrak Berkhidmat"
-          ]
-        }
-      ]
-    }
-  },
+"Inbound": {
   "JPA": {
-    "Sistem Pengurusan Meja Bantuan (SPMB)": {
-      "agency": "JPA",
-      "modules": {
-        "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
-          "title": "Maklumat Aduan Pemilik Kompetensi",
-          "elements": [
-            {
-              "group": "Menghantar Aduan",
-              "fields": [
-                "Nama",
-                "No. Kad Pengenalan",
-                "Kategori Aduan",
-                "Keterangan Aduan",
-                "Status Aduan",
-                "ID Rujukan"
-              ]
-            },
-            {
-              "group": "Semak Status Aduan",
-              "fields": [
-                "Keterangan Aduan",
-                "Status Aduan",
-                "ID Rujukan"
-              ]
-            }
-          ]
-        },
-        "Aplikasi Mudah Alih": {
-          "title": "Maklumat Aduan / Cadangan (AMA)",
-          "elements": [
-            {
-              "group": "Menghantar Aduan / Cadangan",
-              "fields": [
-                "Tarikh",
-                "Aduan/ Cadangan",
-                "Jenis Aduan",
-                "Nama Pengadu",
-                "E-mel Pengadu",
-                "Gambar",
-                "ID Rujukan"
-              ]
-            },
-            {
-              "group": "Menyemak Status Aduan / Cadangan",
-              "fields": [
-                "Tarikh",
-                "Aduan/ Cadangan",
-                "Jenis Aduan",
-                "Status Aduan/ Cadangan",
-                "ID Rujukan"
-              ]
-            }
-          ]
+      "Sistem Pengurusan Meja Bantuan (SPMB)": {
+        "agency": "JPA",
+        "modules": {
+          "Kendiri bagi Pegawai dan Pentadbir Sumber Manusia": {
+            "title": "Maklumat Aduan Pemilik Kompetensi",
+            "elements": [
+              {
+                "group": "Menghantar Aduan",
+                "fields": [
+                  "Nama",
+                  "No. Kad Pengenalan",
+                  "Kategori Aduan",
+                  "Keterangan Aduan",
+                  "Status Aduan",
+                  "ID Rujukan"
+                ]
+              },
+              {
+                "group": "Semak Status Aduan",
+                "fields": [
+                  "Keterangan Aduan",
+                  "Status Aduan",
+                  "ID Rujukan"
+                ]
+              }
+            ]
+          },
+          "Aplikasi Mudah Alih": {
+            "title": "Maklumat Aduan / Cadangan (AMA)",
+            "elements": [
+              {
+                "group": "Menghantar Aduan / Cadangan",
+                "fields": [
+                  "Tarikh",
+                  "Aduan/ Cadangan",
+                  "Jenis Aduan",
+                  "Nama Pengadu",
+                  "E-mel Pengadu",
+                  "Gambar",
+                  "ID Rujukan"
+                ]
+              },
+              {
+                "group": "Menyemak Status Aduan / Cadangan",
+                "fields": [
+                  "Tarikh",
+                  "Aduan/ Cadangan",
+                  "Jenis Aduan",
+                  "Status Aduan/ Cadangan",
+                  "ID Rujukan"
+                ]
+              }
+            ]
+          }
         }
+      },
+      "eSILA": {
+    "agency": "JPA",
+    "modules": {
+      "Pengurusan Penajaan Dalam Perkhidmatan": {
+        "title": "Pengesahan Tawaran Tetap",
+        "elements": [
+          {
+            "group": "Maklumat Tajaan",
+            "fields": [
+              "Kategori Kursus",
+              "Jenis Program Tajaan",
+              "Jenis Kursus Jangka Pendek",
+              "Nama Kursus Tajaan",
+              "Agensi Penaja",
+              "Tahun Penawaran"
+            ]
+          },
+          {
+            "group": "Maklumat Permohonan",
+            "fields": [
+              "No. Permohonan Kursus Tajaan/ Cuti Belajar",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jenis Kemudahan Cuti Belajar",
+              "Peringkat Pengajian",
+              "Kursus Pengajian",
+              "Institusi/ Pusat Pengajian",
+              "Tempoh Masa Graduate on Time"
+            ]
+          },
+          {
+            "group": "Maklumat Kewangan",
+            "fields": [
+              "Gaji dan Emolumen",
+              "Pergerakan Gaji Tahunan (PGT)",
+              "Imbuhan Tetap Perumahan (ITP)",
+              "Bantuan Sara Hidup (BSH)",
+              "Bayaran Imbuhan Wilayah (BIW)",
+              "Elaun Pemangkuan",
+              "Elaun Perumahan Wilayah",
+              "Bayaran Insentif Perkhidmatan Kritikal",
+              "Kemudahan Tambang Mengunjungi Wilayah Asal",
+              "Tempoh Ikatan Kontrak Berkhidmat Dengan Kerajaan"
+            ]
+          },
+          {
+            "group": "Maklumat Pengajian",
+            "fields": [
+              "Tarikh Mula Penajaan",
+              "Tarikh Akhir Penajaan",
+              "Tarikh Mula Perjalanan Ke Tempat Pengajian",
+              "Tarikh Akhir Perjalanan Ke Tempat Pengajian",
+              "Tarikh Mula Perjalanan Pulang",
+              "Tarikh Akhir Perjalanan Pulang"
+            ]
+          },
+          {
+            "group": "Maklumat Tuntutan",
+            "fields": [
+              "Tuntutan Ganti Rugi (RM)",
+              "Jenis Elaun Yang Layak Diperolehi oleh Pemilik Kompetensi",
+              "Jenis Kemudahan Tambang Yang Layak Diperolehi oleh Pemilik Kompetensi"
+            ]
+          },
+          {
+            "group": "Dokumen & Status",
+            "fields": [
+              "Dokumen Sokongan",
+              "Status Penyingkiran Kontrak Berkhidmat"
+            ]
+          }
+        ]
       }
-    },
-    "eSILA": {
-  "agency": "JPA",
-  "modules": {
-    "Pengurusan Penajaan Dalam Perkhidmatan": {
-      "title": "Pengesahan Tawaran Tetap",
-      "elements": [
-        {
-          "group": "Maklumat Tajaan",
-          "fields": [
-            "Kategori Kursus",
-            "Jenis Program Tajaan",
-            "Jenis Kursus Jangka Pendek",
-            "Nama Kursus Tajaan",
-            "Agensi Penaja",
-            "Tahun Penawaran"
-          ]
-        },
-        {
-          "group": "Maklumat Permohonan",
-          "fields": [
-            "No. Permohonan Kursus Tajaan/ Cuti Belajar",
-            "Nama Pemilik Kompetensi",
-            "No. Kad Pengenalan Pemilik Kompetensi",
-            "Jenis Kemudahan Cuti Belajar",
-            "Peringkat Pengajian",
-            "Kursus Pengajian",
-            "Institusi/ Pusat Pengajian",
-            "Tempoh Masa Graduate on Time"
-          ]
-        },
-        {
-          "group": "Maklumat Kewangan",
-          "fields": [
-            "Gaji dan Emolumen",
-            "Pergerakan Gaji Tahunan (PGT)",
-            "Imbuhan Tetap Perumahan (ITP)",
-            "Bantuan Sara Hidup (BSH)",
-            "Bayaran Imbuhan Wilayah (BIW)",
-            "Elaun Pemangkuan",
-            "Elaun Perumahan Wilayah",
-            "Bayaran Insentif Perkhidmatan Kritikal",
-            "Kemudahan Tambang Mengunjungi Wilayah Asal",
-            "Tempoh Ikatan Kontrak Berkhidmat Dengan Kerajaan"
-          ]
-        },
-        {
-          "group": "Maklumat Pengajian",
-          "fields": [
-            "Tarikh Mula Penajaan",
-            "Tarikh Akhir Penajaan",
-            "Tarikh Mula Perjalanan Ke Tempat Pengajian",
-            "Tarikh Akhir Perjalanan Ke Tempat Pengajian",
-            "Tarikh Mula Perjalanan Pulang",
-            "Tarikh Akhir Perjalanan Pulang"
-          ]
-        },
-        {
-          "group": "Maklumat Tuntutan",
-          "fields": [
-            "Tuntutan Ganti Rugi (RM)",
-            "Jenis Elaun Yang Layak Diperolehi oleh Pemilik Kompetensi",
-            "Jenis Kemudahan Tambang Yang Layak Diperolehi oleh Pemilik Kompetensi"
-          ]
-        },
-        {
-          "group": "Dokumen & Status",
-          "fields": [
-            "Dokumen Sokongan",
-            "Status Penyingkiran Kontrak Berkhidmat"
-          ]
-        }
-      ]
     }
-  }
-},
-
-    "MyPsyD": {
-      "agency": "JPA",
-      "modules": {
-        "Psikologi": {
-          "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
-          "elements": [
-            {
-              "group": "Maklumat Profil",
-              "fields": [
-                "No KP Pemilik Kompetensi",
-                "Nama Pemilik Kompetensi",
-                "Jantina",
-                "Jawatan Sebenar",
-                "Unit Organisasi"
-              ]
-            },
-            {
-              "group": "Maklumat Ujian",
-              "fields": [
-                "Jenis Ujian",
-                "Tarikh Ujian",
-                "Hasil Ujian Psikologi dalam bentuk PDF"
-              ]
-            }
-          ]
-        }
-      }
-    },
-    "MyKehadiran": {
-      "agency": "JPA",
-      "modules": {
-        "Pengurusan Kehadiran": {
-          "title": "Maklumat Kehadiran",
-          "elements": [
-            {
-              "group": "Rekod Kehadiran",
-              "fields": [
-                "Agensi",
-                "Tarikh Integrasi",
-                "Status Integrasi",
-                "Tarikh Data Sistem Kehadiran",
-                "ID Pemilik Kompetensi",
-                "Tarikh dan Masa Masuk Bekerja",
-                "Tarikh dan Masa Keluar Pejabat",
-                "Tarikh dan Masa Masuk Semula Pejabat",
-                "Tarikh dan Masa Balik Bekerja"
-              ]
-            }
-          ]
-        }
-      }
-    },
-    "SPPA": {
-  "agency": "JPA",
-  "modules": {
-    "BLJ": {
-      "title": "Terima Maklumat Peperiksaan",
-      "elements": [
-        {
-          "group": "PFD-BLJ-RP-INT-01",
-          "fields": [
-            "Nama Peperiksaan",
-            "Kategori Peperiksaan",
-            "No. Rujukan",
-            "Nama Pemilik Kompetensi",
-            "No. Kad Pengenalan Kompetensi",
-            "Angka Giliran",
-            "Kod Peperiksaan",
-            "Siri",
-            "Tarikh Keputusan Peperiksaan",
-            "Bahagian Peperiksaan",
-            "Tarikh Bahagian Peperiksaan",
-            "Perkara",
-            "Keputusan Bahagian"
-          ]
-        }
-      ]
-    }
-  }
-},
-"GCR": {
-  "agency": "JPA",
-  "modules": {
-    "CUT": {
-      "title": "Merekodkan Maklumat Pemberian Awal Award Wang Tunai GCR",
-      "elements": [
-        {
-          "group": "PFD-CUT-GCR-AWL-01",
-          "fields": [
-            "Nama Pemilik Kompetensi",
-            "No. Kad Pengenalan (bagi warganegara)",
-            "No. Pasport Yang Aktif (bagi bukan warganegara)",
-            "Tarikh Permohonan Pemberian Awal GCR"
-          ]
-        }
-      ]
-    }
-  }
-},
-"Ujian Psikologi Online": {
-  "agency": "JPA",
-  "modules": {
-    "PSI": {
-      "title": "Keputusan Ujian Psikometrik",
-      "elements": [
-        {
-          "group": "Keputusan Ujian Psikometrik",
-          "fields": [
-            "No. Kad Pengenalan Pemilik Kompetensi",
-            "Nama Pemilik Kompetensi",
-            "Jantina",
-            "Jawatan Sebenar",
-            "Unit Organisasi",
-            "Jenis Ujian",
-            "Tarikh Ujian",
-            "Hasil Ujian Psikologi dalam bentuk PDF"
-          ]
-        }
-      ]
-    }
-  }
-},
-"My Psikometrik": {
-  "agency": "JPA",
-  "modules": {
-    "PSI": {
-      "title": "Maklumat Permohonan dan Keputusan Ujian Psikometrik",
-      "elements": [
-        {
-          "group": "Permohonan Pendaftaran Ujian",
-          "fields": [
-            "Nama",
-            "No. Kad Pengenalan",
-            "No. Telefon Pejabat",
-            "E-mel Rasmi",
-            "Tarikh Dan Masa Permohonan",
-            "Jenis Pendekatan",
-            "Jenis Ujian",
-            "Tujuan Ujian"
-          ]
-        },
-        {
-          "group": "Terima Hasil Ujian",
-          "fields": [
-            "No. Kad Pengenalan Pemilik Kompetensi",
-            "Nama Pemilik Kompetensi",
-            "Jantina",
-            "Jawatan Sebenar",
-            "Unit Organisasi",
-            "Jenis Ujian",
-            "Tarikh Ujian",
-            "Hasil Ujian Psikologi dalam bentuk PDF"
-          ]
-        }
-      ]
-    }
-  }
-},
-"PPA Online": {
-  "agency": "JPA",
-  "modules": {
-    "BLJ": {
-      "title": "Maklumat Peperiksaan (ePromise)",
-      "elements": [
-        {
-          "group": "Terima Maklumat Peperiksaan",
-          "fields": [
-            "Nama Peperiksaan",
-            "Kategori Peperiksaan",
-            "No. Rujukan",
-            "Nama Pemilik Kompetensi",
-            "No. Kad Pengenalan Kompetensi",
-            "Angka Giliran",
-            "Kod Peperiksaan",
-            "Siri",
-            "Tarikh Keputusan Peperiksaan",
-            "Bahagian Peperiksaan",
-            "Tarikh Bahagian Peperiksaan",
-            "Perkara",
-            "Keputusan Bahagian"
-          ]
-        }
-      ]
-    }
-  }
-},
-"Sistem Penilaian 360": {
-  "agency": "JPA",
-  "modules": {
-    "SME": {
-      "title": "Maklumat Penilaian Kompetensi",
-      "elements": [
-        {
-          "group": "Penilaian SME",
-          "fields": [
-            "Agensi",
-            "ID Pemilik Kompetensi"
-          ]
-        },
-        {
-          "group": "Senarai Pencalonan",
-          "fields": [
-            "Agensi",
-            "ID Pemilik Kompetensi",
-            "Keputusan Penilaian"
-          ]
-        }
-      ]
-    }
-  }
-}
-
   },
+
+      "MyPsyD": {
+        "agency": "JPA",
+        "modules": {
+          "Psikologi": {
+            "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
+            "elements": [
+              {
+                "group": "Maklumat Profil",
+                "fields": [
+                  "No KP Pemilik Kompetensi",
+                  "Nama Pemilik Kompetensi",
+                  "Jantina",
+                  "Jawatan Sebenar",
+                  "Unit Organisasi"
+                ]
+              },
+              {
+                "group": "Maklumat Ujian",
+                "fields": [
+                  "Jenis Ujian",
+                  "Tarikh Ujian",
+                  "Hasil Ujian Psikologi dalam bentuk PDF"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "MyKehadiran": {
+        "agency": "JPA",
+        "modules": {
+          "Pengurusan Kehadiran": {
+            "title": "Maklumat Kehadiran",
+            "elements": [
+              {
+                "group": "Rekod Kehadiran",
+                "fields": [
+                  "Agensi",
+                  "Tarikh Integrasi",
+                  "Status Integrasi",
+                  "Tarikh Data Sistem Kehadiran",
+                  "ID Pemilik Kompetensi",
+                  "Tarikh dan Masa Masuk Bekerja",
+                  "Tarikh dan Masa Keluar Pejabat",
+                  "Tarikh dan Masa Masuk Semula Pejabat",
+                  "Tarikh dan Masa Balik Bekerja"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "SPPA": {
+    "agency": "JPA",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Peperiksaan",
+        "elements": [
+          {
+            "group": "PFD-BLJ-RP-INT-01",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Kompetensi",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara",
+              "Keputusan Bahagian"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "GCR": {
+    "agency": "JPA",
+    "modules": {
+      "CUT": {
+        "title": "Merekodkan Maklumat Pemberian Awal Award Wang Tunai GCR",
+        "elements": [
+          {
+            "group": "PFD-CUT-GCR-AWL-01",
+            "fields": [
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan (bagi warganegara)",
+              "No. Pasport Yang Aktif (bagi bukan warganegara)",
+              "Tarikh Permohonan Pemberian Awal GCR"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Ujian Psikologi Online": {
+    "agency": "JPA",
+    "modules": {
+      "PSI": {
+        "title": "Keputusan Ujian Psikometrik",
+        "elements": [
+          {
+            "group": "Keputusan Ujian Psikometrik",
+            "fields": [
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Nama Pemilik Kompetensi",
+              "Jantina",
+              "Jawatan Sebenar",
+              "Unit Organisasi",
+              "Jenis Ujian",
+              "Tarikh Ujian",
+              "Hasil Ujian Psikologi dalam bentuk PDF"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "My Psikometrik": {
+    "agency": "JPA",
+    "modules": {
+      "PSI": {
+        "title": "Maklumat Permohonan dan Keputusan Ujian Psikometrik",
+        "elements": [
+          {
+            "group": "Permohonan Pendaftaran Ujian",
+            "fields": [
+              "Nama",
+              "No. Kad Pengenalan",
+              "No. Telefon Pejabat",
+              "E-mel Rasmi",
+              "Tarikh Dan Masa Permohonan",
+              "Jenis Pendekatan",
+              "Jenis Ujian",
+              "Tujuan Ujian"
+            ]
+          },
+          {
+            "group": "Terima Hasil Ujian",
+            "fields": [
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Nama Pemilik Kompetensi",
+              "Jantina",
+              "Jawatan Sebenar",
+              "Unit Organisasi",
+              "Jenis Ujian",
+              "Tarikh Ujian",
+              "Hasil Ujian Psikologi dalam bentuk PDF"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "PPA Online": {
+    "agency": "JPA",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Peperiksaan (ePromise)",
+        "elements": [
+          {
+            "group": "Terima Maklumat Peperiksaan",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Kompetensi",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara",
+              "Keputusan Bahagian"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Sistem Penilaian 360": {
+    "agency": "JPA",
+    "modules": {
+      "SME": {
+        "title": "Maklumat Penilaian Kompetensi",
+        "elements": [
+          {
+            "group": "Penilaian SME",
+            "fields": [
+              "Agensi",
+              "ID Pemilik Kompetensi"
+            ]
+          },
+          {
+            "group": "Senarai Pencalonan",
+            "fields": [
+              "Agensi",
+              "ID Pemilik Kompetensi",
+              "Keputusan Penilaian"
+            ]
+          }
+        ]
+      }
+    }
+  }
+
+    },
 
   "DTIMS": {
   "Pendaftaran Kursus Dalam Talian (DTIMS)": {
