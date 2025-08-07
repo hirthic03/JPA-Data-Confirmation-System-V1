@@ -85,13 +85,17 @@ const flattenElements = (arr) =>
   );
 
 const getSelectable = (modName) => {
-  // Get all elements for the module
+  // Get all elements for the module from systemsData
   const moduleData = systemsData?.Inbound?.[activeSystem]?.[modName];
+  
   if (!moduleData || !moduleData.elements) {
     console.log('No elements found for module:', modName);
+    console.log('Looking in:', systemsData?.Inbound?.[activeSystem]);
     return [];
   }
 
+  console.log('Module data found:', moduleData);
+  
   // Process the elements to ensure ID Rujukan is always included
   const processedElements = moduleData.elements.map((item) => {
     if (typeof item === "object" && item.group && Array.isArray(item.fields)) {
@@ -104,22 +108,12 @@ const getSelectable = (modName) => {
     return item;
   });
 
-  // Flatten all elements
+  // Flatten all elements - return ALL available elements
+  // Don't filter based on what's already in gridRows since we want to allow duplicates
   const allElements = flattenElements(processedElements);
   
-  // Get currently selected elements (from gridRows)
-  const selectedElements = new Set(
-    gridRows.map(row => `${row.dataElement}_${row.groupName || '__ungrouped__'}`)
-  );
-  
-  // Filter out already selected elements
-  const availableElements = allElements.filter(({ name, group }) => {
-    const key = `${name}_${group || '__ungrouped__'}`;
-    return !selectedElements.has(key);
-  });
-
-  console.log('Available elements for selection:', availableElements);
-  return availableElements;
+  console.log('All available elements for selection:', allElements);
+  return allElements;
 };
 /* --------------------------------------------------------------- */
 
@@ -137,22 +131,37 @@ const getCurrentModule = () => {
 
 
 const addGridRow = () => {
-  // Get the current module - prioritize confirmedModule, then formData.module
+  // Get the current module - prioritize confirmedModule
   const currentMod = confirmedModule || formData.module || '';
   
   if (!currentMod || currentMod === '') {
-    alert('Sila pilih "Nama API" dahulu sebelum menambah baris.');
-    return;
+    // Check if we're using one of the API options
+    const apiOptions = ['HantarMaklumatAduan', 'GetStatusAduan', 'HantarMaklumatAduanCadangan', 'GetStatusAduanCadangan'];
+    const selectedApi = apiOptions.find(api => api === formData.module);
+    
+    if (!selectedApi && !confirmedModule) {
+      alert('Sila pilih "Nama API" dahulu sebelum menambah baris.');
+      return;
+    }
   }
 
-  console.log('Adding row for module:', currentMod);
+  // Use the confirmed module for getting elements since that's what has the data
+  const moduleForElements = confirmedModule || currentMod;
+  
+  console.log('Adding row for module:', moduleForElements);
+  console.log('System:', activeSystem);
+  console.log('SystemsData available:', systemsData);
   
   // Set the module and get available elements
-  setPopupModule(currentMod);
-  const selectableElements = getSelectable(currentMod);
+  setPopupModule(moduleForElements);
+  const selectableElements = getSelectable(moduleForElements);
   
   if (selectableElements.length === 0) {
-    alert('Tiada elemen tambahan tersedia untuk modul ini. Semua elemen telah ditambah.');
+    console.error('No elements found. Checking systemsData structure...');
+    console.log('Flow: Inbound');
+    console.log('System:', activeSystem);
+    console.log('Module:', moduleForElements);
+    alert('Tidak dapat memuatkan elemen untuk modul ini. Sila pastikan data modul tersedia.');
     return;
   }
   
@@ -199,20 +208,12 @@ const handleElementSelection = (elementObj) => {
   newRows.splice(insertAt, 0, newRow);
   setGridRows(newRows);
   
-  // Update available elements by removing the selected one
-  const updatedAvailable = availableElements.filter(
-    el => !(el.name === elementName && (el.group || '__ungrouped__') === elementGroup)
-  );
-  setAvailableElements(updatedAvailable);
+  // Don't remove the element from available list - allow multiple selections
+  // Just close the popup
+  setPopupVisible(false);
   
-  // Close popup if no more elements available
-  if (updatedAvailable.length === 0) {
-    setPopupVisible(false);
-    alert('Semua elemen telah ditambah untuk modul ini.');
-  } else {
-    // Keep popup open but with updated list
-    setAvailableElements(updatedAvailable);
-  }
+  // Optional: Show a success message
+  console.log(`Added new row for: ${elementName}${elementGroup !== '__ungrouped__' ? ` (${elementGroup})` : ''}`);
 };
 
 
