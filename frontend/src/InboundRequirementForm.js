@@ -85,31 +85,41 @@ const flattenElements = (arr) =>
   );
 
 const getSelectable = (modName) => {
-    // Ensures every group always exposes “ID Rujukan” even
-  // when a backend / JSON author forgot to list it.
-  const raw =
-    (systemsData?.Inbound?.[activeSystem]?.[modName]?.elements || []).map(
-      (item) => {
-        if (
-          typeof item === "object" &&
-          item.group &&
-          Array.isArray(item.fields)
-        ) {
-          return {
-            ...item,
-            fields: item.fields.includes("ID Rujukan")
-              ? item.fields
-              : [...item.fields, "ID Rujukan"],
-          };
-        }
-        return item; // flat element – unchanged
-      }
-    );
-  const flat = flattenElements(raw);
-  return flat.filter(
-    ({ name, group }) =>
-      !gridRows.some((r) => r.dataElement === name && r.groupName === group)
+  // Get all elements for the module
+  const moduleData = systemsData?.Inbound?.[activeSystem]?.[modName];
+  if (!moduleData || !moduleData.elements) {
+    console.log('No elements found for module:', modName);
+    return [];
+  }
+
+  // Process the elements to ensure ID Rujukan is always included
+  const processedElements = moduleData.elements.map((item) => {
+    if (typeof item === "object" && item.group && Array.isArray(item.fields)) {
+      // Ensure ID Rujukan is in the fields
+      const fields = item.fields.includes("ID Rujukan")
+        ? item.fields
+        : [...item.fields, "ID Rujukan"];
+      return { ...item, fields };
+    }
+    return item;
+  });
+
+  // Flatten all elements
+  const allElements = flattenElements(processedElements);
+  
+  // Get currently selected elements (from gridRows)
+  const selectedElements = new Set(
+    gridRows.map(row => `${row.dataElement}_${row.groupName || '__ungrouped__'}`)
   );
+  
+  // Filter out already selected elements
+  const availableElements = allElements.filter(({ name, group }) => {
+    const key = `${name}_${group || '__ungrouped__'}`;
+    return !selectedElements.has(key);
+  });
+
+  console.log('Available elements for selection:', availableElements);
+  return availableElements;
 };
 /* --------------------------------------------------------------- */
 
@@ -127,15 +137,26 @@ const getCurrentModule = () => {
 
 
 const addGridRow = () => {
-  const currentMod = getCurrentModule();
-
-  if (!currentMod) {
-    alert('Sila pilih “Nama Modul” dahulu.');
+  // Get the current module - prioritize confirmedModule, then formData.module
+  const currentMod = confirmedModule || formData.module || '';
+  
+  if (!currentMod || currentMod === '') {
+    alert('Sila pilih "Nama API" dahulu sebelum menambah baris.');
     return;
   }
 
-  setPopupModule(currentMod);                    // 🔒 lock in
-  setAvailableElements(getSelectable(currentMod));
+  console.log('Adding row for module:', currentMod);
+  
+  // Set the module and get available elements
+  setPopupModule(currentMod);
+  const selectableElements = getSelectable(currentMod);
+  
+  if (selectableElements.length === 0) {
+    alert('Tiada elemen tambahan tersedia untuk modul ini. Semua elemen telah ditambah.');
+    return;
+  }
+  
+  setAvailableElements(selectableElements);
   setPopupVisible(true);
 };
 
@@ -146,10 +167,15 @@ const removeGridRow = (index) => {
 };
 
 const handleElementSelection = (elementObj) => {
-  const key       = typeof elementObj === 'string' ? elementObj : elementObj.name;
-  const newRow    = {
-    dataElement: key,
-    groupName:   typeof elementObj === 'string' ? '' : elementObj.group,
+  console.log('Selected element:', elementObj);
+  
+  const elementName = typeof elementObj === 'string' ? elementObj : elementObj.name;
+  const elementGroup = typeof elementObj === 'string' ? '__ungrouped__' : (elementObj.group || '__ungrouped__');
+  
+  // Create new row with the selected element
+  const newRow = {
+    dataElement: elementName,
+    groupName: elementGroup === '__ungrouped__' ? '' : elementGroup,
     nama: '',
     jenis: '',
     saiz: '',
@@ -157,15 +183,36 @@ const handleElementSelection = (elementObj) => {
     rules: ''
   };
 
-  // Insert right after the last row of that data element (nice grouping)
-  const lastIndex = gridRows.map(r => r.dataElement).lastIndexOf(key);
-  const insertAt = lastIndex === -1 ? gridRows.length : lastIndex + 1;
+  // Find the best position to insert (group similar elements together)
+  let insertAt = gridRows.length;
+  
+  // Try to find the last occurrence of the same element name
+  for (let i = gridRows.length - 1; i >= 0; i--) {
+    if (gridRows[i].dataElement === elementName) {
+      insertAt = i + 1;
+      break;
+    }
+  }
 
+  // Insert the new row
   const newRows = [...gridRows];
   newRows.splice(insertAt, 0, newRow);
-
   setGridRows(newRows);
-  setPopupVisible(false);
+  
+  // Update available elements by removing the selected one
+  const updatedAvailable = availableElements.filter(
+    el => !(el.name === elementName && (el.group || '__ungrouped__') === elementGroup)
+  );
+  setAvailableElements(updatedAvailable);
+  
+  // Close popup if no more elements available
+  if (updatedAvailable.length === 0) {
+    setPopupVisible(false);
+    alert('Semua elemen telah ditambah untuk modul ini.');
+  } else {
+    // Keep popup open but with updated list
+    setAvailableElements(updatedAvailable);
+  }
 };
 
 
@@ -505,44 +552,104 @@ const handleUseExample = (id) => {
       <div className="progress-container">
         {/* === Popup for choosing a data element ==================== */}
 {isPopupVisible && (
-  <div className="popup-overlay">
+  <div className="popup-overlay" onClick={(e) => {
+    if (e.target.className === 'popup-overlay') {
+      setPopupVisible(false);
+    }
+  }}>
     <div className="popup-box">
-      <h4 className="popup-header">Tambah Baris – Pilih Modul &amp; Data Element</h4>
+      <h4 className="popup-header">Tambah Baris – Pilih Modul & Data Element</h4>
 
- {/* --- Locked module (read-only) -------------------------- */}
- <p style={{ fontWeight: 600, marginBottom: 6 }}>
-   Modul: <span style={{ color: '#0a74ff' }}>{popupModule}</span>
- </p>
-
-      {/* --- Dynamic element list ----------------------------- */}
-      <div className="popup-elements" style={{ marginTop: '12px' }}>
-        {availableElements.length === 0 && (
-          <p style={{ fontStyle: 'italic' }}>
-            Semua elemen bagi modul ini sudah ditambah.
-          </p>
-        )}
-        {availableElements.map(({ name, group }, idx) => (
-          <button
-            key={idx}
-            className="popup-option"
-            onClick={() => handleElementSelection({ name, group })}
-          >
-            {group !== '__ungrouped__' ? `${name} (${group})` : name}
-          </button>
-        ))}
+      {/* Module display */}
+      <div style={{ marginBottom: 15 }}>
+        <p style={{ fontWeight: 600, marginBottom: 6 }}>
+          Modul: <span style={{ color: '#0a74ff' }}>{popupModule}</span>
+        </p>
+        <p style={{ fontSize: '12px', color: '#666' }}>
+          Elemen tersedia: {availableElements.length} elemen
+        </p>
       </div>
 
-      <button
-        onClick={() => setPopupVisible(false)}
-        className="close-btn"
-        style={{ marginTop: '15px' }}
-      >
-        ❌ Tutup
-      </button>
+      {/* Element list */}
+      <div className="popup-elements" style={{ 
+        marginTop: '12px',
+        maxHeight: '300px',
+        overflowY: 'auto',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        padding: '10px'
+      }}>
+        {availableElements.length === 0 ? (
+          <p style={{ fontStyle: 'italic', textAlign: 'center', color: '#999' }}>
+            Semua elemen bagi modul ini sudah ditambah.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {availableElements.map((element, idx) => {
+              const displayName = element.group && element.group !== '__ungrouped__' 
+                ? `${element.name} (${element.group})` 
+                : element.name;
+              
+              return (
+                <button
+                  key={`${element.name}_${element.group}_${idx}`}
+                  className="popup-option"
+                  onClick={() => handleElementSelection(element)}
+                  style={{
+                    padding: '10px 15px',
+                    textAlign: 'left',
+                    background: '#f8f9fa',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    ':hover': {
+                      background: '#e9ecef',
+                      borderColor: '#adb5bd'
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#e9ecef';
+                    e.target.style.borderColor = '#adb5bd';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#f8f9fa';
+                    e.target.style.borderColor = '#dee2e6';
+                  }}
+                >
+                  {displayName}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer buttons */}
+      <div style={{ 
+        marginTop: '15px', 
+        display: 'flex', 
+        justifyContent: 'flex-end',
+        gap: '10px'
+      }}>
+        <button
+          onClick={() => setPopupVisible(false)}
+          className="close-btn"
+          style={{
+            padding: '8px 20px',
+            background: '#dc3545',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          ❌ Tutup
+        </button>
+      </div>
     </div>
   </div>
 )}
-
 {/* === End popup ============================================ */}
 
   <div className="progress-label">Kemajuan Borang: {calculateProgress()}%</div>

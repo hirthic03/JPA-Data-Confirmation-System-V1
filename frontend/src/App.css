@@ -651,38 +651,50 @@ textarea {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.35);
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 999;
+  align-items: center;
+  z-index: 1000;
 }
 .popup-box {
-  background: #fff;
-  color: black;
-  padding: 20px;
+  background: white;
   border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
   max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 .popup-option {
-  display: block;
   width: 100%;
-  margin: 6px 0;
-  padding: 8px 10px;
   text-align: left;
-  background: #f1f5ff;
-  border: 1px solid #d5dbff;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
   cursor: pointer;
-  color: #003366; /* Dark blue text */
+  transition: all 0.2s ease;
 }
 
 .popup-option:hover {
-  background: #e5ebff;
+  background: #007bff;
+  color: white;
+  transform: translateX(5px);
+}
+
+.popup-elements {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.popup-option:last-child {
+  margin-bottom: 0;
 }
 .close-btn {
   margin-top: 10px;
@@ -775,10 +787,11 @@ textarea {
 }
 
 .popup-header {
-  color: grey !important;
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
 }
 
 .highlight-label {
