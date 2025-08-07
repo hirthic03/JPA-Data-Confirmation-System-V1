@@ -272,107 +272,120 @@ const getApiValue = () =>
     : formData.module;
 
   const handleSubmit = async () => {
-  const form = new FormData();
-    // Validate all fields before submission
-const missingFields = questions.filter((q) => {
-  const value = formData[q.id];
-
-  if (q.id === 'response') return false;
-
-  if (q.id === 'dataInvolved') {
-    // Check if all grid rows are empty
-    const allRowsEmpty = gridRows.every(
-      row =>
-        !row.nama.trim() &&
-        !row.jenis.trim() &&
-        !row.saiz.trim() &&
-        !row.nullable.trim() &&
-        !row.rules.trim()
-    );
-    return allRowsEmpty;
-  }
-
-  if (q.type === 'dropdown') {
-    return !value || (value === 'Others' && !formData[`${q.id}_other`]);
-  }
-  if (q.type === 'text') {
-    return !value || value.trim() === '';
-  }
-  if (q.type === 'file') {
-    return !files[q.id];
-  }
-
-  return false;
-});
-
-
- const apiValue = getApiValue();
-if (!apiValue) {
-  window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
-  return;
-}
-
-  // 🆕 Grid row check for Q9
-const isGridEmpty = gridRows.every(row =>
-  !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && !row.nullable.trim() && !row.rules.trim()
-);
-
-if (isGridEmpty) {
-  alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
-  return;
-}
-
-  if (missingFields.length > 0) {
-    const firstMissing = missingFields[0].label || "Maklumat wajib";
-    window.alert(`Sila lengkapkan medan berikut: ${firstMissing}`);
-    return;
-  }
-
-
-  // Prepare structured data
-  questions.forEach((q) => {
-    if (q.type === 'dropdown') {
-      const selected = formData[q.id];
-      if (selected === 'Others') {
-        form.append(q.id, formData[`${q.id}_other`] || '');
-      } else {
-        form.append(q.id, selected || '');
-      }
-    } else if (q.type === 'text') {
-      form.append(q.id, formData[q.id] || '');
-    } else if (q.type === 'file') {
-      if (files[q.id]) {
-        form.append(q.id, files[q.id]);
-      }
-    }
-  });
-
-  // Add system and module selections
-  form.append('system', formData.system || '');
-  form.append('api', apiValue); 
- form.append('module_group', confirmedModule || '');
- form.append('module',       apiValue); 
-
-  setIsSubmitting(true);
-  console.log('📤 Submitting Form with Grid Rows:', gridRows);
   try {
+    console.log('🔵 Starting submission process...');
+
+    const form = new FormData();
+
+    const missingFields = questions.filter((q) => {
+      const value = formData[q.id];
+      if (q.id === 'response') return false;
+
+      if (q.id === 'dataInvolved') {
+        const allRowsEmpty = gridRows.every(
+          row =>
+            !row.nama.trim() &&
+            !row.jenis.trim() &&
+            !row.saiz.trim() &&
+            !row.nullable.trim() &&
+            !row.rules.trim()
+        );
+        return allRowsEmpty;
+      }
+
+      if (q.type === 'dropdown') {
+        return !value || (value === 'Others' && !formData[`${q.id}_other`]);
+      }
+      if (q.type === 'text') {
+        return !value || value.trim() === '';
+      }
+      if (q.type === 'file') {
+        return !files[q.id];
+      }
+
+      return false;
+    });
+
+    const apiValue = getApiValue();
+    if (!apiValue) {
+      window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
+      return;
+    }
+
+    const isGridEmpty = gridRows.every(row =>
+      !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() &&
+      !row.nullable.trim() && !row.rules.trim()
+    );
+    if (isGridEmpty) {
+      alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
+      return;
+    }
+
+    if (missingFields.length > 0) {
+      const firstMissing = missingFields[0].label || "Maklumat wajib";
+      window.alert(`Sila lengkapkan medan berikut: ${firstMissing}`);
+      return;
+    }
+
+    console.log('✅ Validation passed');
+
+    questions.forEach((q) => {
+      if (q.type === 'dropdown') {
+        const selected = formData[q.id];
+        form.append(q.id, selected === 'Others' ? formData[`${q.id}_other`] || '' : selected || '');
+      } else if (q.type === 'text') {
+        form.append(q.id, formData[q.id] || '');
+      } else if (q.type === 'file') {
+        if (files[q.id]) form.append(q.id, files[q.id]);
+      }
+    });
+
+    form.append('system', formData.system || '');
+    form.append('api', apiValue);
+    form.append('module_group', confirmedModule || '');
+    form.append('module', apiValue);
     form.append('dataGrid', JSON.stringify(gridRows));
     form.append('submission_id', `${formData.system}-${apiValue}`);
-    form.append('integrationMethod', formData.integrationMethod || 'REST API'); // ✅ Required to trigger email + PDF
-await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
-        /* ------- success prompt + redirect -------- */
-window.alert("Borang pengumpulan keperluan berjaya dihantar.");
-navigate('/submission');
+    form.append('integrationMethod', formData.integrationMethod || 'REST API');
+
+    setIsSubmitting(true);
+    console.log('📤 Submitting Form with Grid Rows:', gridRows);
+
+    const response = await axios.post(
+      'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound',
+      form,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      }
+    );
+
+    console.log('✅ Server response:', response.data);
+    alert("Borang pengumpulan keperluan berjaya dihantar.");
+    navigate('/submission');
 
     setFormData({});
     setFiles({});
+    setGridRows([]);
+
   } catch (err) {
-    console.error(err);
-    alert("Penghantaran gagal. Sila semak konsol.");
+    console.error('❌ Submission error:', err);
+
+    if (err.response) {
+      console.error('Server error response:', err.response.data);
+      alert(`Server error: ${err.response.data.message || 'Unknown server error'}`);
+    } else if (err.request) {
+      console.error('No response from server:', err.request);
+      alert("Cannot connect to server. Please check your internet connection or try again later.");
+    } else {
+      console.error('Error details:', err.message);
+      alert(`Error: ${err.message}`);
+    }
   } finally {
     setIsSubmitting(false);
   }
 };
+
 const calculateProgress = () => {
   let filledCount = 0;
   let totalCount = questions.length;
@@ -745,7 +758,16 @@ const handleUseExample = (id) => {
 
 
       <div className="button-group" style={{ marginTop: '30px' }}>
-        <button onClick={handleSubmit} disabled={isSubmitting}>Hantar</button>
+        <button 
+  onClick={handleSubmit} 
+  disabled={isSubmitting}
+  style={{
+    opacity: isSubmitting ? 0.6 : 1,
+    cursor: isSubmitting ? 'not-allowed' : 'pointer'
+  }}
+>
+  {isSubmitting ? 'Menghantar...' : 'Hantar'}
+</button>
       </div>
     </div>
   );
