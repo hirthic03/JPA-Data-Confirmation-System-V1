@@ -269,103 +269,174 @@ const getApiValue = () =>
     : formData.module;
 
   const handleSubmit = async () => {
-  const form = new FormData();
-    // Validate all fields before submission
-const missingFields = questions.filter((q) => {
-  const value = formData[q.id];
-
-  if (q.id === 'response') return false;
-
-  if (q.id === 'dataInvolved') {
-    // Check if all grid rows are empty
-    const allRowsEmpty = gridRows.every(
-      row =>
-        !row.nama.trim() &&
-        !row.jenis.trim() &&
-        !row.saiz.trim() &&
-        !row.nullable.trim() &&
-        !row.rules.trim()
-    );
-    return allRowsEmpty;
-  }
-
-  if (q.type === 'dropdown') {
-    return !value || (value === 'Others' && !formData[`${q.id}_other`]);
-  }
-  if (q.type === 'text') {
-    return !value || value.trim() === '';
-  }
-  if (q.type === 'file') {
-    return !files[q.id];
-  }
-
-  return false;
-});
-
-
- const apiValue = getApiValue();
-if (!apiValue) {
-  window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
-  return;
-}
-
-  // 🆕 Grid row check for Q9
-const isGridEmpty = gridRows.every(row =>
-  !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && !row.nullable.trim() && !row.rules.trim()
-);
-
-if (isGridEmpty) {
-  alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
-  return;
-}
-
-  if (missingFields.length > 0) {
-    const firstMissing = missingFields[0].label || "Maklumat wajib";
-    window.alert(`Sila lengkapkan medan berikut: ${firstMissing}`);
-    return;
-  }
-
-
-  // Prepare structured data
-  questions.forEach((q) => {
-    if (q.type === 'dropdown') {
-      const selected = formData[q.id];
-      if (selected === 'Others') {
-        form.append(q.id, formData[`${q.id}_other`] || '');
-      } else {
-        form.append(q.id, selected || '');
-      }
-    } else if (q.type === 'text') {
-      form.append(q.id, formData[q.id] || '');
-    } else if (q.type === 'file') {
-      if (files[q.id]) {
-        form.append(q.id, files[q.id]);
-      }
-    }
-  });
-
-  // Add system and module selections
-  form.append('system', formData.system || '');
-  form.append('api', apiValue); 
- form.append('module_group', confirmedModule || '');
- form.append('module',       apiValue); 
-
-  setIsSubmitting(true);
-  console.log('📤 Submitting Form with Grid Rows:', gridRows);
   try {
-    form.append('dataGrid', JSON.stringify(gridRows));
-    form.append('submission_id', `${formData.system}-${apiValue}`);
-    form.append('integrationMethod', formData.integrationMethod || 'REST API'); // ✅ Required to trigger email + PDF
-await axios.post('https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound', form);
-        /* ------- success prompt + redirect -------- */
-window.alert("Borang pengumpulan keperluan berjaya dihantar.");
-navigate('/submission');
+    console.log('🔵 Starting submission process...');
+    console.log('Current formData:', formData);
+    console.log('Current gridRows:', gridRows);
 
+    const form = new FormData();
+
+    // Validate all fields before submission
+    const missingFields = questions.filter((q) => {
+      const value = formData[q.id];
+
+      if (q.id === 'response') return false; // Optional field
+
+      if (q.id === 'dataInvolved') {
+        // Check if all grid rows are empty
+        const allRowsEmpty = gridRows.every(
+          row =>
+            !row.nama.trim() &&
+            !row.jenis.trim() &&
+            !row.saiz.trim() &&
+            !row.nullable.trim() &&
+            !row.rules.trim()
+        );
+        return allRowsEmpty;
+      }
+
+      if (q.type === 'dropdown') {
+        return !value || (value === 'Others' && !formData[`${q.id}_other`]);
+      }
+      if (q.type === 'text') {
+        return !value || value.trim() === '';
+      }
+      if (q.type === 'file') {
+        return !files[q.id];
+      }
+
+      return false;
+    });
+
+    // Check API value
+    const apiValue = getApiValue();
+    if (!apiValue) {
+      window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
+      return;
+    }
+
+    // Grid row check for Q9
+    const isGridEmpty = gridRows.every(row =>
+      !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && 
+      !row.nullable.trim() && !row.rules.trim()
+    );
+
+    if (isGridEmpty) {
+      alert("Sila lengkapkan medan berikut: 9. Data yang Terlibat");
+      return;
+    }
+
+    if (missingFields.length > 0) {
+      const firstMissing = missingFields[0].label || "Maklumat wajib";
+      window.alert(`Sila lengkapkan medan berikut: ${firstMissing}`);
+      return;
+    }
+
+    console.log('✅ Validation passed');
+
+    // Prepare structured data - SKIP dataInvolved as it's handled separately
+    questions.forEach((q) => {
+      // Skip dataInvolved - it will be sent as dataGrid
+      if (q.id === 'dataInvolved') {
+        return;
+      }
+
+      if (q.type === 'dropdown') {
+        const selected = formData[q.id];
+        if (selected === 'Others') {
+          form.append(q.id, formData[`${q.id}_other`] || '');
+        } else {
+          form.append(q.id, selected || '');
+        }
+      } else if (q.type === 'text') {
+        form.append(q.id, formData[q.id] || '');
+      } else if (q.type === 'file') {
+        if (files[q.id]) {
+          form.append(q.id, files[q.id]);
+        }
+      }
+    });
+
+    // Use activeSystem which is defined at the top of your component
+    const systemValue = activeSystem || 'Sistem Pengurusan Meja Bantuan (SPMB)';
+    
+    // Add system and module selections
+    form.append('system', systemValue);
+    form.append('api', apiValue);
+    form.append('module_group', confirmedModule || '');
+    form.append('module', apiValue);
+    
+    // Add grid data
+    form.append('dataGrid', JSON.stringify(gridRows));
+    
+    // Create submission ID with proper system value
+    form.append('submission_id', `${systemValue}-${apiValue}`);
+    
+    // Only add integrationMethod if not already added from questions loop
+    if (!form.has('integrationMethod')) {
+      form.append('integrationMethod', 'REST API');
+    }
+
+    // Log what we're sending
+    console.log('📤 Sending form data:');
+    for (let [key, value] of form.entries()) {
+      console.log(`  ${key}:`, value);
+    }
+
+    setIsSubmitting(true);
+
+    // Make the API request
+    const response = await axios.post(
+      'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound',
+      form,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 30000, // 30 second timeout
+      }
+    );
+
+    console.log('✅ Server response:', response.data);
+    
+    // Success - show alert and navigate
+    window.alert("Borang pengumpulan keperluan berjaya dihantar.");
+    
+    // Clear form data
     setFormData({});
     setFiles({});
+    setGridRows([]); // Also clear grid rows
+    
+    // Navigate to submission page
+    navigate('/submission');
+
   } catch (err) {
-    console.error(err);
-    alert("Penghantaran gagal. Sila semak konsol.");
+    console.error('❌ Submission error:', err);
+    
+    // Detailed error handling
+    if (err.response) {
+      // Server responded with error
+      console.error('Server error response:', err.response.data);
+      console.error('Server error status:', err.response.status);
+      
+      if (err.response.data?.message) {
+        alert(`Server error: ${err.response.data.message}`);
+      } else if (err.response.status === 400) {
+        alert("Bad request: Please check all form fields are filled correctly.");
+      } else if (err.response.status === 500) {
+        alert("Server error: The server encountered an error. Please try again later.");
+      } else {
+        alert(`Server error (${err.response.status}): ${err.response.statusText}`);
+      }
+    } else if (err.request) {
+      // Request made but no response
+      console.error('No response from server:', err.request);
+      alert("Cannot connect to server. Please check your internet connection or try again later.");
+    } else {
+      // Other errors
+      console.error('Error details:', err.message);
+      alert(`Error: ${err.message}`);
+    }
   } finally {
     setIsSubmitting(false);
   }
