@@ -8,14 +8,10 @@ import { loadConfirmed } from './utils/confirmedStore';
 export default function InboundRequirementForm() {
   const navigate = useNavigate();
   const {
-  system: confirmedSystem,
-  module: confirmedModule,
-  elements: confirmedEls = [],
-  agency: confirmedAgency
-} = loadConfirmed();
-
-const userAgency = confirmedAgency || localStorage.getItem('agency') || '';
-
+    system: confirmedSystem,
+    module: confirmedModule,
+    elements: confirmedEls = []
+  } = loadConfirmed();
 
   const handleLogout = () => {
   localStorage.clear();
