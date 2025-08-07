@@ -168,16 +168,12 @@ const handleElementSelection = (elementObj) => {
   setPopupVisible(false);
 };
 
-<button onClick={handleLogout} style={{ float: 'right', margin: '10px' }}>
-  🚪 Log Keluar
-</button>
-
 useEffect(() => {
   const inboundModules = systemsData?.Inbound?.[activeSystem] || {};
   const moduleNames    = Object.keys(inboundModules);
   setFormData(prev => ({ ...prev, system: activeSystem }));
   setModules(moduleNames);
-}, []);
+}, [activeSystem]); // Added activeSystem dependency
 
 useEffect(() => {
   const handleClickOutside = () => {
@@ -443,7 +439,9 @@ const handleUseExample = (id) => {
 
   return (
     <div className="container">
-
+<button onClick={handleLogout} style={{ float: 'right', margin: '10px' }}>
+        🚪 Log Keluar
+      </button>
       <div className="progress-container">
         {/* === Popup for choosing a data element ==================== */}
 {isPopupVisible && (
