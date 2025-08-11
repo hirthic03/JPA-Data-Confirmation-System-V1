@@ -58,10 +58,31 @@ const [gridRows, setGridRows] = useState(
     rules: ''
   }))
 );
+const keyOf = (e) => `${e.name}::${e.group || ""}`;
+const [usedElements, setUsedElements] = useState(() => {
+  return new Set(confirmedEls.map(el => 
+    keyOf({
+      name: typeof el === 'string' ? el : el.name,
+      group: typeof el === 'string' ? '' : (el.group || '')
+    })
+  ));
+});
+
+// Keep usedElements in sync with gridRows
+useEffect(() => {
+  const newUsedSet = new Set(gridRows.map(r => 
+    keyOf({ 
+      name: r.dataElement, 
+      group: r.groupName || '' 
+    })
+  ));
+  setUsedElements(newUsedSet);
+}, [gridRows]);
+
 // ⚠️ Live duplicate-name detector — recalculates whenever gridRows change
 const duplicateNames = React.useMemo(() => {
   const map = {};
-  gridRows.forEach(({ dataElement, groupName = '__ungrouped__' }) => {
+  gridRows.forEach(({ dataElement, groupName = '' }) => {
     if (!map[dataElement]) map[dataElement] = new Set();
     map[dataElement].add(groupName);
   });
@@ -75,47 +96,62 @@ const [availableElements, setAvailableElements] = useState([]);
 /* ---------- Popup helper state & utils (NEW) ------------------- */
 const [popupModule, setPopupModule] = useState(confirmedModule || '');
 
+
 /*  flattenElements()  → converts grouped/flat     */
 /*  getSelectable()    → returns only NOT-yet-picked */
-const flattenElements = (arr) =>
-  arr.flatMap((e) =>
-    typeof e === 'string'
-      ? [{ name: e, group: '__ungrouped__' }]
-      : e.fields.map((f) => ({ name: f, group: e.group }))
-  );
+const flattenElements = (arr) => {
+  if (!arr || !Array.isArray(arr)) return [];
+  return arr.flatMap((e) => {
+    if (typeof e === 'string') {
+      return [{ name: e, group: '' }];
+    } else if (e && e.fields && Array.isArray(e.fields)) {
+      return e.fields.map((f) => ({ 
+        name: f, 
+        group: e.group || '' 
+      }));
+    }
+    return [];
+  });
+};
 
 const getSelectable = (modName) => {
-  // Get all elements for the module from systemsData
-  const moduleData = systemsData?.Inbound?.[activeSystem]?.[modName];
-  
-  if (!moduleData || !moduleData.elements) {
-    console.log('No elements found for module:', modName);
-    console.log('Looking in:', systemsData?.Inbound?.[activeSystem]);
+  // Agency-aware module resolution (userAgency → JPA → direct)
+  const moduleDef = findModuleForLookup(systemsData, activeSystem, modName);
+
+  if (!moduleDef?.elements) {
+    console.log("No elements found for module:", modName, "under system:", activeSystem);
     return [];
   }
 
-  console.log('Module data found:', moduleData);
-  
-  // Process the elements to ensure ID Rujukan is always included
-  const processedElements = moduleData.elements.map((item) => {
-    if (typeof item === "object" && item.group && Array.isArray(item.fields)) {
-      // Ensure ID Rujukan is in the fields
-      const fields = item.fields.includes("ID Rujukan")
-        ? item.fields
-        : [...item.fields, "ID Rujukan"];
-      return { ...item, fields };
-    }
-    return item;
-  });
+  // No more manual 'ID Rujukan' injection here — systems.json already contains it
+  const all = flattenElements(moduleDef.elements);
 
-  // Flatten all elements - return ALL available elements
-  // Don't filter based on what's already in gridRows since we want to allow duplicates
-  const allElements = flattenElements(processedElements);
-  
-  console.log('All available elements for selection:', allElements);
-  return allElements;
+  console.log("Selectable elements:", all);
+  return all;
 };
+
 /* --------------------------------------------------------------- */
+const findModuleForLookup = (systemsData, activeSystem, modName) => {
+  if (!systemsData?.Inbound || !activeSystem || !modName) return null;
+
+  const flow = systemsData.Inbound;
+  const userAgency = localStorage.getItem('agency') || 'JPA';
+
+  // Try: userAgency → "JPA" → direct (legacy/no-agency)
+  const tryPaths = [
+    () => flow[userAgency]?.[activeSystem]?.modules?.[modName],
+    () => flow["JPA"]?.[activeSystem]?.modules?.[modName],
+    () => flow[activeSystem]?.modules?.[modName],
+  ];
+
+  for (const fn of tryPaths) {
+    try {
+      const hit = fn?.();
+      if (hit?.elements) return hit;
+    } catch (_) {}
+  }
+  return null;
+};
 
 
 const handleGridChange = (index, key, value) => {
@@ -131,98 +167,102 @@ const getCurrentModule = () => {
 
 
 const addGridRow = () => {
-  // Get the current module - prioritize confirmedModule
   const currentMod = confirmedModule || formData.module || '';
-  
-  if (!currentMod || currentMod === '') {
-    // Check if we're using one of the API options
-    const apiOptions = ['HantarMaklumatAduan', 'GetStatusAduan', 'HantarMaklumatAduanCadangan', 'GetStatusAduanCadangan'];
+
+  if (!currentMod) {
+    const apiOptions = ['HantarMaklumatAduan','GetStatusAduan','HantarMaklumatAduanCadangan','GetStatusAduanCadangan'];
     const selectedApi = apiOptions.find(api => api === formData.module);
-    
     if (!selectedApi && !confirmedModule) {
       alert('Sila pilih "Nama API" dahulu sebelum menambah baris.');
       return;
     }
   }
 
-  // Use the confirmed module for getting elements since that's what has the data
   const moduleForElements = confirmedModule || currentMod;
-  
-  console.log('Adding row for module:', moduleForElements);
-  console.log('System:', activeSystem);
-  console.log('SystemsData available:', systemsData);
-  
-  // Set the module and get available elements
   setPopupModule(moduleForElements);
-  const selectableElements = getSelectable(moduleForElements);
-  
-  if (selectableElements.length === 0) {
-    console.error('No elements found. Checking systemsData structure...');
-    console.log('Flow: Inbound');
-    console.log('System:', activeSystem);
-    console.log('Module:', moduleForElements);
-    alert('Tidak dapat memuatkan elemen untuk modul ini. Sila pastikan data modul tersedia.');
+
+  const all = getSelectable(moduleForElements);
+  // NEW: filter out already-picked elements
+  const filtered = all.filter(e => !usedElements.has(keyOf(e)));
+
+  if (filtered.length === 0) {
+    alert('Tiada elemen tersedia untuk ditambah.');
     return;
   }
-  
-  setAvailableElements(selectableElements);
+
+  setAvailableElements(filtered);
   setPopupVisible(true);
 };
 
 
+
 const removeGridRow = (index) => {
-  const updatedRows = gridRows.filter((_, i) => i !== index);
-  setGridRows(updatedRows);
+  const toRemove = gridRows[index];
+  const k = keyOf({ name: toRemove.dataElement, group: toRemove.groupName || '' });
+
+  const nextRows = gridRows.filter((_, i) => i !== index);
+  setGridRows(nextRows);
+
+  const nextUsed = new Set(usedElements);
+  nextUsed.delete(k);
+  setUsedElements(nextUsed);
+
+  // If popup is open, refresh available elements
+  if (isPopupVisible) {
+    const moduleForElements = confirmedModule || formData.module || '';
+    const all = getSelectable(moduleForElements);
+    const filtered = all.filter(e => !nextUsed.has(keyOf(e)));
+    setAvailableElements(filtered);
+  }
 };
 
 const handleElementSelection = (elementObj) => {
-  console.log('Selected element:', elementObj);
-  
-  const elementName = typeof elementObj === 'string' ? elementObj : elementObj.name;
-  const elementGroup = typeof elementObj === 'string' ? '__ungrouped__' : (elementObj.group || '__ungrouped__');
-  
-  // Create new row with the selected element
+  const elem = typeof elementObj === 'string'
+    ? { name: elementObj, group: '' }
+    : { name: elementObj.name, group: elementObj.group || '' };
+
   const newRow = {
-    dataElement: elementName,
-    groupName: elementGroup === '__ungrouped__' ? '' : elementGroup,
-    nama: '',
-    jenis: '',
-    saiz: '',
-    nullable: '',
-    rules: ''
+    dataElement: elem.name,
+    groupName: elem.group,
+    nama: '', jenis: '', saiz: '', nullable: '', rules: ''
   };
 
-  // Find the best position to insert (group similar elements together)
-  let insertAt = gridRows.length;
-  
-  // Try to find the last occurrence of the same element name
-  for (let i = gridRows.length - 1; i >= 0; i--) {
-    if (gridRows[i].dataElement === elementName) {
-      insertAt = i + 1;
-      break;
-    }
+  // insert after last occurrence of same element (nice grouping)
+  const nextRows = [...gridRows];
+// Better approach
+let insertAt = nextRows.length; // default to end
+for (let i = nextRows.length - 1; i >= 0; i--) {
+  if (nextRows[i].dataElement === elem.name) {
+    insertAt = i + 1;
+    break;
   }
+}
+  nextRows.splice(insertAt, 0, newRow);
+  setGridRows(nextRows);
 
-  // Insert the new row
-  const newRows = [...gridRows];
-  newRows.splice(insertAt, 0, newRow);
-  setGridRows(newRows);
-  
-  // Don't remove the element from available list - allow multiple selections
-  // Just close the popup
-  setPopupVisible(false);
-  
-  // Optional: Show a success message
-  console.log(`Added new row for: ${elementName}${elementGroup !== '__ungrouped__' ? ` (${elementGroup})` : ''}`);
+  // NEW: mark as used
+  const k = keyOf(elem);
+  const nextUsed = new Set(usedElements);
+  nextUsed.add(k);
+  setUsedElements(nextUsed);
+
+  // NEW: deplete popup list; only close when empty
+  const nextAvail = availableElements.filter(a => keyOf(typeof a === 'string' ? { name: a, group: '' } : a) !== k);
+  setAvailableElements(nextAvail);
+  if (nextAvail.length === 0) setPopupVisible(false);
 };
 
 
 useEffect(() => {
-  const inboundModules = systemsData?.Inbound?.[activeSystem] || {};
-  const moduleNames    = Object.keys(inboundModules);
+  const userAgency = localStorage.getItem('agency') || 'JPA';
+  const inboundModules = 
+    systemsData?.Inbound?.[userAgency]?.[activeSystem]?.modules ||
+    systemsData?.Inbound?.JPA?.[activeSystem]?.modules ||
+    systemsData?.Inbound?.[activeSystem]?.modules || {};
+  const moduleNames = Object.keys(inboundModules);
   setFormData(prev => ({ ...prev, system: activeSystem }));
   setModules(moduleNames);
-}, [activeSystem]); // Added activeSystem dependency
+}, [activeSystem]);
 
 useEffect(() => {
   const handleClickOutside = () => {
@@ -454,6 +494,10 @@ const getApiValue = () =>
     setFormData({});
     setFiles({});
     setGridRows([]); // Also clear grid rows
+    setUsedElements(new Set());
+    setPopupVisible(false);
+    setAvailableElements([]);
+
     
     // Navigate to submission page
     navigate('/submission');
@@ -587,9 +631,10 @@ const handleUseExample = (id) => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {availableElements.map((element, idx) => {
-              const displayName = element.group && element.group !== '__ungrouped__' 
-                ? `${element.name} (${element.group})` 
-                : element.name;
+              const displayName = element.group
+  ? `${element.name} (${element.group})`
+  : element.name;
+
               
               return (
                 <button
