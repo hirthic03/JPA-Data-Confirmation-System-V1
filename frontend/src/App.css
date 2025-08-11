@@ -732,7 +732,7 @@ textarea {
 
 .popup-option:hover {
   background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-  color: #0056b3 ;
+  color: white;
   transform: translateX(8px) scale(1.02);
   border-color: #007bff;
   box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
@@ -744,12 +744,6 @@ textarea {
 
 .popup-option:active {
   transform: translateX(8px) scale(0.98);
-}
-
-.popup-option:hover {
-  background: #007bff;
-  color: white;
-  transform: translateX(5px);
 }
 
 .popup-elements {
