@@ -603,7 +603,7 @@ const handleUseExample = (id) => {
     }
   }}>
     <div className="popup-box">
-      <h4 className="popup-header">Tambah Baris – Pilih Modul & Data Element</h4>
+      <h4 className="popup-header">Tambah Baris – Data Element</h4>
 
       {/* Module display */}
       <div style={{ marginBottom: 15 }}>
