@@ -6,9 +6,9 @@ body.auth-page {
   color: black;
   margin: 0;
   min-height: 100vh;
-  display: flex;
   align-items: center;
   justify-content: center;
+  display: flex;
 }
 
 /* GLOBAL */
@@ -942,6 +942,21 @@ textarea::placeholder {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.form-input {
+  width: 280px; /* fixed width for all inputs */
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 15px;
+  text-align: left;
+}
+.form-input:focus {
+  outline: none;
+  border: 2px solid #287BC0; /* same color as theme */
+  box-shadow: 0 0 5px rgba(40, 123, 192, 0.5);
 }
 
 /* Decorative gradient border */
@@ -1035,15 +1050,6 @@ textarea::placeholder {
 
 /* Enhanced App.css with better UX and security considerations */
 
-/* Form Container */
-.form-container {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 30px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
 
 .form-container h2 {
   text-align: center;
