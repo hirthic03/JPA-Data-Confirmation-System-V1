@@ -319,7 +319,6 @@ function RegisterPage() {
           className="form-select"
         >
           <option value="agency">Agensi</option>
-          <option value="admin">Admin</option>
         </select>
         
         <button 
