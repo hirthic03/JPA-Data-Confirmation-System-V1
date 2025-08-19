@@ -67,7 +67,11 @@ const [usedElements, setUsedElements] = useState(() => {
     })
   ));
 });
-
+// Get user info from localStorage
+const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+const userName = userInfo.name || '';
+const userPhone = userInfo.phone || '';
+const userEmail = userInfo.email || '';
 // Keep usedElements in sync with gridRows
 useEffect(() => {
   const newUsedSet = new Set(gridRows.map(r => 
@@ -444,6 +448,9 @@ const getApiValue = () =>
         }
       }
     });
+        form.append('pic_name', userName);
+        form.append('pic_phone', userPhone);
+        form.append('pic_email', userEmail);
 
     // Use activeSystem which is defined at the top of your component
     const systemValue = activeSystem || 'Sistem Pengurusan Meja Bantuan (SPMB)';

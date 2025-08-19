@@ -115,10 +115,23 @@ db.prepare(`
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
     role TEXT DEFAULT 'agency',
     agency TEXT
   )
 `).run();
+// Add columns if they don't exist (for existing databases)
+try {
+  db.prepare(`ALTER TABLE users ADD COLUMN name TEXT`).run();
+} catch (e) {
+  // Column already exists
+}
+try {
+  db.prepare(`ALTER TABLE users ADD COLUMN phone TEXT`).run();
+} catch (e) {
+  // Column already exists
+}
 console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' });
 const transporter = nodemailer.createTransport({
@@ -274,9 +287,18 @@ function getQuestionTextById(id) {
  * buildInboundEmail – returns nicely-formatted HTML for the mail body
  * -----------------------------------------------------------------*/
 
-function buildInboundEmail(reqBody, gridRows, meta) {
+function buildInboundEmail(reqBody, gridRows, meta, picInfo) {
   const q = (id) => reqBody[id] || '-';
-
+  const picSection = `
+    <h3>👤 Maklumat PIC (Person In Charge)</h3>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width: 100%;">
+      <tbody>
+        <tr><td><b>Nama</b></td><td>${picInfo.name || '-'}</td></tr>
+        <tr><td><b>No. Telefon</b></td><td>${picInfo.phone || '-'}</td></tr>
+        <tr><td><b>Email</b></td><td>${picInfo.email || '-'}</td></tr>
+        <tr><td><b>Tarikh & Masa Hantar</b></td><td>${meta.created_at}</td></tr>
+      </tbody>
+    </table>`;
   const qnaSection = `
     <h3>📝 Q&A Summary</h3>
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width: 100%;">
@@ -328,6 +350,7 @@ function buildInboundEmail(reqBody, gridRows, meta) {
       <p><b>API Name:</b> ${meta.apiName}</p>
       <p><b>Module (Group):</b> ${meta.moduleName}</p>
       <p><b>Submitted At:</b> ${meta.created_at}</p>
+      ${picSection}
       ${qnaSection}
       ${gridSection}
     </div>
@@ -365,7 +388,10 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
       api: apiNameRaw,
       module: apiNameOld,
       module_group,
-      dataGrid
+      dataGrid,
+      pic_name,
+      pic_phone,
+      pic_email
     } = req.body;
 
     const apiName = apiNameRaw || apiNameOld;
@@ -480,6 +506,10 @@ if (system && apiName && req.body.integrationMethod) {
     apiName,
     moduleName,
     created_at
+    }, {
+    name: pic_name,
+    phone: pic_phone,
+    email: pic_email
   });
 
   try {
@@ -525,7 +555,15 @@ if (system && apiName && req.body.integrationMethod) {
 
 app.post('/register', async (req, res) => {
   try {
-    const { email, password, agency, role } = req.body;
+    const { name, phone, email, password, agency, role } = req.body;
+
+    // Validate all fields
+    if (!name || !phone || !email || !password || !agency || !role) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Semua medan diperlukan' 
+      });
+    }
 
     // ✅ Validate input types
     if (typeof email !== 'string' || typeof password !== 'string' || typeof agency !== 'string' || typeof role !== 'string') {
@@ -535,15 +573,18 @@ app.post('/register', async (req, res) => {
     // ✅ Check if user already exists
     const userExists = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
     if (userExists) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email sudah didaftarkan' 
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const stmt = db.prepare('INSERT INTO users (email, password, agency, role) VALUES (?, ?, ?, ?)');
-    stmt.run(email, hashedPassword, agency, role);
+    const stmt = db.prepare('INSERT INTO users (name, phone, email, password, agency, role) VALUES (?, ?, ?, ?, ?, ?)');
+    stmt.run(name, phone, email, hashedPassword, agency, role);
 
-    console.log(`✅ Created user: ${email}`);
+    console.log(`✅ Created user: ${email} (${name})`);
     res.json({ success: true });
   } catch (err) {
     console.error('❌ Registration Error:', err.message);
@@ -572,6 +613,7 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
+        name: user.name,
         role: user.role,
         agency: user.agency,
         email: user.email
@@ -583,7 +625,10 @@ app.post('/login', async (req, res) => {
     // RESPOND
     res.json({
       token,
-      user,
+       user: {
+    ...user,
+    name: user.name  // Make sure name is included
+  },
       agency: user.agency || 'JPA' // <-- ✅ Needed for your frontend
     });
   } catch (err) {

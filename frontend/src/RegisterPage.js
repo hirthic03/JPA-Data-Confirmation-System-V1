@@ -5,6 +5,8 @@ import './App.css';
 import { useNavigate } from 'react-router-dom';
 
 function RegisterPage() {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -145,7 +147,15 @@ function RegisterPage() {
       setMessage('Sila masukkan email yang sah');
       return false;
     }
-
+    if (!name.trim()) {
+      setMessage('Sila masukkan nama penuh');
+      return false;
+    }
+    const phoneRegex = /^01[0-9]{8,9}$/;
+    if (!phoneRegex.test(phone)) {
+      setMessage('Sila masukkan nombor telefon yang sah (contoh: 0123456789)');
+      return false;
+    }
     // Password validation
     if (password.length < 8) {
       setMessage('Kata laluan mestilah sekurang-kurangnya 8 aksara');
@@ -185,6 +195,8 @@ function RegisterPage() {
       console.log('Registering with agency:', finalAgency); // Debug log
       
       const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+        name: name.trim(), 
+        phone: phone.trim(),
         email: email.trim(),
         password,
         role,
@@ -193,6 +205,8 @@ function RegisterPage() {
 
       if (res.data.success) {
         // Clear form data
+        setName('');  // Add this
+        setPhone('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
@@ -242,6 +256,26 @@ function RegisterPage() {
               e.target.removeAttribute('readonly');
             }
           }}
+        />
+                <input
+          type="text"
+          placeholder="Nama Penuh"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+          disabled={isLoading}
+          className="form-input"
+        />
+
+        <input
+          type="tel"
+          placeholder="Nombor Telefon (contoh: 0123456789)"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          required
+          pattern="[0-9]{10,11}"
+          disabled={isLoading}
+          className="form-input"
         />
         
         {/* Password fields with maximum autocomplete prevention */}
@@ -339,6 +373,24 @@ function RegisterPage() {
       <p className="link">
         Sudah mempunyai akaun? <a href="/login">Log masuk di sini</a>
       </p>
+      <div className="support-info" style={{
+  marginTop: '30px',
+  padding: '15px',
+  backgroundColor: '#f0f0f0',
+  borderRadius: '5px',
+  fontSize: '14px',
+  textAlign: 'center'
+}}>
+  <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
+    Sekiranya ada sebarang isu dengan sistem atau pendaftaran, sila hubungi:
+  </p>
+  <p style={{ margin: '5px 0' }}>
+    📧 Email: <a href="mailto:hirthic@pernec.com.my">hirthic@pernec.com.my</a>
+  </p>
+  <p style={{ margin: '5px 0' }}>
+    📱 Telefon: <a href="tel:0123721517">012-372 1517</a>
+  </p>
+</div>
     </div>
   );
 }
