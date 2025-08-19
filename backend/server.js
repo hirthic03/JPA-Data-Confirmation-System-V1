@@ -113,11 +113,11 @@ const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name   TEXT NOT NULL,
+    phone  TEXT NOT NULL,
+    email  TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
     role TEXT DEFAULT 'agency',
     agency TEXT
   )
@@ -178,16 +178,6 @@ db.prepare(`
     remarks TEXT,
     created_at TEXT,
     flow_type TEXT
-  )
-`).run();
-
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL,
-    agency TEXT
   )
 `).run();
 
