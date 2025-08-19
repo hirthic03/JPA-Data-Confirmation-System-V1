@@ -15,6 +15,7 @@ const { randomUUID } = require('crypto');
 const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
 
@@ -217,6 +218,16 @@ db.prepare(`
     data_element TEXT,
     group_name     TEXT,
     FOREIGN KEY(submission_id) REFERENCES inbound_requirements(id)
+  )
+`).run();
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )
 `).run();
 // ✅ One-time migration: Add api_name column to inbound_requirements if it doesn't exist
@@ -636,7 +647,199 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Server error during login' });
   }
 });
+// Forgot Password - Request Reset
+app.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email diperlukan' 
+      });
+    }
 
+    // Check if user exists
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    
+    if (!user) {
+      // Don't reveal if email exists for security
+      return res.json({ 
+        success: true, 
+        message: 'Jika email wujud dalam sistem, arahan tetapan semula akan dihantar.' 
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    // Token expires in 1 hour
+    const expiresAt = new Date(Date.now() + 3600000).toISOString();
+    
+    // Delete any existing tokens for this email
+    db.prepare('DELETE FROM password_resets WHERE email = ?').run(email);
+    
+    // Save new token
+    db.prepare(`
+      INSERT INTO password_resets (email, token, expires_at)
+      VALUES (?, ?, ?)
+    `).run(email, hashedToken, expiresAt);
+    
+    // Create reset link
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    
+    // Send email
+    const mailOptions = {
+      from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
+      to: email,
+      subject: '🔐 Tetapan Semula Kata Laluan - JPA Data Confirmation System',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #003366;">Tetapan Semula Kata Laluan</h2>
+          <p>Salam ${user.name || 'Pengguna'},</p>
+          <p>Kami telah menerima permintaan untuk menetapkan semula kata laluan akaun anda.</p>
+          <p>Klik butang di bawah untuk menetapkan kata laluan baharu:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" 
+               style="background-color: #007bff; color: white; padding: 12px 30px; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+              Tetapkan Semula Kata Laluan
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            Atau salin dan tampal pautan ini ke pelayar anda:<br>
+            <code style="background: #f5f5f5; padding: 5px;">${resetLink}</code>
+          </p>
+          <hr style="border: 1px solid #eee; margin: 30px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Pautan ini akan tamat tempoh dalam 1 jam.<br>
+            Jika anda tidak meminta tetapan semula kata laluan, sila abaikan email ini.
+          </p>
+        </div>
+      `
+    };
+    
+    await transporter.sendMail(mailOptions);
+    
+    console.log(`Password reset email sent to: ${email}`);
+    res.json({ 
+      success: true, 
+      message: 'Arahan tetapan semula telah dihantar ke email anda.' 
+    });
+    
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ralat sistem. Sila cuba lagi.' 
+    });
+  }
+});
+
+// Reset Password - Verify Token and Update Password
+app.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token dan kata laluan diperlukan' 
+      });
+    }
+    
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Kata laluan mestilah sekurang-kurangnya 8 aksara' 
+      });
+    }
+    
+    // Hash the token to match stored version
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find valid token
+    const resetRecord = db.prepare(`
+      SELECT * FROM password_resets 
+      WHERE token = ? 
+      AND expires_at > datetime('now') 
+      AND used = 0
+    `).get(hashedToken);
+    
+    if (!resetRecord) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token tidak sah atau telah tamat tempoh' 
+      });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Update user password
+    db.prepare(`
+      UPDATE users 
+      SET password = ? 
+      WHERE email = ?
+    `).run(hashedPassword, resetRecord.email);
+    
+    // Mark token as used
+    db.prepare(`
+      UPDATE password_resets 
+      SET used = 1 
+      WHERE id = ?
+    `).run(resetRecord.id);
+    
+    console.log(`Password reset successful for: ${resetRecord.email}`);
+    res.json({ 
+      success: true, 
+      message: 'Kata laluan berjaya ditetapkan semula. Sila log masuk.' 
+    });
+    
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ralat sistem. Sila cuba lagi.' 
+    });
+  }
+});
+
+// Verify Reset Token (to check if token is valid before showing reset form)
+app.get('/verify-reset-token/:token', (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    const resetRecord = db.prepare(`
+      SELECT * FROM password_resets 
+      WHERE token = ? 
+      AND expires_at > datetime('now') 
+      AND used = 0
+    `).get(hashedToken);
+    
+    if (!resetRecord) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token tidak sah atau telah tamat tempoh' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      email: resetRecord.email 
+    });
+    
+  } catch (err) {
+    console.error('Verify token error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ralat sistem' 
+    });
+  }
+});
 
 // 📄 Outbound Submission Handler
 app.post('/submit', (req, res) => {

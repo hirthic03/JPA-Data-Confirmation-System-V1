@@ -8,6 +8,8 @@ import './App.css';
 import AdminPage from './AdminPage';
 import RegisterPage from './RegisterPage';
 import { jwtDecode } from 'jwt-decode';
+import ForgotPasswordPage from './ForgotPasswordPage';
+import ResetPasswordPage from './ResetPasswordPage';
 
 
 function ReportingPage() {
@@ -190,6 +192,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage onLogin={() => setLoggedIn(true)} />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/submission" element={loggedIn ? <SubmissionApp /> : <Navigate to="/login" />} />
         <Route path="/" element={<Navigate to={loggedIn ? "/submission" : "/login"} />} />
         <Route path="/requirement" element={loggedIn ? <InboundRequirementForm /> : <Navigate to="/login" />} />

@@ -196,7 +196,10 @@ function LoginPage({ onLogin }) {
           {error}
         </div>
       )}
-      
+            {/* Add this after the submit button and before the register link */}
+      <p className="link" style={{ marginTop: '15px' }}>
+        <Link to="/forgot-password">Lupa kata laluan?</Link>
+      </p>
       <p className="link">
         Belum mempunyai akaun? <Link to="/register">Daftar di sini</Link>
       </p>
