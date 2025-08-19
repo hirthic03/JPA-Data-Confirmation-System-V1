@@ -677,7 +677,7 @@ app.post('/forgot-password', async (req, res) => {
     `).run(email, hashedToken, expiresAt);
     
     // Create reset link
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL || 'https://jpa-data-confirmation-system-v1.vercel.app'}/reset-password?token=${resetToken}`;
     
     // Send email
     const mailOptions = {
