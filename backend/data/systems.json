@@ -633,7 +633,6 @@
     }
   }
 },
-
 "INTAN": {
   "Pendaftaran Kursus Dalam Talian (DTIMS)": {
     "agency": "INTAN",
@@ -642,15 +641,15 @@
         "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
         "elements": [
           {
-            "group": "Maklumat Program Pembelajaran",
+            "group": "A. Maklumat Program Pembelajaran",
             "fields": [
               "Nama Program Pembelajaran",
               "Siri Program Pembelajaran",
               "Jenis Program Pembelajaran",
               "Kategori Program Pembelajaran",
-              "Keterangan",
-              "Objektif",
-              "Agensi Pengajur",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
               "Lokasi Program Pembelajaran",
               "Tempat Program Pembelajaran",
               "Bidang Pengkhususan",
@@ -659,7 +658,7 @@
             ]
           },
           {
-            "group": "Maklumat Kompetensi",
+            "group": "B. Maklumat Kompetensi",
             "fields": [
               "Jenis Kompetensi",
               "Kompetensi",
@@ -667,18 +666,39 @@
             ]
           },
           {
-            "group": "Dokumen Sokongan",
-            "fields": []
-          },
-          {
-            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "group": "C. Dokumen & Kehadiran",
             "fields": [
+              "Dokumen Sokongan",
               "Nama Pemilik Kompetensi",
               "No. Kad Pengenalan Pemilik Kompetensi",
               "Jawatan",
               "Gred",
               "Sijil Program Pembelajaran",
-              "Sijil Kehadiran"
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -692,15 +712,15 @@
         "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
         "elements": [
           {
-            "group": "Maklumat Program Pembelajaran",
+            "group": "A. Maklumat Program Pembelajaran",
             "fields": [
               "Nama Program Pembelajaran",
               "Siri Program Pembelajaran",
               "Jenis Program Pembelajaran",
               "Kategori Program Pembelajaran",
-              "Keterangan",
-              "Objektif",
-              "Agensi Pengajur",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
               "Lokasi Program Pembelajaran",
               "Tempat Program Pembelajaran",
               "Bidang Pengkhususan",
@@ -709,7 +729,7 @@
             ]
           },
           {
-            "group": "Maklumat Kompetensi",
+            "group": "B. Maklumat Kompetensi",
             "fields": [
               "Jenis Kompetensi",
               "Kompetensi",
@@ -717,18 +737,39 @@
             ]
           },
           {
-            "group": "Dokumen Sokongan",
-            "fields": []
-          },
-          {
-            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "group": "C. Dokumen & Kehadiran",
             "fields": [
+              "Dokumen Sokongan",
               "Nama Pemilik Kompetensi",
               "No. Kad Pengenalan Pemilik Kompetensi",
               "Jawatan",
               "Gred",
               "Sijil Program Pembelajaran",
-              "Sijil Kehadiran"
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -742,21 +783,64 @@
         "title": "Terima Maklumat Peperiksaan",
         "elements": [
           {
-            "group": "PFD-BLJ-RP-INT-01",
+            "group": "A. Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
             "fields": [
               "Nama Peperiksaan",
               "Kategori Peperiksaan",
-              "No. Rujukan",
-              "Nama Pemilik Kompetensi",
-              "No. Kad Pengenalan Kompetensi",
+              "No. Rujukan (Peperiksaan)",
               "Angka Giliran",
               "Kod Peperiksaan",
-              "Siri",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
               "Tarikh Keputusan Peperiksaan",
               "Bahagian Peperiksaan",
               "Tarikh Bahagian Peperiksaan",
-              "Perkara",
-              "Keputusan Bahagian"
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -770,21 +854,64 @@
         "title": "Terima Maklumat Peperiksaan",
         "elements": [
           {
-            "group": "PFD-BLJ-RP-INT-01",
+            "group": "A. Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
             "fields": [
               "Nama Peperiksaan",
               "Kategori Peperiksaan",
-              "No. Rujukan",
-              "Nama Pemilik Kompetensi",
-              "No. Kad Pengenalan Kompetensi",
+              "No. Rujukan (Peperiksaan)",
               "Angka Giliran",
               "Kod Peperiksaan",
-              "Siri",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
               "Tarikh Keputusan Peperiksaan",
               "Bahagian Peperiksaan",
               "Tarikh Bahagian Peperiksaan",
-              "Perkara",
-              "Keputusan Bahagian"
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -798,15 +925,15 @@
         "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
         "elements": [
           {
-            "group": "Maklumat Program Pembelajaran",
+            "group": "A. Maklumat Program Pembelajaran",
             "fields": [
               "Nama Program Pembelajaran",
               "Siri Program Pembelajaran",
               "Jenis Program Pembelajaran",
               "Kategori Program Pembelajaran",
-              "Keterangan",
-              "Objektif",
-              "Agensi Pengajur",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
               "Lokasi Program Pembelajaran",
               "Tempat Program Pembelajaran",
               "Bidang Pengkhususan",
@@ -815,7 +942,7 @@
             ]
           },
           {
-            "group": "Maklumat Kompetensi",
+            "group": "B. Maklumat Kompetensi",
             "fields": [
               "Jenis Kompetensi",
               "Kompetensi",
@@ -823,18 +950,39 @@
             ]
           },
           {
-            "group": "Dokumen Sokongan",
-            "fields": []
-          },
-          {
-            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "group": "C. Dokumen & Kehadiran",
             "fields": [
+              "Dokumen Sokongan",
               "Nama Pemilik Kompetensi",
               "No. Kad Pengenalan Pemilik Kompetensi",
               "Jawatan",
               "Gred",
               "Sijil Program Pembelajaran",
-              "Sijil Kehadiran"
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -848,10 +996,64 @@
         "title": "Maklumat Keputusan Peperiksaan",
         "elements": [
           {
-            "group": "Maklumat Keputusan Peperiksaan",
+            "group": "A. Maklumat Program Pembelajaran",
             "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
               "Sijil Program Pembelajaran",
-              "Sijil Kehadiran"
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -865,8 +1067,65 @@
         "title": "Maklumat Keputusan Peperiksaan",
         "elements": [
           {
-            "group": "Maklumat Keputusan Peperiksaan",
-            "fields": []
+            "group": "A. Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
+            ]
           }
         ]
       }
@@ -879,8 +1138,65 @@
         "title": "Maklumat Keputusan Peperiksaan",
         "elements": [
           {
-            "group": "Maklumat Keputusan Peperiksaan",
-            "fields": []
+            "group": "A. Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
+            ]
           }
         ]
       }
@@ -893,8 +1209,65 @@
         "title": "Maklumat Keputusan Peperiksaan",
         "elements": [
           {
-            "group": "Maklumat Keputusan Peperiksaan",
-            "fields": []
+            "group": "A. Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
+            ]
           }
         ]
       }
@@ -907,8 +1280,65 @@
         "title": "Maklumat Keputusan Peperiksaan",
         "elements": [
           {
-            "group": "Maklumat Keputusan Peperiksaan",
-            "fields": []
+            "group": "A. Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
+              "Markah",
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
+            ]
           }
         ]
       }
@@ -921,15 +1351,64 @@
         "title": "Maklumat Keputusan Peperiksaan",
         "elements": [
           {
-            "group": "Maklumat Keputusan Peperiksaan",
+            "group": "A. Maklumat Program Pembelajaran",
             "fields": [
-              "NAMA CO",
-              "NO KP CO",
-              "NAMA PEPERIKSAAN",
-              "Keputusan Peperiksaan",
-              "Lulus/Gagal",
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan (Program)",
+              "Objektif (Program)",
+              "Agensi Penganjur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "B. Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "C. Dokumen & Kehadiran",
+            "fields": [
+              "Dokumen Sokongan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran",
+              "Status Kehadiran (jika diperlukan — implied by 'Terima Maklumat Pembelajaran dan Kehadiran')"
+            ]
+          },
+          {
+            "group": "D. Maklumat Peperiksaan / Penilaian",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan (Peperiksaan)",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri (Peperiksaan)",
+              "Tarikh Ambil Peperiksaan",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara (Jenis/Jenis penilaian)",
               "Markah",
-              "TARIKH AMBIL PEPERIKSAAN"
+              "Keputusan Peperiksaan (Lulus/Gagal)",
+              "Keputusan Bahagian",
+              "Nama Pemilik Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "No. Kad Pengenalan Kompetensi (ulang untuk ikatan dengan keputusan)",
+              "Nama CO (jika berkenaan)",
+              "No. KP CO (jika berkenaan)"
             ]
           }
         ]
@@ -938,20 +1417,36 @@
   }
 },
 "KPM": {
-  "Sistem Pengurusan Pendidikan KPM": {
+  "e2PK": {
     "agency": "KPM",
     "modules": {
-      "Modul Pendidikan": {
-        "title": "Maklumat Pendidikan",
+      "Sub sistem MOeIS": {
+        "title": "Maklumat Peribadi, Perkhidmatan, Status Perisytharan Harta, Sandangan dan Persimarima",
         "elements": [
           {
-            "group": "Maklumat Asas",
+            "group": "PFD-PSI-DAF-PU-01 - Permohonan Pendaftaran Ujian",
             "fields": [
               "Nama",
               "No. Kad Pengenalan",
-              "Sekolah",
-              "Daerah",
-              "Negeri"
+              "No. Telefon Pejabat",
+              "E-mel Rasmi",
+              "Tarikh Dan Masa Permohonan",
+              "Jenis Pendekatan",
+              "Jenis Ujian",
+              "Tujuan Ujian"
+            ]
+          },
+          {
+            "group": "PFD-PSI-PP-UP - Keputusan Ujian Psikologi",
+            "fields": [
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Nama Pemilik Kompetensi",
+              "Jantina",
+              "Jawatan Sebenar",
+              "Unit Organisasi",
+              "Jenis Ujian",
+              "Tarikh Ujian",
+              "Hasil Ujian Psikologi dalam bentuk PDF"
             ]
           }
         ]
