@@ -632,8 +632,333 @@
       }
     }
   }
-}
+},
 
+"INTAN": {
+  "Pendaftaran Kursus Dalam Talian (DTIMS)": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan",
+              "Objektif",
+              "Agensi Pengajur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "Dokumen Sokongan",
+            "fields": []
+          },
+          {
+            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "fields": [
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "E-Pembelajaran Sektor Awam (EPSA) v2": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan",
+              "Objektif",
+              "Agensi Pengajur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "Dokumen Sokongan",
+            "fields": []
+          },
+          {
+            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "fields": [
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Penilaian Kemahiran Bahasa Inggeris (ELPA)": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Peperiksaan",
+        "elements": [
+          {
+            "group": "PFD-BLJ-RP-INT-01",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Kompetensi",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara",
+              "Keputusan Bahagian"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ICT Skills Assessment & Certification (ISAC) v2": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Peperiksaan",
+        "elements": [
+          {
+            "group": "PFD-BLJ-RP-INT-01",
+            "fields": [
+              "Nama Peperiksaan",
+              "Kategori Peperiksaan",
+              "No. Rujukan",
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Kompetensi",
+              "Angka Giliran",
+              "Kod Peperiksaan",
+              "Siri",
+              "Tarikh Keputusan Peperiksaan",
+              "Bahagian Peperiksaan",
+              "Tarikh Bahagian Peperiksaan",
+              "Perkara",
+              "Keputusan Bahagian"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Sistem INTAN Event Management Gateway (I-EMG)": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Maklumat Program Pembelajaran",
+            "fields": [
+              "Nama Program Pembelajaran",
+              "Siri Program Pembelajaran",
+              "Jenis Program Pembelajaran",
+              "Kategori Program Pembelajaran",
+              "Keterangan",
+              "Objektif",
+              "Agensi Pengajur",
+              "Lokasi Program Pembelajaran",
+              "Tempat Program Pembelajaran",
+              "Bidang Pengkhususan",
+              "Sub Bidang Pengkhususan",
+              "Cara Penyampaian"
+            ]
+          },
+          {
+            "group": "Maklumat Kompetensi",
+            "fields": [
+              "Jenis Kompetensi",
+              "Kompetensi",
+              "Skala Kompetensi"
+            ]
+          },
+          {
+            "group": "Dokumen Sokongan",
+            "fields": []
+          },
+          {
+            "group": "Maklumat Kehadiran Program Pembelajaran",
+            "fields": [
+              "Nama Pemilik Kompetensi",
+              "No. Kad Pengenalan Pemilik Kompetensi",
+              "Jawatan",
+              "Gred",
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "JLEAP": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Keputusan Peperiksaan",
+        "elements": [
+          {
+            "group": "Maklumat Keputusan Peperiksaan",
+            "fields": [
+              "Sijil Program Pembelajaran",
+              "Sijil Kehadiran"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MLEAP": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Keputusan Peperiksaan",
+        "elements": [
+          {
+            "group": "Maklumat Keputusan Peperiksaan",
+            "fields": []
+          }
+        ]
+      }
+    }
+  },
+  "ELEAP": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Keputusan Peperiksaan",
+        "elements": [
+          {
+            "group": "Maklumat Keputusan Peperiksaan",
+            "fields": []
+          }
+        ]
+      }
+    }
+  },
+  "ALEAP": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Keputusan Peperiksaan",
+        "elements": [
+          {
+            "group": "Maklumat Keputusan Peperiksaan",
+            "fields": []
+          }
+        ]
+      }
+    }
+  },
+  "ALMP": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Keputusan Peperiksaan",
+        "elements": [
+          {
+            "group": "Maklumat Keputusan Peperiksaan",
+            "fields": []
+          }
+        ]
+      }
+    }
+  },
+  "e-Penilaian": {
+    "agency": "INTAN",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Keputusan Peperiksaan",
+        "elements": [
+          {
+            "group": "Maklumat Keputusan Peperiksaan",
+            "fields": [
+              "NAMA CO",
+              "NO KP CO",
+              "NAMA PEPERIKSAAN",
+              "Keputusan Peperiksaan",
+              "Lulus/Gagal",
+              "Markah",
+              "TARIKH AMBIL PEPERIKSAAN"
+            ]
+          }
+        ]
+      }
+    }
+  }
+},
+"KPM": {
+  "Sistem Pengurusan Pendidikan KPM": {
+    "agency": "KPM",
+    "modules": {
+      "Modul Pendidikan": {
+        "title": "Maklumat Pendidikan",
+        "elements": [
+          {
+            "group": "Maklumat Asas",
+            "fields": [
+              "Nama",
+              "No. Kad Pengenalan",
+              "Sekolah",
+              "Daerah",
+              "Negeri"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
   
 }
 
