@@ -436,7 +436,7 @@ const submit = (confirmed) => {
       <div style={{ textAlign: 'right', marginBottom: '10px' }}>
   <button onClick={handleLogout} className="logout-btn">Log Keluar</button>
 </div>
-      <h1 className="nav-title">Pengesahan Data JPA</h1>
+      <h1 className="nav-title">Pengesahan Data</h1>
       <div className="form-group">
         <label>Aliran Data:</label>
         <select value={flowType} onChange={e => setFlowType(e.target.value)}>
