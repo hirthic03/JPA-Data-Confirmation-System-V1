@@ -21,14 +21,6 @@ export default function InboundRequirementForm() {
 const DEFAULT_SYSTEM = "Sistem Pengurusan Meja Bantuan (SPMB)";
 const activeSystem   = confirmedSystem || DEFAULT_SYSTEM; 
 
- useEffect(() => {
-    // Ping the server to wake it up
-    fetch('https://jpa-data-confirmation-system-v1.onrender.com/')
-      .then(() => console.log('Server pinged'))
-      .catch(() => console.log('Server ping failed'));
-  }, []);
-
-
   // 🚧 Kick users back if they haven’t confirmed data elements first
   useEffect(() => {
     if (!confirmedEls.length) {
@@ -488,33 +480,17 @@ const getApiValue = () =>
 
     setIsSubmitting(true);
 
-// Retry logic for sleeping server
-let response;
-let retryCount = 0;
-const maxRetries = 2;
-
-while (retryCount <= maxRetries) {
-  try {
-    response = await axios.post(
+    // Make the API request
+    const response = await axios.post(
       'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound',
       form,
       {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // Increased to 120 seconds
+        timeout: 30000, // 30 second timeout
       }
     );
-    break; // Success, exit loop
-  } catch (err) {
-    retryCount++;
-    if (retryCount > maxRetries) {
-      throw err; // All retries failed
-    }
-    console.log(`Retry ${retryCount}/${maxRetries} - Server may be waking up...`);
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
-  }
-}
 
     console.log('✅ Server response:', response.data);
     
@@ -551,15 +527,11 @@ while (retryCount <= maxRetries) {
       } else {
         alert(`Server error (${err.response.status}): ${err.response.statusText}`);
       }
-      } else if (err.request) {
-        // Request made but no response
-        console.error('No response from server:', err.request);
-        if (err.code === 'ECONNABORTED') {
-          alert("Server sedang dalam proses. Sila cuba sekali lagi. Jika masalah berterusan, tunggu 1-2 minit dan cuba lagi (server mungkin sedang 'bangun').");
-        } else {
-          alert("Cannot connect to server. Please check your internet connection or try again later.");
-        }
-      } else {
+    } else if (err.request) {
+      // Request made but no response
+      console.error('No response from server:', err.request);
+      alert("Cannot connect to server. Please check your internet connection or try again later.");
+    } else {
       // Other errors
       console.error('Error details:', err.message);
       alert(`Error: ${err.message}`);
