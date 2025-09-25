@@ -135,28 +135,19 @@ try {
 }
 console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' });
-const SMTP_USER = (process.env.NOTIF_EMAIL || process.env.EMAIL_USER || '').trim();
-const SMTP_PASS = (process.env.NOTIF_PASS || process.env.EMAIL_PASS || '').replace(/\s+/g, '');
-
-console.log('📧 Email Config - User:', SMTP_USER);
-console.log('📧 Email Config - Pass Length:', SMTP_PASS.length);
-
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: SMTP_USER,
-    pass: SMTP_PASS
-  }
+    // Support both sets of credentials for backward compatibility
+    user: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
+    pass: process.env.NOTIF_PASS || process.env.EMAIL_PASS
+  },
+  logger: true,
+  debug : true
 });
-// Verify connection on startup
-transporter.verify((err, success) => {
-  if (err) {
-    console.error('❌ SMTP Connection Failed:', err.message);
-    console.error('Full error:', err);
-  } else {
-    console.log('✅ SMTP Connection Successful - Ready to send emails');
-  }
-});
+
 const CC_LIST = (process.env.NOTIF_CC || '')
   .split(',')
   .map(s => s.trim())
@@ -368,88 +359,24 @@ function buildInboundEmail(reqBody, gridRows, meta, picInfo) {
 }
 
 
-async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBody = '', toOverride) {
-  const fromEmail =
-    (transporter?.options?.auth?.user) ||
-    process.env.NOTIF_EMAIL ||
-    process.env.EMAIL_USER;
-
-  // Build recipients: env EMAIL_TO + override PIC + fallback to fromEmail
-  const envTo = (process.env.EMAIL_TO || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const overrideTo = (toOverride || '')
-    .toString()
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const toList = Array.from(new Set([...envTo, ...overrideTo]));
-  if (toList.length === 0) toList.push(fromEmail); // never empty
-
+async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBody = '') {
   const mailOptions = {
-    from: fromEmail,                   // must be authenticated Gmail user
-    to: toList.join(','),
-    cc: (process.env.NOTIF_CC || '')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean)
-          .join(',') || undefined,
+    from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
+    to: process.env.EMAIL_TO,
+    cc: CC_LIST,
     subject: '📎 Inbound Requirement Submission PDF',
     text: 'Attached is the generated PDF for the inbound requirement submission.',
-    html: htmlBody,
+    html: htmlBody, // ✅ This line makes the email body show up
     attachments: [
-      { filename, content: pdfBuffer, contentType: 'application/pdf' }
+      {
+        filename,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      }
     ]
   };
 
-  console.log('📨 Email From:', mailOptions.from);
-  console.log('📨 Email To  :', mailOptions.to);
-  if (mailOptions.cc) console.log('📨 Email CC  :', mailOptions.cc);
-
-  const info = await transporter.sendMail(mailOptions);
-  console.log('✅ Email accepted by SMTP, messageId:', info.messageId);
-  return info;
-
-  // Place this directly under sendEmailWithPDF(...)
-async function sendEmailWithRetry(mailOptions, retries = 1) {
-  // Ensure "from" is the authenticated Gmail and expand recipients using env
-  const fromEmail =
-    (transporter?.options?.auth?.user) ||
-    process.env.NOTIF_EMAIL ||
-    process.env.EMAIL_USER;
-
-  const envTo = (process.env.EMAIL_TO || '')
-    .split(',').map(s => s.trim()).filter(Boolean);
-
-  const overrideTo = (mailOptions.to || '')
-    .toString().split(',').map(s => s.trim()).filter(Boolean);
-
-  const toList = Array.from(new Set([...envTo, ...overrideTo]));
-  mailOptions.from = fromEmail;
-  mailOptions.to = toList.length ? toList.join(',') : fromEmail;
-
-  const ccList = (process.env.NOTIF_CC || '')
-    .split(',').map(s => s.trim()).filter(Boolean);
-  if (ccList.length) mailOptions.cc = ccList.join(',');
-
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log('✅ Email accepted by SMTP, messageId:', info.messageId);
-      return info;
-    } catch (err) {
-      lastErr = err;
-      console.error(`❌ sendMail attempt ${i + 1} failed:`, err.message);
-      if (i < retries) await new Promise(r => setTimeout(r, 1500));
-    }
-  }
-  throw lastErr;
-}
-
+  return transporter.sendMail(mailOptions);
 }
 
 
@@ -574,66 +501,46 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     }
 
     // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
-// ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
-// ✅ EMAIL + PDF logic – always send (don’t depend on integrationMethod being truthy)
-{
-  // Normalise integrationMethod so the email shows something readable
-// ✅ EMAIL + PDF logic — always send
-// Normalise integrationMethod so the email shows something readable
-// ✅ EMAIL + PDF logic — simplified version
-// ✅ EMAIL logic - with better error handling
-const rawIM = (req.body.integrationMethod ?? '').toString().trim();
-if (!rawIM) req.body.integrationMethod = '(tidak dinyatakan)';
-
-const htmlBody = buildInboundEmail(
-  req.body,
-  cleanedGrid,
-  { system, apiName, moduleName, created_at },
-  { name: pic_name, phone: pic_phone, email: pic_email }
-);
-
-console.log('📧 Preparing email for submission:', submission_uuid);
-console.log('  To:', pic_email || SMTP_USER);
-
-// Try to send email immediately (not in background)
-let emailSent = false;
-let emailError = null;
-
-try {
-  const mailOptions = {
-    from: SMTP_USER,
-    to: pic_email || SMTP_USER,
-    subject: `📎 Inbound Requirement Submission - ${submission_uuid}`,
-    html: htmlBody
-  };
-  
-  console.log('📧 Sending email with options:', {
-    from: mailOptions.from,
-    to: mailOptions.to,
-    subject: mailOptions.subject
+if (system && apiName && req.body.integrationMethod) {
+  const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
+    system,
+    apiName,
+    moduleName,
+    created_at
+    }, {
+    name: pic_name,
+    phone: pic_phone,
+    email: pic_email
   });
-  
-  await sendEmailWithRetry(mailOptions);
-  emailSent = true;
-  console.log('✅ Email sent for submission:', submission_uuid);
-} catch (err) {
-  emailError = err.message;
-  console.error('❌ Email failed for submission:', submission_uuid);
-  console.error('Error details:', err);
+
+  try {
+    // 🔧 TEMPORARY: Skip Puppeteer and use dummy PDF
+    console.log('⚠️ Skipping Puppeteer – Using dummy PDF buffer...');
+    const dummyBuffer = Buffer.from('PDF temporarily disabled. This is a test file.', 'utf-8');
+
+    console.log('📨 Sending email configuration:');
+    console.log('  - From:', process.env.NOTIF_EMAIL || process.env.EMAIL_USER);
+    console.log('  - To:', process.env.EMAIL_TO);
+    console.log('  - CC:', CC_LIST.join(', ') || 'None');
+
+    await sendEmailWithPDF(dummyBuffer, `TEST-Inbound-${submission_uuid}.pdf`, htmlBody);
+    console.log('📧 Email with dummy PDF sent successfully');
+
+    return res.status(200).json({
+      message: '✅ Submission saved. Dummy email sent.',
+      emailStatus: 'sent'
+    });
+
+  } catch (err) {
+    console.error('❌ Email Error (PDF skipped):', err);
+
+    return res.status(500).json({
+      message: '⚠️ Submission saved, but email sending failed.',
+      emailStatus: 'failed'
+    });
+  }
 }
 
-// Send response with email status
-res.status(200).json({
-  message: emailSent 
-    ? '✅ Submission saved and email sent successfully.'
-    : '✅ Submission saved. Email failed to send.',
-  submission_uuid,
-  emailSent,
-  emailError
-});
-
-return;
-}
 
     // ✅ No integrationMethod, just save silently
     return res.status(200).json({
@@ -1161,65 +1068,6 @@ app.get('/export-backup', (req, res) => {
   );
 
   fs.createReadStream(dbPath).pipe(res);
-});
-
-// Test email endpoint
-// Enhanced test email endpoint with detailed debugging
-app.get('/test-email', async (req, res) => {
-  try {
-    console.log('🔧 Testing email configuration...');
-    console.log('  SMTP User:', SMTP_USER);
-    console.log('  SMTP Pass Length:', SMTP_PASS.length);
-    console.log('  Environment:', process.env.NODE_ENV || 'development');
-    
-    // Step 1: Verify transporter
-    console.log('Step 1: Verifying SMTP connection...');
-    await new Promise((resolve, reject) => {
-      transporter.verify((err, success) => {
-        if (err) reject(err);
-        else resolve(success);
-      });
-    });
-    console.log('✅ SMTP connection verified');
-    
-    // Step 2: Send test email
-    console.log('Step 2: Sending test email...');
-    const testInfo = await transporter.sendMail({
-      from: SMTP_USER,
-      to: SMTP_USER,
-      subject: `JPA Test Email - ${new Date().toISOString()}`,
-      text: 'This is a test email from JPA Data Confirmation System',
-      html: `
-        <h3>Test Email</h3>
-        <p>If you receive this, email is working correctly.</p>
-        <p>Sent at: ${new Date().toISOString()}</p>
-        <p>Environment: ${process.env.NODE_ENV || 'development'}</p>
-      `
-    });
-    
-    console.log('✅ Test email sent:', testInfo);
-    
-    res.json({ 
-      success: true, 
-      message: 'Test email sent successfully! Check your inbox.',
-      details: {
-        messageId: testInfo.messageId,
-        accepted: testInfo.accepted,
-        rejected: testInfo.rejected,
-        response: testInfo.response
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Email test failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      code: error.code,
-      command: error.command,
-      responseCode: error.responseCode
-    });
-  }
 });
 
 // ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first
