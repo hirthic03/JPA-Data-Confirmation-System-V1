@@ -359,25 +359,51 @@ function buildInboundEmail(reqBody, gridRows, meta, picInfo) {
 }
 
 
-async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBody = '') {
+async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBody = '', toOverride) {
+  // Always send "from" the authenticated SMTP user (Gmail requires this)
+  const fromEmail =
+    (transporter?.options?.auth?.user) ||
+    process.env.NOTIF_EMAIL ||
+    process.env.EMAIL_USER;
+
+  // Build recipient list:
+  //  - EMAIL_TO from env (can be comma-separated)
+  //  - plus optional override (e.g., PIC email)
+  //  - fallback to fromEmail if none set
+  const envTo = (process.env.EMAIL_TO || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const overrideTo = (toOverride || '')
+    .toString()
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  // de-duplicate & ensure at least one recipient
+  const toList = Array.from(new Set([...envTo, ...overrideTo]));
+  if (toList.length === 0) toList.push(fromEmail);
+
   const mailOptions = {
-    from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
-    to: process.env.EMAIL_TO,
-    cc: CC_LIST,
+    from: fromEmail,
+    to: toList.join(','),
+    cc: (CC_LIST && CC_LIST.length) ? CC_LIST : undefined,
     subject: '📎 Inbound Requirement Submission PDF',
     text: 'Attached is the generated PDF for the inbound requirement submission.',
-    html: htmlBody, // ✅ This line makes the email body show up
+    html: htmlBody,
     attachments: [
-      {
-        filename,
-        content: pdfBuffer,
-        contentType: 'application/pdf',
-      }
+      { filename, content: pdfBuffer, contentType: 'application/pdf' }
     ]
   };
 
+  console.log('📨 Email From:', mailOptions.from);
+  console.log('📨 Email To  :', mailOptions.to);
+  if (mailOptions.cc) console.log('📨 Email CC  :', mailOptions.cc);
+
   return transporter.sendMail(mailOptions);
 }
+
 
 
 
@@ -524,11 +550,13 @@ if (system && apiName && req.body.integrationMethod) {
         'PDF temporarily disabled. This is a test file.',
         'utf-8'
       );
-      await sendEmailWithPDF(
-        dummyBuffer,
-        `Inbound-${submission_uuid}.pdf`,
-        htmlBody
-      );
+          await sendEmailWithPDF(
+      dummyBuffer,
+      `Inbound-${submission_uuid}.pdf`,
+      htmlBody,
+      pic_email
+    );
+
       console.log('📧 Email sent for submission:', submission_uuid);
     } catch (err) {
       console.error('❌ Background email failed for', submission_uuid, err);
