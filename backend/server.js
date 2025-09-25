@@ -135,17 +135,23 @@ try {
 }
 console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' });
+const SMTP_USER = (process.env.NOTIF_EMAIL || process.env.EMAIL_USER || '').trim();
+const SMTP_PASS = (process.env.NOTIF_PASS || process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
   auth: {
-    // Support both sets of credentials for backward compatibility
-    user: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
-    pass: process.env.NOTIF_PASS || process.env.EMAIL_PASS
+    user: SMTP_USER,
+    pass: SMTP_PASS
   },
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 20,
   logger: true,
-  debug : true
+  debug: true,
+  requireTLS: true
 });
 
 const CC_LIST = (process.env.NOTIF_CC || '')
@@ -360,16 +366,12 @@ function buildInboundEmail(reqBody, gridRows, meta, picInfo) {
 
 
 async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBody = '', toOverride) {
-  // Always send "from" the authenticated SMTP user (Gmail requires this)
   const fromEmail =
     (transporter?.options?.auth?.user) ||
     process.env.NOTIF_EMAIL ||
     process.env.EMAIL_USER;
 
-  // Build recipient list:
-  //  - EMAIL_TO from env (can be comma-separated)
-  //  - plus optional override (e.g., PIC email)
-  //  - fallback to fromEmail if none set
+  // Build recipients: env EMAIL_TO + override PIC + fallback to fromEmail
   const envTo = (process.env.EMAIL_TO || '')
     .split(',')
     .map(s => s.trim())
@@ -381,14 +383,17 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
     .map(s => s.trim())
     .filter(Boolean);
 
-  // de-duplicate & ensure at least one recipient
   const toList = Array.from(new Set([...envTo, ...overrideTo]));
-  if (toList.length === 0) toList.push(fromEmail);
+  if (toList.length === 0) toList.push(fromEmail); // never empty
 
   const mailOptions = {
-    from: fromEmail,
+    from: fromEmail,                   // must be authenticated Gmail user
     to: toList.join(','),
-    cc: (CC_LIST && CC_LIST.length) ? CC_LIST : undefined,
+    cc: (process.env.NOTIF_CC || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
+          .join(',') || undefined,
     subject: '📎 Inbound Requirement Submission PDF',
     text: 'Attached is the generated PDF for the inbound requirement submission.',
     html: htmlBody,
@@ -401,8 +406,11 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
   console.log('📨 Email To  :', mailOptions.to);
   if (mailOptions.cc) console.log('📨 Email CC  :', mailOptions.cc);
 
-  return transporter.sendMail(mailOptions);
+  const info = await transporter.sendMail(mailOptions);
+  console.log('✅ Email accepted by SMTP, messageId:', info.messageId);
+  return info;
 }
+
 
 
 
