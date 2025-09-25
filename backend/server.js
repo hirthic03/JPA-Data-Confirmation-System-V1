@@ -138,22 +138,19 @@ const upload = multer({ dest: 'uploads/' });
 const SMTP_USER = (process.env.NOTIF_EMAIL || process.env.EMAIL_USER || '').trim();
 const SMTP_PASS = (process.env.NOTIF_PASS || process.env.EMAIL_PASS || '').replace(/\s+/g, '');
 
+console.log('📧 Email Config - User:', SMTP_USER);
+console.log('📧 Email Config - Pass Length:', SMTP_PASS.length);
+
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  service: 'gmail',  // Use Gmail service directly
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASS
   },
-  pool: true,
-  maxConnections: 1,
-  maxMessages: 20,
-  logger: true,
-  debug: true,
-  requireTLS: true
+  tls: {
+    rejectUnauthorized: false  // Allow self-signed certificates
+  }
 });
-
 const CC_LIST = (process.env.NOTIF_CC || '')
   .split(',')
   .map(s => s.trim())
@@ -541,6 +538,7 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
   // Normalise integrationMethod so the email shows something readable
 // ✅ EMAIL + PDF logic — always send
 // Normalise integrationMethod so the email shows something readable
+// ✅ EMAIL + PDF logic — simplified version
 const rawIM = (req.body.integrationMethod ?? '').toString().trim();
 if (!rawIM) req.body.integrationMethod = '(tidak dinyatakan)';
 
@@ -551,78 +549,42 @@ const htmlBody = buildInboundEmail(
   { name: pic_name, phone: pic_phone, email: pic_email }
 );
 
-// Store email status for response
-let emailStatus = 'pending';
-let emailError = null;
+// Simple email sending without complex timeout logic
+console.log('📧 Preparing to send email for submission:', submission_uuid);
 
-// Try to send email synchronously first to catch immediate errors
-try {
-  console.log('📧 Attempting to send email for submission:', submission_uuid);
-  console.log('📧 Email recipients - To:', pic_email, 'CC:', CC_LIST.join(','));
-  
-  // Generate actual PDF instead of dummy
-  let pdfBuffer;
-  try {
-    // For now, use HTML as PDF content
-    pdfBuffer = Buffer.from(htmlBody, 'utf-8');
-  } catch (pdfErr) {
-    console.error('PDF generation failed, using fallback:', pdfErr);
-    pdfBuffer = Buffer.from('PDF generation failed. Please see email body for details.', 'utf-8');
-  }
-  
-  // Send email with timeout
-  const emailPromise = sendEmailWithPDF(
-    pdfBuffer,
-    `Inbound-${submission_uuid}.pdf`,
-    htmlBody,
-    pic_email
-  );
-  
-  // Wait up to 10 seconds for email
-  const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Email sending timeout')), 10000)
-  );
-  
-  await Promise.race([emailPromise, timeoutPromise]);
-  
-  emailStatus = 'sent';
-  console.log('✅ Email sent successfully for submission:', submission_uuid);
-  
-} catch (err) {
-  emailStatus = 'failed';
-  emailError = err.message || 'Unknown error';
-  console.error('❌ Email failed for submission:', submission_uuid);
-  console.error('Error details:', err);
-  
-  // Don't fail the submission, just log the error
-  // Try one more time in background
-  setImmediate(async () => {
-    try {
-      console.log('🔄 Retrying email in background for:', submission_uuid);
-      await sendEmailWithPDF(
-        Buffer.from(htmlBody, 'utf-8'),
-        `Inbound-${submission_uuid}.pdf`,
-        htmlBody,
-        pic_email
-      );
-      console.log('✅ Background email retry successful for:', submission_uuid);
-    } catch (retryErr) {
-      console.error('❌ Background email retry also failed:', retryErr);
-    }
-  });
-}
-
-// Return response with email status
-return res.status(200).json({
-  message: emailStatus === 'sent' 
-    ? '✅ Submission saved and email sent successfully.'
-    : '✅ Submission saved. Email may be delayed.',
-  submission_uuid,
-  emailStatus,
-  emailError
+// Send response immediately
+res.status(200).json({
+  message: '✅ Submission saved. Email will be sent.',
+  submission_uuid
 });
 
-  return; // stop further work
+// Send email in background
+setImmediate(async () => {
+  try {
+    console.log('📧 Sending email to:', pic_email || SMTP_USER);
+    
+    const mailOptions = {
+      from: SMTP_USER,
+      to: pic_email || SMTP_USER,
+      subject: '📎 Inbound Requirement Submission',
+      html: htmlBody,
+      attachments: [{
+        filename: `Inbound-${submission_uuid}.txt`,
+        content: Buffer.from(htmlBody, 'utf-8')
+      }]
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully:', info.messageId);
+    console.log('✅ Email accepted:', info.accepted);
+    console.log('✅ Email response:', info.response);
+  } catch (err) {
+    console.error('❌ Email failed:', err.message);
+    console.error('Full error:', err);
+  }
+});
+
+return; // End request here
 }
 
     // ✅ No integrationMethod, just save silently
