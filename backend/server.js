@@ -539,37 +539,88 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 // ✅ EMAIL + PDF logic – always send (don’t depend on integrationMethod being truthy)
 {
   // Normalise integrationMethod so the email shows something readable
-  const rawIM = (req.body.integrationMethod ?? '').toString().trim();
-  if (!rawIM) req.body.integrationMethod = '(tidak dinyatakan)';
+// ✅ EMAIL + PDF logic — always send
+// Normalise integrationMethod so the email shows something readable
+const rawIM = (req.body.integrationMethod ?? '').toString().trim();
+if (!rawIM) req.body.integrationMethod = '(tidak dinyatakan)';
 
-  const htmlBody = buildInboundEmail(
-    req.body,
-    cleanedGrid,
-    { system, apiName, moduleName, created_at },
-    { name: pic_name, phone: pic_phone, email: pic_email }
+const htmlBody = buildInboundEmail(
+  req.body,
+  cleanedGrid,
+  { system, apiName, moduleName, created_at },
+  { name: pic_name, phone: pic_phone, email: pic_email }
+);
+
+// Store email status for response
+let emailStatus = 'pending';
+let emailError = null;
+
+// Try to send email synchronously first to catch immediate errors
+try {
+  console.log('📧 Attempting to send email for submission:', submission_uuid);
+  console.log('📧 Email recipients - To:', pic_email, 'CC:', CC_LIST.join(','));
+  
+  // Generate actual PDF instead of dummy
+  let pdfBuffer;
+  try {
+    // For now, use HTML as PDF content
+    pdfBuffer = Buffer.from(htmlBody, 'utf-8');
+  } catch (pdfErr) {
+    console.error('PDF generation failed, using fallback:', pdfErr);
+    pdfBuffer = Buffer.from('PDF generation failed. Please see email body for details.', 'utf-8');
+  }
+  
+  // Send email with timeout
+  const emailPromise = sendEmailWithPDF(
+    pdfBuffer,
+    `Inbound-${submission_uuid}.pdf`,
+    htmlBody,
+    pic_email
   );
-
-  // 1) Reply immediately so the client never times out
-  res.status(202).json({
-    message: '✅ Submission saved. Email is being sent in background.',
-    submission_uuid
-  });
-
-  // 2) Send the email in the background (non-blocking)
+  
+  // Wait up to 10 seconds for email
+  const timeoutPromise = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Email sending timeout')), 10000)
+  );
+  
+  await Promise.race([emailPromise, timeoutPromise]);
+  
+  emailStatus = 'sent';
+  console.log('✅ Email sent successfully for submission:', submission_uuid);
+  
+} catch (err) {
+  emailStatus = 'failed';
+  emailError = err.message || 'Unknown error';
+  console.error('❌ Email failed for submission:', submission_uuid);
+  console.error('Error details:', err);
+  
+  // Don't fail the submission, just log the error
+  // Try one more time in background
   setImmediate(async () => {
     try {
-      const dummyBuffer = Buffer.from('PDF temporarily disabled. This is a test file.', 'utf-8');
+      console.log('🔄 Retrying email in background for:', submission_uuid);
       await sendEmailWithPDF(
-        dummyBuffer,
+        Buffer.from(htmlBody, 'utf-8'),
         `Inbound-${submission_uuid}.pdf`,
         htmlBody,
-        pic_email   // fallback recipient already supported in helper
+        pic_email
       );
-      console.log('📧 Email sent for submission:', submission_uuid);
-    } catch (err) {
-      console.error('❌ Background email failed for', submission_uuid, err);
+      console.log('✅ Background email retry successful for:', submission_uuid);
+    } catch (retryErr) {
+      console.error('❌ Background email retry also failed:', retryErr);
     }
   });
+}
+
+// Return response with email status
+return res.status(200).json({
+  message: emailStatus === 'sent' 
+    ? '✅ Submission saved and email sent successfully.'
+    : '✅ Submission saved. Email may be delayed.',
+  submission_uuid,
+  emailStatus,
+  emailError
+});
 
   return; // stop further work
 }
@@ -1100,6 +1151,43 @@ app.get('/export-backup', (req, res) => {
   );
 
   fs.createReadStream(dbPath).pipe(res);
+});
+
+// Test email endpoint
+app.get('/test-email', async (req, res) => {
+  try {
+    console.log('Testing email configuration...');
+    console.log('SMTP User:', SMTP_USER);
+    console.log('SMTP Pass length:', SMTP_PASS ? SMTP_PASS.length : 0);
+    
+    // Verify transporter
+    await transporter.verify();
+    console.log('✅ SMTP connection verified');
+    
+    // Send test email
+    const testInfo = await transporter.sendMail({
+      from: SMTP_USER,
+      to: SMTP_USER,
+      subject: 'JPA System - Test Email',
+      text: 'This is a test email from JPA Data Confirmation System',
+      html: '<h3>Test Email</h3><p>If you receive this, email is working correctly.</p>'
+    });
+    
+    console.log('✅ Test email sent:', testInfo.messageId);
+    res.json({ 
+      success: true, 
+      message: 'Test email sent successfully',
+      messageId: testInfo.messageId 
+    });
+    
+  } catch (error) {
+    console.error('❌ Email test failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: error.response || error.stack
+    });
+  }
 });
 
 // ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first
