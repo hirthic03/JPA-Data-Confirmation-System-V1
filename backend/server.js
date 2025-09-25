@@ -412,11 +412,45 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
   const info = await transporter.sendMail(mailOptions);
   console.log('✅ Email accepted by SMTP, messageId:', info.messageId);
   return info;
+
 }
 
+ // Place this directly under sendEmailWithPDF(...)
+async function sendEmailWithRetry(mailOptions, retries = 1) {
+  // Ensure "from" is the authenticated Gmail and expand recipients using env
+  const fromEmail =
+    (transporter?.options?.auth?.user) ||
+    process.env.NOTIF_EMAIL ||
+    process.env.EMAIL_USER;
 
+  const envTo = (process.env.EMAIL_TO || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
 
+  const overrideTo = (mailOptions.to || '')
+    .toString().split(',').map(s => s.trim()).filter(Boolean);
 
+  const toList = Array.from(new Set([...envTo, ...overrideTo]));
+  mailOptions.from = fromEmail;
+  mailOptions.to = toList.length ? toList.join(',') : fromEmail;
+
+  const ccList = (process.env.NOTIF_CC || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+  if (ccList.length) mailOptions.cc = ccList.join(',');
+
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('✅ Email accepted by SMTP, messageId:', info.messageId);
+      return info;
+    } catch (err) {
+      lastErr = err;
+      console.error(`❌ sendMail attempt ${i + 1} failed:`, err.message);
+      if (i < retries) await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+  throw lastErr;
+}
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
