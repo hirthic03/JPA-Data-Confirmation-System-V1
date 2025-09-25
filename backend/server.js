@@ -142,13 +142,19 @@ console.log('📧 Email Config - User:', SMTP_USER);
 console.log('📧 Email Config - Pass Length:', SMTP_PASS.length);
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',  // Use Gmail service directly
+  service: 'gmail',
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASS
-  },
-  tls: {
-    rejectUnauthorized: false  // Allow self-signed certificates
+  }
+});
+// Verify connection on startup
+transporter.verify((err, success) => {
+  if (err) {
+    console.error('❌ SMTP Connection Failed:', err.message);
+    console.error('Full error:', err);
+  } else {
+    console.log('✅ SMTP Connection Successful - Ready to send emails');
   }
 });
 const CC_LIST = (process.env.NOTIF_CC || '')
@@ -539,6 +545,7 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 // ✅ EMAIL + PDF logic — always send
 // Normalise integrationMethod so the email shows something readable
 // ✅ EMAIL + PDF logic — simplified version
+// ✅ EMAIL logic - with better error handling
 const rawIM = (req.body.integrationMethod ?? '').toString().trim();
 if (!rawIM) req.body.integrationMethod = '(tidak dinyatakan)';
 
@@ -549,42 +556,47 @@ const htmlBody = buildInboundEmail(
   { name: pic_name, phone: pic_phone, email: pic_email }
 );
 
-// Simple email sending without complex timeout logic
-console.log('📧 Preparing to send email for submission:', submission_uuid);
+console.log('📧 Preparing email for submission:', submission_uuid);
+console.log('  To:', pic_email || SMTP_USER);
 
-// Send response immediately
+// Try to send email immediately (not in background)
+let emailSent = false;
+let emailError = null;
+
+try {
+  const mailOptions = {
+    from: SMTP_USER,
+    to: pic_email || SMTP_USER,
+    subject: `📎 Inbound Requirement Submission - ${submission_uuid}`,
+    html: htmlBody
+  };
+  
+  console.log('📧 Sending email with options:', {
+    from: mailOptions.from,
+    to: mailOptions.to,
+    subject: mailOptions.subject
+  });
+  
+  await sendEmailWithRetry(mailOptions);
+  emailSent = true;
+  console.log('✅ Email sent for submission:', submission_uuid);
+} catch (err) {
+  emailError = err.message;
+  console.error('❌ Email failed for submission:', submission_uuid);
+  console.error('Error details:', err);
+}
+
+// Send response with email status
 res.status(200).json({
-  message: '✅ Submission saved. Email will be sent.',
-  submission_uuid
+  message: emailSent 
+    ? '✅ Submission saved and email sent successfully.'
+    : '✅ Submission saved. Email failed to send.',
+  submission_uuid,
+  emailSent,
+  emailError
 });
 
-// Send email in background
-setImmediate(async () => {
-  try {
-    console.log('📧 Sending email to:', pic_email || SMTP_USER);
-    
-    const mailOptions = {
-      from: SMTP_USER,
-      to: pic_email || SMTP_USER,
-      subject: '📎 Inbound Requirement Submission',
-      html: htmlBody,
-      attachments: [{
-        filename: `Inbound-${submission_uuid}.txt`,
-        content: Buffer.from(htmlBody, 'utf-8')
-      }]
-    };
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully:', info.messageId);
-    console.log('✅ Email accepted:', info.accepted);
-    console.log('✅ Email response:', info.response);
-  } catch (err) {
-    console.error('❌ Email failed:', err.message);
-    console.error('Full error:', err);
-  }
-});
-
-return; // End request here
+return;
 }
 
     // ✅ No integrationMethod, just save silently
@@ -1116,30 +1128,50 @@ app.get('/export-backup', (req, res) => {
 });
 
 // Test email endpoint
+// Enhanced test email endpoint with detailed debugging
 app.get('/test-email', async (req, res) => {
   try {
-    console.log('Testing email configuration...');
-    console.log('SMTP User:', SMTP_USER);
-    console.log('SMTP Pass length:', SMTP_PASS ? SMTP_PASS.length : 0);
+    console.log('🔧 Testing email configuration...');
+    console.log('  SMTP User:', SMTP_USER);
+    console.log('  SMTP Pass Length:', SMTP_PASS.length);
+    console.log('  Environment:', process.env.NODE_ENV || 'development');
     
-    // Verify transporter
-    await transporter.verify();
+    // Step 1: Verify transporter
+    console.log('Step 1: Verifying SMTP connection...');
+    await new Promise((resolve, reject) => {
+      transporter.verify((err, success) => {
+        if (err) reject(err);
+        else resolve(success);
+      });
+    });
     console.log('✅ SMTP connection verified');
     
-    // Send test email
+    // Step 2: Send test email
+    console.log('Step 2: Sending test email...');
     const testInfo = await transporter.sendMail({
       from: SMTP_USER,
       to: SMTP_USER,
-      subject: 'JPA System - Test Email',
+      subject: `JPA Test Email - ${new Date().toISOString()}`,
       text: 'This is a test email from JPA Data Confirmation System',
-      html: '<h3>Test Email</h3><p>If you receive this, email is working correctly.</p>'
+      html: `
+        <h3>Test Email</h3>
+        <p>If you receive this, email is working correctly.</p>
+        <p>Sent at: ${new Date().toISOString()}</p>
+        <p>Environment: ${process.env.NODE_ENV || 'development'}</p>
+      `
     });
     
-    console.log('✅ Test email sent:', testInfo.messageId);
+    console.log('✅ Test email sent:', testInfo);
+    
     res.json({ 
       success: true, 
-      message: 'Test email sent successfully',
-      messageId: testInfo.messageId 
+      message: 'Test email sent successfully! Check your inbox.',
+      details: {
+        messageId: testInfo.messageId,
+        accepted: testInfo.accepted,
+        rejected: testInfo.rejected,
+        response: testInfo.response
+      }
     });
     
   } catch (error) {
@@ -1147,7 +1179,9 @@ app.get('/test-email', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message,
-      details: error.response || error.stack
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode
     });
   }
 });
