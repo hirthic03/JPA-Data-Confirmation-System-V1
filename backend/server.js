@@ -136,31 +136,31 @@ try {
 console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' });
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  service: 'gmail',  // Use 'gmail' service instead of manual config
   auth: {
-    // Support both sets of credentials for backward compatibility
     user: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
     pass: process.env.NOTIF_PASS || process.env.EMAIL_PASS
   },
-  logger: true,
-  debug : true
+  tls: {
+    rejectUnauthorized: false  // Add this for Render deployment
+  }
 });
 
 const CC_LIST = (process.env.NOTIF_CC || '')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
-  
-// One-off health-check — shows up in Render logs on boot
-transporter.verify((err, ok) => {
+
+  // Email verification with better error handling
+transporter.verify((err, success) => {
   if (err) {
-    console.error('❌ SMTP login failed:', err.message);
+    console.error('⚠️ EMAIL CONFIG WARNING:', err.message);
+    console.log('Email sending will be disabled');
   } else {
-    console.log('✅ SMTP server is ready to take our messages');
+    console.log('✅ Email service ready');
   }
 });
+  
 const PORT = process.env.PORT || 3001;
 const SUBMISSIONS_FOLDER = 'inbound_submissions';
 if (!fs.existsSync(SUBMISSIONS_FOLDER)) fs.mkdirSync(SUBMISSIONS_FOLDER);
@@ -383,6 +383,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
+  
   try {
     const {
       system,
@@ -405,12 +406,13 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
       return res.status(400).json({ error: 'System and API are required' });
     }
 
+    // Database operations
     const questionInsert = db.prepare(`
-      INSERT INTO inbound_requirements
-      (submission_uuid, system_name, module_name, api_name,
-      question_id, question_text, answer, file_path, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+  INSERT INTO inbound_requirements
+  (submission_uuid, system_name, module_name, api_name,
+  question_id, question_text, answer, file_path, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
 
     const uploadedFiles = {};
     if (req.files) {
@@ -421,58 +423,49 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 
     let result;
     Object.entries(req.body).forEach(([key, value]) => {
-  // Skip these fields AND any field starting with 'showTooltip_'
-   if (['system', 'api', 'module', 'module_group', 'dataGrid', 'submission_id'].includes(key) || 
-      key.startsWith('showTooltip_') ||
-      key.endsWith('_other')) {
-    return;
-  }
-  const questionText = getQuestionTextById(key);
-  //const questionId = key;
-  //const questionText = getQuestionTextById(questionId) || 'Unknown';
-  //const filePath = uploadedFiles[questionId] || null;
+      if (['system', 'api', 'module', 'module_group', 'dataGrid', 'submission_id'].includes(key) || 
+          key.startsWith('showTooltip_') ||
+          key.endsWith('_other')) {
+        return;
+      }
+      
+      const questionText = getQuestionTextById(key);
+      if (questionText !== null) {
+        const filePath = uploadedFiles[key] || null;
+        
+        result = questionInsert.run(
+          submission_uuid,
+          system,
+          moduleName,
+          apiName || '',
+          key,
+          questionText,
+          value || '',
+          filePath,
+          created_at
+        );
 
-// Only insert if it's a valid question ID (not null)
-  if (questionText !== null) {
-    const filePath = uploadedFiles[key] || null;
+        if (key === 'dataInvolved') {
+          q9RowId = result.lastInsertRowid;
+        }
+      }
+    });
     
-    result = questionInsert.run(
-      submission_uuid,
-      system,
-      moduleName,
-      apiName || '',
-      key,           // question_id
-      questionText,  // question_text
-      value || '',   // answer
-      filePath,
-      created_at
-    );
-
-    if (key === 'dataInvolved') {
-      q9RowId = result.lastInsertRowid;
-    }
-  }
-});
-    
-    // ✅ THIS IS THE CORRECTED AND CONSOLIDATED LOGIC
-    let cleanedGrid = []; // This will hold our corrected data for both DB and email
-
+    // Process grid data
+    let cleanedGrid = [];
     if (dataGrid) {
       try {
         const parsedGrid = JSON.parse(dataGrid);
-
-        // Map frontend's camelCase to backend's snake_case
         cleanedGrid = parsedGrid.map(row => ({
-          data_element: row.dataElement || '-', // Correctly reads 'dataElement'
-          group_name:   row.groupName   || '',   // Correctly reads 'groupName'
-          nama:         row.nama        || '-',
-          jenis:        row.jenis       || '-',
-          saiz:         row.saiz        || '-',
-          nullable:     row.nullable    || '-',
-          rules:        row.rules       || '-'
+          data_element: row.dataElement || '-',
+          group_name: row.groupName || '',
+          nama: row.nama || '-',
+          jenis: row.jenis || '-',
+          saiz: row.saiz || '-',
+          nullable: row.nullable || '-',
+          rules: row.rules || '-'
         }));
 
-        // Insert the cleaned data into the database ONCE
         const stmt = db.prepare(`
           INSERT INTO inbound_data_grid
           (submission_uuid, submission_id, nama, jenis, saiz, nullable, rules, data_element, group_name)
@@ -488,69 +481,66 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
             row.saiz,
             row.nullable,
             row.rules,
-            row.data_element, // Now uses the correct key
-            row.group_name    // Now uses the correct key
+            row.data_element,
+            row.group_name
           );
         });
-        console.log(`✅ Successfully inserted ${cleanedGrid.length} grid rows into the database.`);
-
+        
+        console.log(`✅ Inserted ${cleanedGrid.length} grid rows`);
       } catch (err) {
-        console.error('❌ Failed to parse or insert dataGrid:', err);
-        return res.status(400).json({ error: 'Invalid dataGrid format or database error.' });
+        console.error('⚠️ Grid parsing error:', err);
+        // Continue without failing the entire submission
       }
     }
 
-    // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
-if (system && apiName && req.body.integrationMethod) {
-  const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
-    system,
-    apiName,
-    moduleName,
-    created_at
-    }, {
-    name: pic_name,
-    phone: pic_phone,
-    email: pic_email
-  });
-
-  try {
-    // 🔧 TEMPORARY: Skip Puppeteer and use dummy PDF
-    console.log('⚠️ Skipping Puppeteer – Using dummy PDF buffer...');
-    const dummyBuffer = Buffer.from('PDF temporarily disabled. This is a test file.', 'utf-8');
-
-    console.log('📨 Sending email configuration:');
-    console.log('  - From:', process.env.NOTIF_EMAIL || process.env.EMAIL_USER);
-    console.log('  - To:', process.env.EMAIL_TO);
-    console.log('  - CC:', CC_LIST.join(', ') || 'None');
-
-    await sendEmailWithPDF(dummyBuffer, `TEST-Inbound-${submission_uuid}.pdf`, htmlBody);
-    console.log('📧 Email with dummy PDF sent successfully');
-
-    return res.status(200).json({
-      message: '✅ Submission saved. Dummy email sent.',
-      emailStatus: 'sent'
+    // Send success response immediately
+    res.status(200).json({
+      message: '✅ Borang berjaya dihantar',
+      submission_id: submission_uuid,
+      emailStatus: 'queued'
     });
 
-  } catch (err) {
-    console.error('❌ Email Error (PDF skipped):', err);
+    // Handle email asynchronously (non-blocking)
+    if (system && apiName && req.body.integrationMethod) {
+      setImmediate(async () => {
+        try {
+          console.log('📧 Preparing email...');
+          
+          const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
+            system,
+            apiName,
+            moduleName,
+            created_at
+          }, {
+            name: pic_name,
+            phone: pic_phone,
+            email: pic_email
+          });
 
-    return res.status(500).json({
-      message: '⚠️ Submission saved, but email sending failed.',
-      emailStatus: 'failed'
-    });
-  }
-}
+          // Simple email without PDF attachment for now
+          const mailOptions = {
+            from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
+            to: process.env.EMAIL_TO || process.env.NOTIF_EMAIL,
+            cc: CC_LIST.filter(Boolean),
+            subject: `📋 Inbound Requirement - ${system} - ${apiName}`,
+            html: htmlBody
+          };
 
-
-    // ✅ No integrationMethod, just save silently
-    return res.status(200).json({
-      message: '✅ Submission saved (no email sent).',
-      emailStatus: 'skipped'
-    });
+          await transporter.sendMail(mailOptions);
+          console.log('✅ Email sent successfully');
+        } catch (emailErr) {
+          console.error('⚠️ Email failed (non-critical):', emailErr.message);
+          // Email failure doesn't affect the submission
+        }
+      });
+    }
 
   } catch (error) {
-    console.error('❌ Internal Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error('❌ Submission error:', error);
+    return res.status(500).json({ 
+      error: 'Ralat sistem. Sila cuba lagi.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

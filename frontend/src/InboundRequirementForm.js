@@ -360,12 +360,10 @@ const getApiValue = () =>
     ? (formData.module_other || '').trim()
     : formData.module;
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
   try {
-    console.log('🔵 Starting submission process...');
-    console.log('Current formData:', formData);
-    console.log('Current gridRows:', gridRows);
-
+    console.log('📵 Starting submission process...');
+    
     const form = new FormData();
 
     // Validate all fields before submission
@@ -375,7 +373,6 @@ const getApiValue = () =>
       if (q.id === 'response') return false; // Optional field
 
       if (q.id === 'dataInvolved') {
-        // Check if all grid rows are empty
         const allRowsEmpty = gridRows.every(
           row =>
             !row.nama.trim() &&
@@ -400,14 +397,12 @@ const getApiValue = () =>
       return false;
     });
 
-    // Check API value
     const apiValue = getApiValue();
     if (!apiValue) {
       window.alert("Sila pilih API Name – jika 'Others', sila isikan kotak di bawahnya.");
       return;
     }
 
-    // Grid row check for Q9
     const isGridEmpty = gridRows.every(row =>
       !row.nama.trim() && !row.jenis.trim() && !row.saiz.trim() && 
       !row.nullable.trim() && !row.rules.trim()
@@ -426,12 +421,9 @@ const getApiValue = () =>
 
     console.log('✅ Validation passed');
 
-    // Prepare structured data - SKIP dataInvolved as it's handled separately
+    // Prepare form data
     questions.forEach((q) => {
-      // Skip dataInvolved - it will be sent as dataGrid
-      if (q.id === 'dataInvolved') {
-        return;
-      }
+      if (q.id === 'dataInvolved') return;
 
       if (q.type === 'dropdown') {
         const selected = formData[q.id];
@@ -448,93 +440,86 @@ const getApiValue = () =>
         }
       }
     });
-        form.append('pic_name', userName);
-        form.append('pic_phone', userPhone);
-        form.append('pic_email', userEmail);
 
-    // Use activeSystem which is defined at the top of your component
+    form.append('pic_name', userName);
+    form.append('pic_phone', userPhone);
+    form.append('pic_email', userEmail);
+
     const systemValue = activeSystem || 'Sistem Pengurusan Meja Bantuan (SPMB)';
     
-    // Add system and module selections
     form.append('system', systemValue);
     form.append('api', apiValue);
     form.append('module_group', confirmedModule || '');
     form.append('module', apiValue);
-    
-    // Add grid data
     form.append('dataGrid', JSON.stringify(gridRows));
-    
-    // Create submission ID with proper system value
     form.append('submission_id', `${systemValue}-${apiValue}`);
     
-    // Only add integrationMethod if not already added from questions loop
     if (!form.has('integrationMethod')) {
       form.append('integrationMethod', 'REST API');
     }
 
-    // Log what we're sending
-    console.log('📤 Sending form data:');
-    for (let [key, value] of form.entries()) {
-      console.log(`  ${key}:`, value);
-    }
-
+    console.log('📤 Sending form data...');
     setIsSubmitting(true);
 
-    // Make the API request
-    const response = await axios.post(
-      'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound',
-      form,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 30000, // 30 second timeout
+    // Increase timeout and add retry logic
+    const submitWithRetry = async (retries = 2) => {
+      try {
+        const response = await axios.post(
+          'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound',
+          form,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            timeout: 60000, // Increased to 60 seconds
+          }
+        );
+        return response;
+      } catch (error) {
+        if (retries > 0 && (error.code === 'ECONNABORTED' || !error.response)) {
+          console.log(`Retrying... (${retries} attempts left)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return submitWithRetry(retries - 1);
+        }
+        throw error;
       }
-    );
+    };
+
+    const response = await submitWithRetry();
 
     console.log('✅ Server response:', response.data);
     
-    // Success - show alert and navigate
     window.alert("Borang pengumpulan keperluan berjaya dihantar.");
     
     // Clear form data
     setFormData({});
     setFiles({});
-    setGridRows([]); // Also clear grid rows
+    setGridRows([]);
     setUsedElements(new Set());
     setPopupVisible(false);
     setAvailableElements([]);
-
     
-    // Navigate to submission page
     navigate('/submission');
 
   } catch (err) {
     console.error('❌ Submission error:', err);
     
-    // Detailed error handling
     if (err.response) {
-      // Server responded with error
-      console.error('Server error response:', err.response.data);
-      console.error('Server error status:', err.response.status);
+      console.error('Server error:', err.response.data);
       
       if (err.response.data?.message) {
-        alert(`Server error: ${err.response.data.message}`);
+        alert(`Ralat: ${err.response.data.message}`);
       } else if (err.response.status === 400) {
-        alert("Bad request: Please check all form fields are filled correctly.");
+        alert("Ralat: Sila pastikan semua medan diisi dengan betul.");
       } else if (err.response.status === 500) {
-        alert("Server error: The server encountered an error. Please try again later.");
+        alert("Ralat pelayan. Sila cuba lagi.");
       } else {
-        alert(`Server error (${err.response.status}): ${err.response.statusText}`);
+        alert(`Ralat (${err.response.status}): ${err.response.statusText}`);
       }
     } else if (err.request) {
-      // Request made but no response
-      console.error('No response from server:', err.request);
-      alert("Cannot connect to server. Please check your internet connection or try again later.");
+      alert("Tidak dapat menyambung ke pelayan. Sila periksa sambungan internet atau cuba lagi.");
     } else {
-      // Other errors
-      console.error('Error details:', err.message);
-      alert(`Error: ${err.message}`);
+      alert(`Ralat: ${err.message}`);
     }
   } finally {
     setIsSubmitting(false);
