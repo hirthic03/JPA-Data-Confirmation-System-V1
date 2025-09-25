@@ -528,7 +528,12 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 
     // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
 // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
-if (system && apiName && req.body.integrationMethod) {
+// ✅ EMAIL + PDF logic – always send (don’t depend on integrationMethod being truthy)
+{
+  // Normalise integrationMethod so the email shows something readable
+  const rawIM = (req.body.integrationMethod ?? '').toString().trim();
+  if (!rawIM) req.body.integrationMethod = '(tidak dinyatakan)';
+
   const htmlBody = buildInboundEmail(
     req.body,
     cleanedGrid,
@@ -545,28 +550,21 @@ if (system && apiName && req.body.integrationMethod) {
   // 2) Send the email in the background (non-blocking)
   setImmediate(async () => {
     try {
-      // Replace with real PDF if needed:
-      const dummyBuffer = Buffer.from(
-        'PDF temporarily disabled. This is a test file.',
-        'utf-8'
+      const dummyBuffer = Buffer.from('PDF temporarily disabled. This is a test file.', 'utf-8');
+      await sendEmailWithPDF(
+        dummyBuffer,
+        `Inbound-${submission_uuid}.pdf`,
+        htmlBody,
+        pic_email   // fallback recipient already supported in helper
       );
-          await sendEmailWithPDF(
-      dummyBuffer,
-      `Inbound-${submission_uuid}.pdf`,
-      htmlBody,
-      pic_email
-    );
-
       console.log('📧 Email sent for submission:', submission_uuid);
     } catch (err) {
       console.error('❌ Background email failed for', submission_uuid, err);
     }
   });
 
-  // 3) Stop further handler work
-  return;
+  return; // stop further work
 }
-
 
     // ✅ No integrationMethod, just save silently
     return res.status(200).json({
