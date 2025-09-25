@@ -137,23 +137,15 @@ console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' });
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,            // STARTTLS
-  secure: false,        // must be false for 587
-  requireTLS: true,     // upgrade via STARTTLS
+  port: 465,
+  secure: true,
   auth: {
     // Support both sets of credentials for backward compatibility
     user: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
     pass: process.env.NOTIF_PASS || process.env.EMAIL_PASS
   },
   logger: true,
-  debug : true,
-  connectionTimeout: 10000, // 10s to connect TCP
-  greetingTimeout: 10000,   // 10s to get SMTP banner
-  socketTimeout: 20000,     // 20s for data/response
-  // Optional: small pool keeps socket warm across requests
-  pool: true,
-  maxConnections: 1,
-  maxMessages: 20
+  debug : true
 });
 
 const CC_LIST = (process.env.NOTIF_CC || '')
