@@ -501,44 +501,42 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     }
 
     // ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
+// ✅ EMAIL + PDF logic now uses the already processed `cleanedGrid`
 if (system && apiName && req.body.integrationMethod) {
-  const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
-    system,
-    apiName,
-    moduleName,
-    created_at
-    }, {
-    name: pic_name,
-    phone: pic_phone,
-    email: pic_email
+  const htmlBody = buildInboundEmail(
+    req.body,
+    cleanedGrid,
+    { system, apiName, moduleName, created_at },
+    { name: pic_name, phone: pic_phone, email: pic_email }
+  );
+
+  // 1) Reply immediately so the client never times out
+  res.status(202).json({
+    message: '✅ Submission saved. Email is being sent in background.',
+    submission_uuid
   });
 
-  try {
-    // 🔧 TEMPORARY: Skip Puppeteer and use dummy PDF
-    console.log('⚠️ Skipping Puppeteer – Using dummy PDF buffer...');
-    const dummyBuffer = Buffer.from('PDF temporarily disabled. This is a test file.', 'utf-8');
+  // 2) Send the email in the background (non-blocking)
+  setImmediate(async () => {
+    try {
+      // Replace with real PDF if needed:
+      const dummyBuffer = Buffer.from(
+        'PDF temporarily disabled. This is a test file.',
+        'utf-8'
+      );
+      await sendEmailWithPDF(
+        dummyBuffer,
+        `Inbound-${submission_uuid}.pdf`,
+        htmlBody
+      );
+      console.log('📧 Email sent for submission:', submission_uuid);
+    } catch (err) {
+      console.error('❌ Background email failed for', submission_uuid, err);
+    }
+  });
 
-    console.log('📨 Sending email configuration:');
-    console.log('  - From:', process.env.NOTIF_EMAIL || process.env.EMAIL_USER);
-    console.log('  - To:', process.env.EMAIL_TO);
-    console.log('  - CC:', CC_LIST.join(', ') || 'None');
-
-    await sendEmailWithPDF(dummyBuffer, `TEST-Inbound-${submission_uuid}.pdf`, htmlBody);
-    console.log('📧 Email with dummy PDF sent successfully');
-
-    return res.status(200).json({
-      message: '✅ Submission saved. Dummy email sent.',
-      emailStatus: 'sent'
-    });
-
-  } catch (err) {
-    console.error('❌ Email Error (PDF skipped):', err);
-
-    return res.status(500).json({
-      message: '⚠️ Submission saved, but email sending failed.',
-      emailStatus: 'failed'
-    });
-  }
+  // 3) Stop further handler work
+  return;
 }
 
 
