@@ -413,9 +413,7 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
   console.log('✅ Email accepted by SMTP, messageId:', info.messageId);
   return info;
 
-}
-
- // Place this directly under sendEmailWithPDF(...)
+  // Place this directly under sendEmailWithPDF(...)
 async function sendEmailWithRetry(mailOptions, retries = 1) {
   // Ensure "from" is the authenticated Gmail and expand recipients using env
   const fromEmail =
@@ -451,6 +449,10 @@ async function sendEmailWithRetry(mailOptions, retries = 1) {
   }
   throw lastErr;
 }
+
+}
+
+
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
