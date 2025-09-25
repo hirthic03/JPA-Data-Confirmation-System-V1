@@ -136,13 +136,16 @@ try {
 console.log('✅ Users table checked/created');
 const upload = multer({ dest: 'uploads/' });
 const transporter = nodemailer.createTransport({
-  service: 'gmail',  // Use 'gmail' service instead of manual config
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // use TLS
   auth: {
-    user: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
-    pass: process.env.NOTIF_PASS || process.env.EMAIL_PASS
+    user: process.env.NOTIF_EMAIL,
+    pass: process.env.NOTIF_PASS
   },
   tls: {
-    rejectUnauthorized: false  // Add this for Render deployment
+    ciphers: 'SSLv3',
+    rejectUnauthorized: false
   }
 });
 
@@ -1146,4 +1149,67 @@ app.get('/api/agency-data', authenticateToken, (req, res) => {
   const data = getDataForAgency(userAgency);
   
   res.json(data);
+});
+
+// Test endpoint 1: Check email configuration
+app.get('/test-email-config', async (req, res) => {
+  const config = {
+    email: process.env.NOTIF_EMAIL || 'Not set',
+    hasPassword: !!process.env.NOTIF_PASS,
+    passwordLength: process.env.NOTIF_PASS ? process.env.NOTIF_PASS.length : 0,
+    emailTo: process.env.EMAIL_TO || 'Not set',
+    nodeEnv: process.env.NODE_ENV || 'Not set'
+  };
+  
+  try {
+    await transporter.verify();
+    res.json({ 
+      ...config, 
+      status: '✅ Email configuration is VALID',
+      ready: true 
+    });
+  } catch (err) {
+    res.json({ 
+      ...config, 
+      status: '❌ Email configuration FAILED',
+      error: err.message,
+      code: err.code,
+      command: err.command,
+      ready: false 
+    });
+  }
+});
+
+// Test endpoint 2: Send a test email
+app.post('/test-email-send', async (req, res) => {
+  try {
+    console.log('Starting test email send...');
+    console.log('From:', process.env.NOTIF_EMAIL);
+    console.log('To:', process.env.EMAIL_TO || process.env.NOTIF_EMAIL);
+    
+    const info = await transporter.sendMail({
+      from: process.env.NOTIF_EMAIL,
+      to: process.env.EMAIL_TO || process.env.NOTIF_EMAIL,
+      subject: 'Test Email - JPA System',
+      text: 'If you receive this, email is working!',
+      html: '<h1>Success!</h1><p>Email configuration is working correctly.</p>'
+    });
+    
+    console.log('Email sent successfully:', info);
+    res.json({ 
+      success: true, 
+      messageId: info.messageId,
+      accepted: info.accepted,
+      response: info.response
+    });
+  } catch (error) {
+    console.error('Email send failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode
+    });
+  }
 });
