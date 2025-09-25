@@ -5,13 +5,6 @@ import systemsData from './systems.json'; // adjust path if needed
 import { useNavigate } from 'react-router-dom';
 import { loadConfirmed } from './utils/confirmedStore';
 
-async function warmServer() {
-  try {
-    await fetch('https://jpa-data-confirmation-system-v1.onrender.com/', { method: 'GET' });
-  } catch (_) { /* ignore */ }
-}
-
-
 export default function InboundRequirementForm() {
   const navigate = useNavigate();
   const {
@@ -487,8 +480,6 @@ const getApiValue = () =>
 
     setIsSubmitting(true);
 
-    await warmServer();
-
     // Make the API request
     const response = await axios.post(
       'https://jpa-data-confirmation-system-v1.onrender.com/submit-inbound',
@@ -497,7 +488,7 @@ const getApiValue = () =>
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 30 second timeout
+        timeout: 30000, // 30 second timeout
       }
     );
 
