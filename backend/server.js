@@ -17,6 +17,7 @@ const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
 
 const validate = (req, res, next) => {
@@ -1044,6 +1045,58 @@ app.get('/inbound-submissions-grouped', (req, res) => {
   }
 });
 
+// Admin endpoint to view all submissions
+app.get('/admin-view-submissions', async (req, res) => {
+  // Simple password protection
+const adminPassword = req.headers['x-admin-password'];
+if (adminPassword !== (process.env.ADMIN_VIEW_PASSWORD || 'YourVeryStrongPassword2024!')) {
+  return res.status(401).json({ error: 'Unauthorized' });
+}
+  
+  try {
+    // Get all submissions with their grid data
+    const submissions = db.prepare(`
+      SELECT * FROM inbound_requirements 
+      ORDER BY created_at DESC 
+      LIMIT 50
+    `).all();
+    
+    const gridStmt = db.prepare(
+      'SELECT * FROM inbound_data_grid WHERE submission_uuid = ?'
+    );
+    
+    const results = [];
+    const processedUUIDs = new Set();
+    
+    for (const sub of submissions) {
+      if (processedUUIDs.has(sub.submission_uuid)) continue;
+      processedUUIDs.add(sub.submission_uuid);
+      
+      const allQuestions = db.prepare(
+        'SELECT * FROM inbound_requirements WHERE submission_uuid = ?'
+      ).all(sub.submission_uuid);
+      
+      const gridData = gridStmt.all(sub.submission_uuid);
+      
+      results.push({
+        submission_uuid: sub.submission_uuid,
+        system: sub.system_name,
+        api: sub.api_name,
+        module: sub.module_name,
+        created_at: sub.created_at,
+        questions: allQuestions.map(q => ({
+          question: q.question_text,
+          answer: q.answer
+        })),
+        gridData: gridData
+      });
+    }
+    
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 📄 Admin Reporting
 app.get('/all-submissions', (req, res) => {
@@ -1136,6 +1189,41 @@ app.get('/export-backup', (req, res) => {
   );
 
   fs.createReadStream(dbPath).pipe(res);
+});
+
+// Export submissions as CSV
+app.get('/export-submissions-csv', (req, res) => {
+const adminPassword = req.headers['x-admin-password'];
+if (adminPassword !== (process.env.ADMIN_VIEW_PASSWORD || 'YourVeryStrongPassword2024!')) {
+  return res.status(401).json({ error: 'Unauthorized' });
+}
+  
+  try {
+    const submissions = db.prepare(`
+      SELECT 
+        ir.submission_uuid,
+        ir.system_name,
+        ir.api_name,
+        ir.question_text,
+        ir.answer,
+        ir.created_at
+      FROM inbound_requirements ir
+      ORDER BY ir.created_at DESC
+    `).all();
+    
+    // Create CSV
+    let csv = 'Submission ID,System,API,Question,Answer,Date\n';
+    
+    for (const row of submissions) {
+      csv += `"${row.submission_uuid}","${row.system_name}","${row.api_name}","${row.question_text}","${row.answer?.replace(/"/g, '""')}","${row.created_at}"\n`;
+    }
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=submissions.csv');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ⚠️ TEMP: Delete test/demo data by pattern (https://jpa-data-confirmation-system-v1.onrender.com/cleanup-test-data) but remember to download db first

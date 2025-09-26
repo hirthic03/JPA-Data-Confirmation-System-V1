@@ -10,6 +10,7 @@ import RegisterPage from './RegisterPage';
 import { jwtDecode } from 'jwt-decode';
 import ForgotPasswordPage from './ForgotPasswordPage';
 import ResetPasswordPage from './ResetPasswordPage';
+import AdminView from './AdminView';
 
 
 function ReportingPage() {
@@ -197,6 +198,7 @@ function App() {
         <Route path="/submission" element={loggedIn ? <SubmissionApp /> : <Navigate to="/login" />} />
         <Route path="/" element={<Navigate to={loggedIn ? "/submission" : "/login"} />} />
         <Route path="/requirement" element={loggedIn ? <InboundRequirementForm /> : <Navigate to="/login" />} />
+        <Route path="/admin-view" element={<AdminView />} />
       </Routes>
     </Router>
   );
