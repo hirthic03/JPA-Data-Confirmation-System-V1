@@ -59,6 +59,8 @@ function authenticateToken(req, res, next) {
 const app = express();
 const saltRounds = 10;
 
+// Add this after line 33 (after const saltRounds = 10;)
+const emailQueue = new Map(); // Track email sending status
 
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
@@ -287,6 +289,7 @@ function getQuestionTextById(id) {
   return questionMap[id] || null; // Return null instead of id for unknown questions
 }
 
+
 /** ------------------------------------------------------------------
  * buildInboundEmail – returns nicely-formatted HTML for the mail body
  * -----------------------------------------------------------------*/
@@ -382,7 +385,77 @@ async function sendEmailWithPDF(pdfBuffer, filename = 'requirement.pdf', htmlBod
   return transporter.sendMail(mailOptions);
 }
 
-
+// Add this BEFORE your existing app.post('/submit-inbound') endpoint (around line 264)
+async function sendInboundEmail(reqBody, gridRows, meta, picInfo, submission_uuid) {
+  const emailStatus = {
+    id: submission_uuid,
+    status: 'pending',
+    attempts: 0,
+    lastError: null,
+    timestamp: new Date().toISOString()
+  };
+  
+  emailQueue.set(submission_uuid, emailStatus);
+  
+  try {
+    console.log('📧 Starting email send for submission:', submission_uuid);
+    
+    // Verify transporter is ready
+    await transporter.verify();
+    console.log('✅ Email transporter verified');
+    
+    const htmlBody = buildInboundEmail(reqBody, gridRows, meta, picInfo);
+    
+    const mailOptions = {
+      from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
+      to: process.env.EMAIL_TO || process.env.NOTIF_EMAIL,
+      cc: CC_LIST.filter(Boolean),
+      subject: `📋 Inbound Requirement - ${meta.system} - ${meta.apiName}`,
+      html: htmlBody,
+      headers: {
+        'X-Priority': '3',
+        'X-Mailer': 'JPA Data Confirmation System'
+      }
+    };
+    
+    console.log('📤 Sending email to:', mailOptions.to);
+    console.log('📤 CC to:', mailOptions.cc);
+    
+    const info = await transporter.sendMail(mailOptions);
+    
+    emailStatus.status = 'sent';
+    emailStatus.messageId = info.messageId;
+    emailStatus.response = info.response;
+    
+    console.log('✅ Email sent successfully:', info.messageId);
+    console.log('📬 Response:', info.response);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    emailStatus.status = 'failed';
+    emailStatus.lastError = error.message;
+    emailStatus.attempts++;
+    
+    console.error('❌ Email send failed:', {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      submission: submission_uuid
+    });
+    
+    // Retry logic
+    if (emailStatus.attempts < 3) {
+      console.log(`🔄 Retrying email send (attempt ${emailStatus.attempts + 1}/3)...`);
+      setTimeout(() => {
+        sendInboundEmail(reqBody, gridRows, meta, picInfo, submission_uuid);
+      }, 5000 * emailStatus.attempts); // Exponential backoff
+    }
+    
+    return { success: false, error: error.message };
+  }
+}
 
 app.post('/submit-inbound', upload.any(), async (req, res) => {
   console.log('📦 Incoming inbound payload:', JSON.stringify(req.body, null, 2));
@@ -496,47 +569,49 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
       }
     }
 
-    // Send success response immediately
-    res.status(200).json({
-      message: '✅ Borang berjaya dihantar',
-      submission_id: submission_uuid,
-      emailStatus: 'queued'
-    });
-
-    // Handle email asynchronously (non-blocking)
-    if (system && apiName && req.body.integrationMethod) {
-      setImmediate(async () => {
-        try {
-          console.log('📧 Preparing email...');
-          
-          const htmlBody = buildInboundEmail(req.body, cleanedGrid, {
+    // Send email synchronously but with timeout
+    let emailResult = { status: 'not_sent', error: 'Email service not configured' };
+    
+    if (process.env.NOTIF_EMAIL && process.env.NOTIF_PASS) {
+      try {
+        // Set a timeout for email sending
+        const emailPromise = sendInboundEmail(
+          req.body, 
+          cleanedGrid, 
+          {
             system,
             apiName,
             moduleName,
             created_at
-          }, {
+          },
+          {
             name: pic_name,
             phone: pic_phone,
             email: pic_email
-          });
-
-          // Simple email without PDF attachment for now
-          const mailOptions = {
-            from: process.env.NOTIF_EMAIL || process.env.EMAIL_USER,
-            to: process.env.EMAIL_TO || process.env.NOTIF_EMAIL,
-            cc: CC_LIST.filter(Boolean),
-            subject: `📋 Inbound Requirement - ${system} - ${apiName}`,
-            html: htmlBody
-          };
-
-          await transporter.sendMail(mailOptions);
-          console.log('✅ Email sent successfully');
-        } catch (emailErr) {
-          console.error('⚠️ Email failed (non-critical):', emailErr.message);
-          // Email failure doesn't affect the submission
-        }
-      });
+          },
+          submission_uuid
+        );
+        
+        // Wait up to 10 seconds for email
+        emailResult = await Promise.race([
+          emailPromise,
+          new Promise(resolve => setTimeout(() => 
+            resolve({ status: 'timeout', error: 'Email sending timed out but will continue in background' }), 
+            10000
+          ))
+        ]);
+      } catch (emailError) {
+        console.error('Email error:', emailError);
+        emailResult = { status: 'failed', error: emailError.message };
+      }
     }
+
+    // Always return success for the submission itself
+    res.status(200).json({
+      message: '✅ Borang berjaya dihantar',
+      submission_id: submission_uuid,
+      emailStatus: emailResult
+    });
 
   } catch (error) {
     console.error('❌ Submission error:', error);
@@ -1149,6 +1224,52 @@ app.get('/api/agency-data', authenticateToken, (req, res) => {
   const data = getDataForAgency(userAgency);
   
   res.json(data);
+});
+
+// Add these NEW endpoints after line 906 (before the existing test endpoints)
+
+// Check email status for a specific submission
+app.get('/email-status/:submission_id', (req, res) => {
+  const status = emailQueue.get(req.params.submission_id);
+  if (!status) {
+    return res.status(404).json({ error: 'Submission not found' });
+  }
+  res.json(status);
+});
+
+// Comprehensive email debug endpoint
+app.get('/debug-email', async (req, res) => {
+  const debugInfo = {
+    config: {
+      hasEmail: !!process.env.NOTIF_EMAIL,
+      hasPassword: !!process.env.NOTIF_PASS,
+      emailLength: process.env.NOTIF_EMAIL?.length || 0,
+      passwordLength: process.env.NOTIF_PASS?.length || 0,
+      emailTo: process.env.EMAIL_TO || 'Not set',
+      emailUser: process.env.EMAIL_USER || 'Not set',
+      notifCc: process.env.NOTIF_CC || 'Not set'
+    },
+    queue: Array.from(emailQueue.entries()).map(([id, status]) => ({
+      id,
+      ...status
+    }))
+  };
+
+  try {
+    await transporter.verify();
+    debugInfo.transporterStatus = '✅ Connected and ready';
+    debugInfo.canSendEmail = true;
+  } catch (error) {
+    debugInfo.transporterStatus = '❌ Connection failed';
+    debugInfo.transporterError = {
+      message: error.message,
+      code: error.code,
+      command: error.command
+    };
+    debugInfo.canSendEmail = false;
+  }
+
+  res.json(debugInfo);
 });
 
 // Test endpoint 1: Check email configuration
