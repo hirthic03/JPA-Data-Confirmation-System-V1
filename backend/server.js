@@ -17,7 +17,6 @@ const puppeteer = require('puppeteer');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret123'; // 🔐 Always secure!
 
 const validate = (req, res, next) => {
