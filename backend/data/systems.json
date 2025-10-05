@@ -367,34 +367,38 @@
     }
   },
 
-      "MyPsyD": {
-        "agency": "JPA",
-        "modules": {
-          "Psikologi": {
-            "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
-            "elements": [
-              {
-                "group": "Maklumat Profil",
-                "fields": [
-                  "No KP Pemilik Kompetensi",
-                  "Nama Pemilik Kompetensi",
-                  "Jantina",
-                  "Jawatan Sebenar",
-                  "Unit Organisasi"
-                ]
-              },
-              {
-                "group": "Maklumat Ujian",
-                "fields": [
-                  "Jenis Ujian",
-                  "Tarikh Ujian",
-                  "Hasil Ujian Psikologi dalam bentuk PDF"
-                ]
-              }
+     "MyPsyD": {
+    "agency": "JPA",
+    "modules": {
+      "Psikologi": {
+        "title": "Maklumat Peribadi & Hasil Ujian Psikologi",
+        "elements": [
+          {
+            "group": "Maklumat Profil",
+            "fields": [
+              "No KP",
+              "Nama Pemilik Kompetensi"
+            ]
+          },
+          {
+            "group": "Maklumat Ujian",
+            "fields": [
+              "Tarikh Ujian",
+              "Keputusan Keseluruhan (Individu)"
+            ]
+          },
+          {
+            "group": "Keputusan Ujian berdasarkan Domain",
+            "fields": [
+              "Kod Domain",
+              "Nama Domain",
+              "Keputusan"
             ]
           }
-        }
-      },
+        ]
+      }
+    }
+  },
       "MyKehadiran": {
         "agency": "JPA",
         "modules": {
