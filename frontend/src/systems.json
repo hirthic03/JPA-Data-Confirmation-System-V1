@@ -728,6 +728,331 @@
       }
     }
   },
+  "KKM": {
+  "Online Monitoring Of Continuing Professional Development (MyCPD)": {
+    "agency": "KKM",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Rekod Pembelajaran",
+            "fields": [
+              "ProgramPembelajaran (Berjadual / Atas Permintaan)",
+              "KodPembelajaran",
+              "NamaPembelajaran",
+              "PengkelasanPembelajaran (Generik / Fungsian)",
+              "KlusterPembelajaran",
+              "KategoriPembelajaran",
+              "SubKategoriPembelajaran",
+              "BidangPengkhususan",
+              "SubBidangPengkhususan",
+              "StrukturPembelajaran (Formal / Tidak Formal)",
+              "KeteranganPembelajaran",
+              "Objektif",
+              "AgensiPenganjur",
+              "NamaAgensiPenganjur",
+              "AgensiPengendali",
+              "NamaAgensiPengendali",
+              "JenisKompetensi",
+              "NamaKompetensi",
+              "SkalaKompetensi",
+              "Siri",
+              "TarikhMulaPembelajaran",
+              "MasaMulaPembelajaran",
+              "TarikhTamatPembelajaran",
+              "MasaTamatPembelajaran",
+              "JumlahJam",
+              "LokasiProgramPembelajaran",
+              "NamaPeserta",
+              "NoKPPeserta",
+              "KeputusanPembelajaran"
+            ]
+          },
+          {
+            "group": "Rekod Peperiksaan",
+            "fields": [
+              "NamaPeperiksaan",
+              "No.Rujukan",
+              "KodPeperiksaan",
+              "KategoriPeperiksaan",
+              "TarikhPeperiksaan",
+              "SiriPeperiksaan",
+              "NamaBahagianPeperiksaan",
+              "TarikhBahagianPeperiksaan",
+              "Perkara",
+              "TarikhKeputusanBahagianPeperiksaan",
+              "No.KPCalon",
+              "NamaCalon",
+              "No.AngkaGiliranCalon",
+              "KeputusanPeperiksaan"
+            ]
+          }
+        ]
+      }
+    }
+  }
+},
+"ILA": {
+  "Sistem Pengurusan Program Pembelajaran": {
+    "agency": "ILA",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Rekod Pembelajaran",
+            "fields": [
+              "ProgramPembelajaran (Berjadual / Atas Permintaan)",
+              "KodPembelajaran",
+              "NamaPembelajaran",
+              "PengkelasanPembelajaran (Generik / Fungsian)",
+              "KlusterPembelajaran",
+              "KategoriPembelajaran",
+              "SubKategoriPembelajaran",
+              "BidangPengkhususan",
+              "SubBidangPengkhususan",
+              "StrukturPembelajaran (Formal / Tidak Formal)",
+              "KeteranganPembelajaran",
+              "Objektif",
+              "AgensiPenganjur",
+              "NamaAgensiPenganjur",
+              "AgensiPengendali",
+              "NamaAgensiPengendali",
+              "JenisKompetensi",
+              "NamaKompetensi",
+              "SkalaKompetensi",
+              "Siri",
+              "TarikhMulaPembelajaran",
+              "MasaMulaPembelajaran",
+              "TarikhTamatPembelajaran",
+              "MasaTamatPembelajaran",
+              "JumlahJam",
+              "LokasiProgramPembelajaran",
+              "NamaPeserta",
+              "NoKPPeserta",
+              "KeputusanPembelajaran"
+            ]
+          },
+          {
+            "group": "Rekod Peperiksaan",
+            "fields": [
+              "NamaPeperiksaan",
+              "No.Rujukan",
+              "KodPeperiksaan",
+              "KategoriPeperiksaan",
+              "TarikhPeperiksaan",
+              "SiriPeperiksaan",
+              "NamaBahagianPeperiksaan",
+              "TarikhBahagianPeperiksaan",
+              "Perkara",
+              "TarikhKeputusanBahagianPeperiksaan",
+              "No.KPCalon",
+              "NamaCalon",
+              "No.AngkaGiliranCalon",
+              "KeputusanPeperiksaan"
+            ]
+          }
+        ]
+      }
+    }
+  }
+},
+"EIMAS": {
+  "Sistem Latihan Bersepadu (SLB)": {
+    "agency": "Jabatan Alam Sekitar",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Latihan",
+        "elements": [
+          {
+            "group": "Rekod Pembelajaran",
+            "fields": [
+              "ProgramPembelajaran (Berjadual / Atas Permintaan)",
+              "KodPembelajaran",
+              "NamaPembelajaran",
+              "PengkelasanPembelajaran (Generik / Fungsian)",
+              "KlusterPembelajaran",
+              "KategoriPembelajaran",
+              "SubKategoriPembelajaran",
+              "BidangPengkhususan",
+              "SubBidangPengkhususan",
+              "StrukturPembelajaran (Formal / Tidak Formal)",
+              "KeteranganPembelajaran",
+              "Objektif",
+              "AgensiPenganjur",
+              "NamaAgensiPenganjur",
+              "AgensiPengendali",
+              "NamaAgensiPengendali",
+              "JenisKompetensi",
+              "NamaKompetensi",
+              "SkalaKompetensi",
+              "Siri",
+              "TarikhMulaPembelajaran",
+              "MasaMulaPembelajaran",
+              "TarikhTamatPembelajaran",
+              "MasaTamatPembelajaran",
+              "JumlahJam",
+              "LokasiProgramPembelajaran",
+              "NamaPeserta",
+              "NoKPPeserta",
+              "KeputusanPembelajaran"
+            ]
+          },
+          {
+            "group": "Rekod Peperiksaan",
+            "fields": [
+              "NamaPeperiksaan",
+              "No.Rujukan",
+              "KodPeperiksaan",
+              "KategoriPeperiksaan",
+              "TarikhPeperiksaan",
+              "SiriPeperiksaan",
+              "NamaBahagianPeperiksaan",
+              "TarikhBahagianPeperiksaan",
+              "Perkara",
+              "TarikhKeputusanBahagianPeperiksaan",
+              "No.KPCalon",
+              "NamaCalon",
+              "No.AngkaGiliranCalon",
+              "KeputusanPeperiksaan"
+            ]
+          }
+        ]
+      }
+    }
+  }
+},
+"KPT": {
+  "Sistem Pengurusan Program Pembelajaran": {
+    "agency": "KPT",
+    "modules": {
+      "BLJ": {
+        "title": "Terima Maklumat Pembelajaran Dan Kehadiran Pembelajaran",
+        "elements": [
+          {
+            "group": "Rekod Pembelajaran",
+            "fields": [
+              "ProgramPembelajaran (Berjadual / Atas Permintaan)",
+              "KodPembelajaran",
+              "NamaPembelajaran",
+              "PengkelasanPembelajaran (Generik / Fungsian)",
+              "KlusterPembelajaran",
+              "KategoriPembelajaran",
+              "SubKategoriPembelajaran",
+              "BidangPengkhususan",
+              "SubBidangPengkhususan",
+              "StrukturPembelajaran (Formal / Tidak Formal)",
+              "KeteranganPembelajaran",
+              "Objektif",
+              "AgensiPenganjur",
+              "NamaAgensiPenganjur",
+              "AgensiPengendali",
+              "NamaAgensiPengendali",
+              "JenisKompetensi",
+              "NamaKompetensi",
+              "SkalaKompetensi",
+              "Siri",
+              "TarikhMulaPembelajaran",
+              "MasaMulaPembelajaran",
+              "TarikhTamatPembelajaran",
+              "MasaTamatPembelajaran",
+              "JumlahJam",
+              "LokasiProgramPembelajaran",
+              "NamaPeserta",
+              "NoKPPeserta",
+              "KeputusanPembelajaran"
+            ]
+          },
+          {
+            "group": "Rekod Peperiksaan",
+            "fields": [
+              "NamaPeperiksaan",
+              "No.Rujukan",
+              "KodPeperiksaan",
+              "KategoriPeperiksaan",
+              "TarikhPeperiksaan",
+              "SiriPeperiksaan",
+              "NamaBahagianPeperiksaan",
+              "TarikhBahagianPeperiksaan",
+              "Perkara",
+              "TarikhKeputusanBahagianPeperiksaan",
+              "No.KPCalon",
+              "NamaCalon",
+              "No.AngkaGiliranCalon",
+              "KeputusanPeperiksaan"
+            ]
+          }
+        ]
+      }
+    }
+  }
+},
+"SPA": {
+  "TERAS": {
+    "agency": "SPA",
+    "modules": {
+      "BLJ": {
+        "title": "Maklumat Peperiksaan Integrasi",
+        "elements": [
+          {
+            "group": "Rekod Pembelajaran",
+            "fields": [
+              "ProgramPembelajaran (Berjadual / Atas Permintaan)",
+              "KodPembelajaran",
+              "NamaPembelajaran",
+              "PengkelasanPembelajaran (Generik / Fungsian)",
+              "KlusterPembelajaran",
+              "KategoriPembelajaran",
+              "SubKategoriPembelajaran",
+              "BidangPengkhususan",
+              "SubBidangPengkhususan",
+              "StrukturPembelajaran (Formal / Tidak Formal)",
+              "KeteranganPembelajaran",
+              "Objektif",
+              "AgensiPenganjur",
+              "NamaAgensiPenganjur",
+              "AgensiPengendali",
+              "NamaAgensiPengendali",
+              "JenisKompetensi",
+              "NamaKompetensi",
+              "SkalaKompetensi",
+              "Siri",
+              "TarikhMulaPembelajaran",
+              "MasaMulaPembelajaran",
+              "TarikhTamatPembelajaran",
+              "MasaTamatPembelajaran",
+              "JumlahJam",
+              "LokasiProgramPembelajaran",
+              "NamaPeserta",
+              "NoKPPeserta",
+              "KeputusanPembelajaran"
+            ]
+          },
+          {
+            "group": "Rekod Peperiksaan",
+            "fields": [
+              "NamaPeperiksaan",
+              "No.Rujukan",
+              "KodPeperiksaan",
+              "KategoriPeperiksaan",
+              "TarikhPeperiksaan",
+              "SiriPeperiksaan",
+              "NamaBahagianPeperiksaan",
+              "TarikhBahagianPeperiksaan",
+              "Perkara",
+              "TarikhKeputusanBahagianPeperiksaan",
+              "No.KPCalon",
+              "NamaCalon",
+              "No.AngkaGiliranCalon",
+              "KeputusanPeperiksaan"
+            ]
+          }
+        ]
+      }
+    }
+  }
+},
   "Penilaian Kemahiran Bahasa Inggeris (ELPA)": {
     "agency": "INTAN",
     "modules": {
