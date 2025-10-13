@@ -97,8 +97,11 @@ app.use(compression());
 // 🟢 Rate limiting only for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: 'Terlalu banyak cubaan. Sila cuba lagi dalam 15 minit.'
+  max: 10, // Increased from 5 to 10
+  message: 'Terlalu banyak cubaan. Sila cuba lagi dalam 15 minit.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Don't count successful logins
 });
 app.use('/login', authLimiter);
 app.use('/register', authLimiter);
@@ -110,20 +113,44 @@ app.use(express.urlencoded({ extended: true }));
 // 🟢 DB initialization
 const dbDir = path.join(__dirname, 'data');
 fs.mkdirSync(dbDir, { recursive: true });
-const db = new Database(path.join(__dirname, 'confirmation_data.db'));
 
+// FIX: Use data directory for database and enable WAL mode
+const dbPath = path.join(dbDir, 'confirmation_data.db');
+const db = new Database(dbPath, { 
+  verbose: console.log,
+  fileMustExist: false
+});
+
+// FIX: Enable WAL mode to prevent locking issues
+db.pragma('journal_mode = WAL');
+db.pragma('busy_timeout = 5000');
+db.pragma('synchronous = NORMAL');
+db.pragma('cache_size = -64000');
+db.pragma('foreign_keys = ON');
+db.pragma('temp_store = MEMORY');
+
+console.log('✅ Database initialized with WAL mode at:', dbPath);
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name   TEXT NOT NULL,
     phone  TEXT NOT NULL,
-    email  TEXT UNIQUE NOT NULL,
+    email  TEXT UNIQUE NOT NULL COLLATE NOCASE,
     password TEXT NOT NULL,
     role TEXT DEFAULT 'agency',
-    agency TEXT
+    agency TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_login TEXT
   )
 `).run();
+
+// Add index for better performance
+try {
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)').run();
+} catch (e) {
+  // Index already exists
+}
 // Add columns if they don't exist (for existing databases)
 try {
   db.prepare(`ALTER TABLE users ADD COLUMN name TEXT`).run();
@@ -241,37 +268,104 @@ if (!gridCols.includes('group_name')) {
 }
 
 async function seedUsers() {
-  const existing = db.prepare('SELECT COUNT(*) as count FROM users').get();
-  if (existing.count > 0) {
-    console.log('⚠️ Users already seeded, skipping.');
-    return;
-  }
-
-  const testUsers = [
+  // Always ensure these accounts exist on every server start
+  const permanentAccounts = [
     {
-      agency_name: 'Jabatan A',
-      email: 'agency1@jpa.gov.my',
-      password: 'agency123',
-      role: 'agency'
+      name: 'JPA Admin',
+      phone: '0123456789',
+      email: 'jpa@gmail.com',
+      password: 'JPA@12345',
+      role: 'agency',
+      agency: 'JPA'
     },
     {
-      agency_name: 'Jabatan Digital',
-      email: 'admin@jpa.gov.my',
-      password: 'admin123',
-      role: 'admin'
+      name: 'INTAN Admin',
+      phone: '0123456789',
+      email: 'intan@gmail.com',
+      password: 'INTAN@12334',
+      role: 'agency',
+      agency: 'INTAN'
+    },
+    {
+      name: 'SPA Admin',
+      phone: '0123456789',
+      email: 'spa@gmail.com',
+      password: 'SPA@12345',
+      role: 'agency',
+      agency: 'SPA'
+    },
+    {
+      name: 'KKM Admin',
+      phone: '0123456789',
+      email: 'kkm@gmail.com',
+      password: 'KKM@12345',
+      role: 'agency',
+      agency: 'KKM'
+    },
+    {
+      name: 'KPT Admin',
+      phone: '0123456789',
+      email: 'kpt@gmail.com',
+      password: 'KPT@12345',
+      role: 'agency',
+      agency: 'KPT'
+    },
+    {
+      name: 'ILA Admin',
+      phone: '0123456789',
+      email: 'ila@gmail.com',
+      password: 'ILA@12345',
+      role: 'agency',
+      agency: 'ILA'
     }
   ];
 
-  for (const u of testUsers) {
-    const hash = await bcrypt.hash(u.password, 10);
-db.prepare(`
-  INSERT INTO users (email, password, role, agency)
-  VALUES (?, ?, ?, ?)
-`).run(u.email, hash, u.role, u.agency_name);
-    console.log(`✅ Created user: ${u.email}`);
+  console.log('🔄 Ensuring permanent accounts exist...');
+  
+  for (const account of permanentAccounts) {
+    try {
+      // Check if user exists (case-insensitive)
+      const existing = db.prepare(
+        'SELECT id FROM users WHERE LOWER(email) = LOWER(?)'
+      ).get(account.email);
+      
+      if (existing) {
+        // Update password to ensure it matches
+        const hash = await bcrypt.hash(account.password, 10);
+        db.prepare(`
+          UPDATE users 
+          SET password = ?, name = ?, phone = ?, agency = ?
+          WHERE LOWER(email) = LOWER(?)
+        `).run(hash, account.name, account.phone, account.agency, account.email);
+        console.log(`✅ Updated account: ${account.email}`);
+      } else {
+        // Create new user
+        const hash = await bcrypt.hash(account.password, 10);
+        db.prepare(`
+          INSERT INTO users (name, phone, email, password, role, agency)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          account.name,
+          account.phone,
+          account.email.toLowerCase(),
+          hash,
+          account.role,
+          account.agency
+        );
+        console.log(`✅ Created permanent account: ${account.email}`);
+      }
+    } catch (err) {
+      console.error(`⚠️ Error processing ${account.email}:`, err.message);
+    }
   }
+  
+  console.log('✅ All permanent accounts ready');
 }
-seedUsers();
+
+// Call seedUsers on every server start
+seedUsers().catch(err => {
+  console.error('Failed to seed users:', err);
+});
 
 // Utility
 function getQuestionTextById(id) {
@@ -622,6 +716,84 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
   }
 });
 
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        error: 'Email dan kata laluan diperlukan' 
+      });
+    }
+
+    // Query user (case-insensitive)
+    const user = db.prepare(`
+      SELECT * FROM users 
+      WHERE LOWER(email) = LOWER(?)
+    `).get(email.trim());
+    
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Email atau kata laluan tidak sah' 
+      });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ 
+        error: 'Email atau kata laluan tidak sah' 
+      });
+    }
+
+    // Update last login
+    try {
+      db.prepare(`
+        UPDATE users 
+        SET last_login = datetime('now') 
+        WHERE id = ?
+      `).run(user.id);
+    } catch (updateErr) {
+      console.error('Failed to update last login:', updateErr);
+      // Continue even if update fails
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        agency: user.agency
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Send response
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        agency: user.agency
+      }
+    });
+
+    console.log(`✅ User logged in: ${user.email}`);
+    
+  } catch (err) {
+    console.error('❌ LOGIN ERROR:', err);
+    res.status(500).json({ 
+      error: 'Ralat sistem semasa log masuk. Sila cuba lagi.' 
+    });
+  }
+});
+
 app.post('/register', async (req, res) => {
   try {
     const { name, phone, email, password, agency, role } = req.body;
@@ -634,13 +806,20 @@ app.post('/register', async (req, res) => {
       });
     }
 
-    // ✅ Validate input types
-    if (typeof email !== 'string' || typeof password !== 'string' || typeof agency !== 'string' || typeof role !== 'string') {
-      return res.status(400).json({ success: false, message: 'Invalid input type' });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Format email tidak sah' 
+      });
     }
 
-    // ✅ Check if user already exists
-    const userExists = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
+    // Check if user already exists (case-insensitive)
+    const userExists = db.prepare(
+      'SELECT 1 FROM users WHERE LOWER(email) = LOWER(?)'
+    ).get(email.trim());
+    
     if (userExists) {
       return res.status(400).json({ 
         success: false, 
@@ -648,63 +827,42 @@ app.post('/register', async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const stmt = db.prepare('INSERT INTO users (name, phone, email, password, agency, role) VALUES (?, ?, ?, ?, ?, ?)');
-    stmt.run(name, phone, email, hashedPassword, agency, role);
-
-    console.log(`✅ Created user: ${email} (${name})`);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('❌ Registration Error:', err.message);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
-
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // VALIDATE INPUT
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-
-    // QUERY USER
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
-
-    // VERIFY PASSWORD
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
-
-    // GENERATE TOKEN
-    const token = jwt.sign(
-      {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        agency: user.agency,
-        email: user.email
-      },
-      JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
-    // RESPOND
-    res.json({
-      token,
-       user: {
-    ...user,
-    name: user.name  // Make sure name is included
-  },
-      agency: user.agency || 'JPA' // <-- ✅ Needed for your frontend
+    // Use transaction for atomic insert
+    const insertUser = db.transaction(() => {
+      return db.prepare(`
+        INSERT INTO users (name, phone, email, password, agency, role, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+      `).run(
+        name.trim(), 
+        phone.trim(), 
+        email.trim().toLowerCase(), 
+        hashedPassword, 
+        agency, 
+        role
+      );
     });
+
+    const result = insertUser();
+
+    console.log(`✅ Registered new user: ${email} with ID: ${result.lastInsertRowid}`);
+    
+    res.json({ 
+      success: true,
+      message: 'Pendaftaran berjaya! Sila log masuk.'
+    });
+    
   } catch (err) {
-    console.error('❌ LOGIN ERROR:', err);
-    res.status(500).json({ error: 'Server error during login' });
+    console.error('❌ Registration Error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ralat sistem. Sila cuba lagi.' 
+    });
   }
 });
+
 // Forgot Password - Request Reset
 app.post('/forgot-password', async (req, res) => {
   try {
@@ -1166,6 +1324,53 @@ app.get('/systems', (req, res) => {
   });
 });
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    const testQuery = db.prepare('SELECT 1 as test').get();
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    
+    // If no users exist, reseed
+    if (userCount.count === 0) {
+      console.log('⚠️ No users found, reseeding...');
+      await seedUsers();
+    }
+    
+    res.json({
+      status: 'healthy',
+      database: testQuery ? 'connected' : 'error',
+      users: userCount.count,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'unhealthy',
+      error: err.message
+    });
+  }
+});
+
+// Database recovery check - run on startup and periodically
+async function checkAndRecoverDatabase() {
+  try {
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    console.log(`📊 Current user count: ${userCount.count}`);
+    
+    if (userCount.count < 6) {
+      console.log('⚠️ Missing users detected, running recovery...');
+      await seedUsers();
+    }
+  } catch (err) {
+    console.error('Database check error:', err);
+  }
+}
+
+// Run database check every 5 minutes
+setInterval(checkAndRecoverDatabase, 5 * 60 * 1000);
+
+// Run immediately on startup
+checkAndRecoverDatabase();
 
 // ✅ Root status route
 app.get('/', (req, res) => {
@@ -1262,6 +1467,36 @@ const server = app.listen(PORT, () => {
   console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
+// Keep service alive on free tier (ping every 10 minutes)
+if (process.env.NODE_ENV === 'production') {
+  const keepAlive = () => {
+    try {
+      // Self-ping to prevent sleep
+      const https = require('https');
+      const hostname = process.env.RENDER_EXTERNAL_URL || `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
+      
+      if (hostname) {
+        https.get(`${hostname}/health`, (res) => {
+          console.log(`⏰ Keep-alive ping: ${res.statusCode} at ${new Date().toISOString()}`);
+        }).on('error', (err) => {
+          console.error('Keep-alive failed:', err.message);
+        });
+      }
+      
+      // Also ensure accounts exist
+      checkAndRecoverDatabase();
+    } catch (err) {
+      console.error('Keep-alive error:', err);
+    }
+  };
+  
+  // Run every 10 minutes
+  setInterval(keepAlive, 10 * 60 * 1000);
+  
+  // Initial run after 1 minute
+  setTimeout(keepAlive, 60 * 1000);
+}
+
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Closing server...');
   server.close(() => {
@@ -1271,27 +1506,23 @@ process.on('SIGTERM', () => {
   });
 });
 
-// Add these security improvements to your existing server.js
-
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
-
-
-// 7. Add logout endpoint
-app.post('/logout', authenticateToken, (req, res) => {
-  // In a production system, you might want to blacklist the token
-  // For now, just acknowledge the logout
-  console.log(`User ${req.user.email} logged out`);
-  res.json({ success: true, message: 'Logged out successfully' });
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Closing server...');
+  server.close(() => {
+    db.close();
+    console.log('Server shutdown complete.');
+    process.exit(0);
+  });
 });
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  db.close();
+  process.exit(1);
+});
+
+// Add these security improvements to your existing server.js
 
 function getDataForAgency(agency) {
   // Replace this with real filtered results if needed
@@ -1301,17 +1532,6 @@ function getDataForAgency(agency) {
     data: []
   };
 }
-
-// 8. Protected route example with agency filtering
-app.get('/api/agency-data', authenticateToken, (req, res) => {
-  const userAgency = req.user.agency;
-  
-  // Filter data based on user's agency
-  // Example: only return data relevant to user's agency
-  const data = getDataForAgency(userAgency);
-  
-  res.json(data);
-});
 
 // Add these NEW endpoints after line 906 (before the existing test endpoints)
 
