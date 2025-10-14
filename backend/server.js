@@ -61,6 +61,61 @@ const saltRounds = 10;
 
 // Add this after line 33 (after const saltRounds = 10;)
 const emailQueue = new Map(); // Track email sending status
+// ============= TELEGRAM NOTIFICATION SETUP =============
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID_HERE';
+
+async function sendTelegramNotification(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || 
+      TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
+    console.log('⚠️ Telegram not configured, skipping notification');
+    return { success: false, error: 'Not configured' };
+  }
+
+  try {
+    const axios = require('axios');
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    
+    const response = await axios.post(url, {
+      chat_id: TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: 'HTML'
+    });
+
+    console.log('✅ Telegram notification sent');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('❌ Telegram notification failed:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Function to format the submission for Telegram
+function formatTelegramMessage(reqBody, gridRows, meta, picInfo) {
+  const q = (id) => reqBody[id] || '-';
+  
+  let message = `🔔 <b>New Inbound Submission</b>\n\n`;
+  message += `<b>System:</b> ${meta.system}\n`;
+  message += `<b>API:</b> ${meta.apiName}\n`;
+  message += `<b>Module:</b> ${meta.moduleName}\n\n`;
+  
+  message += `👤 <b>PIC Info:</b>\n`;
+  message += `• Name: ${picInfo.name || '-'}\n`;
+  message += `• Phone: ${picInfo.phone || '-'}\n`;
+  message += `• Email: ${picInfo.email || '-'}\n\n`;
+  
+  message += `📋 <b>Details:</b>\n`;
+  message += `• Integration: ${q('integrationMethod')}\n`;
+  message += `• Format: ${q('messageFormat')}\n`;
+  message += `• Transaction: ${q('transactionType')}\n`;
+  message += `• Frequency: ${q('frequency')}\n`;
+  message += `• Data Elements: ${gridRows.length} items\n\n`;
+  
+  message += `📅 <b>Submitted:</b> ${new Date().toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}`;
+  
+  return message;
+}
+// ============= END TELEGRAM SETUP =============
 
 // ────────────────────────────────────────────────────────────────
 // CORS - allow only your Vercel frontend + localhost (dev)
@@ -665,6 +720,32 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
 
     // Send email synchronously but with timeout
     let emailResult = { status: 'not_sent', error: 'Email service not configured' };
+
+    // Send Telegram notification
+    let telegramResult = { status: 'not_sent' };
+    try {
+      const telegramMessage = formatTelegramMessage(
+        req.body,
+        cleanedGrid,
+        {
+          system,
+          apiName,
+          moduleName,
+          created_at
+        },
+        {
+          name: pic_name,
+          phone: pic_phone,
+          email: pic_email
+        }
+      );
+      
+      telegramResult = await sendTelegramNotification(telegramMessage);
+      console.log('📱 Telegram notification result:', telegramResult);
+    } catch (telegramError) {
+      console.error('Telegram error:', telegramError);
+      telegramResult = { status: 'failed', error: telegramError.message };
+    }
     
     if (process.env.NOTIF_EMAIL && process.env.NOTIF_PASS) {
       try {
@@ -704,7 +785,8 @@ app.post('/submit-inbound', upload.any(), async (req, res) => {
     res.status(200).json({
       message: '✅ Borang berjaya dihantar',
       submission_id: submission_uuid,
-      emailStatus: emailResult
+      emailStatus: emailResult,
+      telegramStatus: telegramResult
     });
 
   } catch (error) {
