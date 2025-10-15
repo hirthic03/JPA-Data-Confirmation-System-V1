@@ -62,12 +62,12 @@ const saltRounds = 10;
 // Add this after line 33 (after const saltRounds = 10;)
 const emailQueue = new Map(); // Track email sending status
 // ============= TELEGRAM NOTIFICATION SETUP =============
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8464725411:AAHDti-znrCnRCgdj9M2nbHINsEXLfVBp-k';
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '987654321';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID_HERE';
 
 async function sendTelegramNotification(message) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || 
-      TELEGRAM_BOT_TOKEN === '8464725411:AAHDti-znrCnRCgdj9M2nbHINsEXLfVBp-k') {
+      TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
     console.log('⚠️ Telegram not configured, skipping notification');
     return { success: false, error: 'Not configured' };
   }
